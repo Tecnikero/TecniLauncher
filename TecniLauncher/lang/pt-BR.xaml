@@ -1,0 +1,92 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <sys:String x:Key="Menu_Events">🎈   Eventos</sys:String>
+    <sys:String x:Key="Menu_Play">🎮   Jogar</sys:String>
+    <sys:String x:Key="Menu_Profiles">📂   Perfis</sys:String>
+    <sys:String x:Key="Menu_Mods">🧩   Mods</sys:String>
+    <sys:String x:Key="Menu_Settings">⚙️   Configurações</sys:String>
+    <sys:String x:Key="Menu_ModPacks">🧭​   ModPacks</sys:String>
+
+    <sys:String x:Key="Events_Header">EVENTOS TECNISTUDIOS</sys:String>
+    <sys:String x:Key="Events_Active">Eventos Ativos</sys:String>
+    <sys:String x:Key="Events_Ram">RAM</sys:String>
+    <sys:String x:Key="Events_GB">GB</sys:String>
+
+    <sys:String x:Key="Play_NewsLoadingTitle">Carregando novidades...</sys:String>
+    <sys:String x:Key="Play_NewsLoadingBody">Descrição da notícia...</sys:String>
+    <sys:String x:Key="Play_NewsJoin">PARTICIPAR AGORA</sys:String>
+    <sys:String x:Key="Play_SelectProfile">SELECIONE SEU PERFIL</sys:String>
+    <sys:String x:Key="Play_BtnPlay">JOGAR AGORA</sys:String>
+
+    <sys:String x:Key="Profiles_Title">GERENCIAR PERFIS</sys:String>
+    <sys:String x:Key="Profiles_CreateNew">CRIAR NOVO PERFIL</sys:String>
+
+    <sys:String x:Key="Mods_Title">LOJA DE MODS</sys:String>
+    <sys:String x:Key="Mods_TargetProfile">Perfil Alvo</sys:String>
+    <sys:String x:Key="Mods_SearchPlaceholder">Buscar mod (ex: Sodium)...</sys:String>
+    <sys:String x:Key="Mods_BtnSearch">🔍 BUSCAR</sys:String>
+    <sys:String x:Key="Mods_TabInstalled">📂 Instalados</sys:String>
+    <sys:String x:Key="Mods_TabOnline">☁️ Modrinth API</sys:String>
+    <sys:String x:Key="ModPack_Title">EXPLORE MODPACKS</sys:String>
+    <sys:String x:Key="ModPack_SubTitle">Pesquise e instale pacotes de mods completos do Modrinth</sys:String>
+    <sys:String x:Key="ModPack_botonBus">BUSCAR</sys:String>
+
+    <sys:String x:Key="Settings_Title">CONFIGURAÇÕES</sys:String>
+
+    <sys:String x:Key="Settings_Language">Idioma / Language</sys:String>
+    <sys:String x:Key="Settings_LanguageDesc">Selecione o idioma da interface</sys:String>
+    <sys:String x:Key="Settings_LanguageSub">Select your language / Selecciona tu idioma</sys:String>
+
+    <sys:String x:Key="Settings_General">Geral</sys:String>
+    <sys:String x:Key="Settings_HideLauncher">Ocultar Launcher ao jogar</sys:String>
+    <sys:String x:Key="Settings_HideLauncherDesc">Minimiza o aplicativo automaticamente ao abrir o jogo.</sys:String>
+    <sys:String x:Key="Settings_ShowSnapshots">Mostrar Snapshots</sys:String>
+    <sys:String x:Key="Settings_ShowSnapshotsDesc">Permite selecionar versões experimentais e betas.</sys:String>
+
+    <sys:String x:Key="Settings_Video">Vídeo e Tela</sys:String>
+    <sys:String x:Key="Settings_Resolution">Resolução da Janela</sys:String>
+    <sys:String x:Key="Settings_ResolutionDesc">Tamanho da janela ao iniciar (se não for tela cheia)</sys:String>
+    <sys:String x:Key="Settings_Width">Largura:</sys:String>
+    <sys:String x:Key="Settings_Height">Altura:</sys:String>
+    <sys:String x:Key="Settings_Fullscreen">Tela Cheia</sys:String>
+    <sys:String x:Key="Settings_FullscreenDesc">O jogo ocupará toda a tela ao iniciar.</sys:String>
+
+    <sys:String x:Key="Settings_Customization">Personalização</sys:String>
+    <sys:String x:Key="Settings_SkinTitle">Skin do Jogador</sys:String>
+    <sys:String x:Key="Settings_SkinDesc">A skin é detectada automaticamente (Ely.by).</sys:String>
+    <sys:String x:Key="Settings_UploadSkin">GERENCIAR NO ELY.BY</sys:String>
+    <sys:String x:Key="Settings_ElySub">Clique para enviar ou alterar sua skin</sys:String>
+    <sys:String x:Key="Settings_DeleteSkin">Recarregar Skin</sys:String>
+    <sys:String x:Key="Settings_Preview">PRÉ-VISUALIZAÇÃO</sys:String>
+
+    <sys:String x:Key="Login_Welcome">BEM-VINDO</sys:String>
+    <sys:String x:Key="Login_Microsoft">Entrar com Microsoft</sys:String>
+    <sys:String x:Key="Login_OfflineTitle">OU JOGUE OFFLINE</sys:String>
+    <sys:String x:Key="Login_Username">Nome de Usuário</sys:String>
+    <sys:String x:Key="Login_PlayerPlaceholder">Jogador</sys:String>
+    <sys:String x:Key="Login_Enter">ENTRAR</sys:String>
+    <sys:String x:Key="Login_NoSession">Sem Sessão</sys:String>
+    <sys:String x:Key="Btn_Login">LOGIN</sys:String>
+    <sys:String x:Key="CuentaEly">☁️ Conta Ely.by</sys:String>
+    <sys:String x:Key="CuentaEly_Correo">E-mail</sys:String>
+    <sys:String x:Key="CuentaEly_Contra">Senha</sys:String>
+    <sys:String x:Key="CuentaEly_Entrar">Entrar</sys:String>
+    <sys:String x:Key="CuentaEly_iniciar">☁️ Fazer login</sys:String>
+    <sys:String x:Key="CuentaEly_Creden">Usar suas credenciais Ely.by</sys:String>
+    <sys:String x:Key="CuentaEly_atras">← Voltar</sys:String>
+
+    <sys:String x:Key="Config_Title">CONFIGURAR PERFIL</sys:String>
+    <sys:String x:Key="Config_Name">Nome do Perfil</sys:String>
+    <sys:String x:Key="Config_Loader">Loader</sys:String>
+    <sys:String x:Key="Config_Version">Versão</sys:String>
+    <sys:String x:Key="Config_LoaderVer">Versão do Loader</sys:String>
+    <sys:String x:Key="Config_Ram">Memória RAM (GB)</sys:String>
+    <sys:String x:Key="Config_Icon">Ícone do Perfil</sys:String>
+
+    <sys:String x:Key="Btn_Save">SALVAR</sys:String>
+    <sys:String x:Key="Btn_Cancel">CANCELAR</sys:String>
+    <sys:String x:Key="Msg_Loading">Carregando...</sys:String>
+
+</ResourceDictionary>

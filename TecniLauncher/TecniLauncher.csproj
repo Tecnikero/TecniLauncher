@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>TecniLogo.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Page Remove="lang\en-US.xaml" />
+    <Page Remove="lang\es-ES.xaml" />
+    <Page Remove="lang\pt-BR.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="lang\en-US.xaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="lang\es-ES.xaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="lang\pt-BR.xaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TecniLogo.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CmlLib.Core" Version="4.0.6" />
+    <PackageReference Include="CmlLib.Core.Auth.Microsoft" Version="3.3.1" />
+    <PackageReference Include="CmlLib.Core.Installer.Forge" Version="1.1.1" />
+    <PackageReference Include="CmlLib.Core.Installer.NeoForge" Version="4.0.0" />
+    <PackageReference Include="MdXaml" Version="1.27.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Icons\icon1.png" />
+    <Resource Include="Resources\Icons\icon2.png" />
+    <Resource Include="Resources\Icons\icon3.png" />
+    <Resource Include="Resources\Icons\icon4.png" />
+    <Resource Include="Resources\Icons\icon5.png" />
+    <Resource Include="Resources\Icons\icon6.png" />
+    <Resource Include="Resources\Icons\icon7.png" />
+    <Resource Include="Resources\Icons\icon8.png" />
+    <Resource Include="Resources\Icons\icon9.png" />
+    <Resource Include="Resources\Icons\icon10.png" />
+  </ItemGroup>
+
+</Project>

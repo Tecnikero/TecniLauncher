@@ -1,0 +1,92 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <sys:String x:Key="Menu_Events">🎈   Events</sys:String>
+    <sys:String x:Key="Menu_Play">🎮   Play</sys:String>
+    <sys:String x:Key="Menu_Profiles">📂   Profiles</sys:String>
+    <sys:String x:Key="Menu_Mods">🧩   Mods</sys:String>
+    <sys:String x:Key="Menu_Settings">⚙️   Settings</sys:String>
+    <sys:String x:Key="Menu_ModPacks">🧭​   ModPacks</sys:String>
+
+    <sys:String x:Key="Events_Header">TECNISTUDIOS EVENTS</sys:String>
+    <sys:String x:Key="Events_Active">Active Events</sys:String>
+    <sys:String x:Key="Events_Ram">RAM</sys:String>
+    <sys:String x:Key="Events_GB">GB</sys:String>
+
+    <sys:String x:Key="Play_NewsLoadingTitle">Loading news...</sys:String>
+    <sys:String x:Key="Play_NewsLoadingBody">News description...</sys:String>
+    <sys:String x:Key="Play_NewsJoin">JOIN NOW</sys:String>
+    <sys:String x:Key="Play_SelectProfile">SELECT YOUR PROFILE</sys:String>
+    <sys:String x:Key="Play_BtnPlay">PLAY NOW</sys:String>
+
+    <sys:String x:Key="Profiles_Title">PROFILE MANAGER</sys:String>
+    <sys:String x:Key="Profiles_CreateNew">CREATE NEW PROFILE</sys:String>
+
+    <sys:String x:Key="Mods_Title">MOD STORE</sys:String>
+    <sys:String x:Key="Mods_TargetProfile">Target Profile</sys:String>
+    <sys:String x:Key="Mods_SearchPlaceholder">Search mod (e.g. Sodium)...</sys:String>
+    <sys:String x:Key="Mods_BtnSearch">🔍 SEARCH</sys:String>
+    <sys:String x:Key="Mods_TabInstalled">📂 Installed</sys:String>
+    <sys:String x:Key="Mods_TabOnline">☁️ Modrinth API</sys:String>
+    <sys:String x:Key="ModPack_Title">EXPLORE MODPACKS</sys:String>
+    <sys:String x:Key="ModPack_SubTitle">Search and install complete mod packs from Modrinth</sys:String>
+    <sys:String x:Key="ModPack_botonBus">SEARCH</sys:String>
+
+    <sys:String x:Key="Settings_Title">SETTINGS</sys:String>
+
+    <sys:String x:Key="Settings_Language">Language</sys:String>
+    <sys:String x:Key="Settings_LanguageDesc">Select interface language</sys:String>
+    <sys:String x:Key="Settings_LanguageSub">Selecciona tu idioma / Escolha seu idioma</sys:String>
+
+    <sys:String x:Key="Settings_General">General</sys:String>
+    <sys:String x:Key="Settings_HideLauncher">Hide Launcher when playing</sys:String>
+    <sys:String x:Key="Settings_HideLauncherDesc">Minimizes the app automatically when Minecraft opens.</sys:String>
+    <sys:String x:Key="Settings_ShowSnapshots">Show Snapshots</sys:String>
+    <sys:String x:Key="Settings_ShowSnapshotsDesc">Allows selecting experimental and beta versions.</sys:String>
+
+    <sys:String x:Key="Settings_Video">Video &amp; Display</sys:String>
+    <sys:String x:Key="Settings_Resolution">Window Resolution</sys:String>
+    <sys:String x:Key="Settings_ResolutionDesc">Window size on startup (if not fullscreen)</sys:String>
+    <sys:String x:Key="Settings_Width">Width:</sys:String>
+    <sys:String x:Key="Settings_Height">Height:</sys:String>
+    <sys:String x:Key="Settings_Fullscreen">Fullscreen</sys:String>
+    <sys:String x:Key="Settings_FullscreenDesc">Game will occupy the entire screen on startup.</sys:String>
+
+    <sys:String x:Key="Settings_Customization">Customization</sys:String>
+    <sys:String x:Key="Settings_SkinTitle">Player Skin</sys:String>
+    <sys:String x:Key="Settings_SkinDesc">Skin is detected automatically (Ely.by).</sys:String>
+    <sys:String x:Key="Settings_UploadSkin">MANAGE ON ELY.BY</sys:String>
+    <sys:String x:Key="Settings_ElySub">Click to upload or change your skin</sys:String>
+    <sys:String x:Key="Settings_DeleteSkin">Reload Skin</sys:String>
+    <sys:String x:Key="Settings_Preview">PREVIEW</sys:String>
+
+    <sys:String x:Key="Login_Welcome">WELCOME</sys:String>
+    <sys:String x:Key="Login_Microsoft">Login with Microsoft</sys:String>
+    <sys:String x:Key="Login_OfflineTitle">OR PLAY OFFLINE</sys:String>
+    <sys:String x:Key="Login_Username">Username</sys:String>
+    <sys:String x:Key="Login_PlayerPlaceholder">Player</sys:String>
+    <sys:String x:Key="Login_Enter">ENTER</sys:String>
+    <sys:String x:Key="Login_NoSession">No Session</sys:String>
+    <sys:String x:Key="Btn_Login">LOGIN</sys:String>
+    <sys:String x:Key="CuentaEly">☁️ Ely.by Account</sys:String>
+    <sys:String x:Key="CuentaEly_Correo">Email</sys:String>
+    <sys:String x:Key="CuentaEly_Contra">Password</sys:String>
+    <sys:String x:Key="CuentaEly_Entrar">Log In</sys:String>
+    <sys:String x:Key="CuentaEly_iniciar">☁️ Sign In</sys:String>
+    <sys:String x:Key="CuentaEly_Creden">Use your Ely.by credentials</sys:String>
+    <sys:String x:Key="CuentaEly_atras">← Go Back</sys:String>
+
+    <sys:String x:Key="Config_Title">CONFIGURE PROFILE</sys:String>
+    <sys:String x:Key="Config_Name">Profile Name</sys:String>
+    <sys:String x:Key="Config_Loader">Loader</sys:String>
+    <sys:String x:Key="Config_Version">Version</sys:String>
+    <sys:String x:Key="Config_LoaderVer">Loader Version</sys:String>
+    <sys:String x:Key="Config_Ram">RAM Memory (GB)</sys:String>
+    <sys:String x:Key="Config_Icon">Profile Icon</sys:String>
+
+    <sys:String x:Key="Btn_Save">SAVE</sys:String>
+    <sys:String x:Key="Btn_Cancel">CANCEL</sys:String>
+    <sys:String x:Key="Msg_Loading">Loading...</sys:String>
+
+</ResourceDictionary>
