@@ -244,7 +244,7 @@
                     </Grid>
                 </Border>
 
-                <Grid Grid.Column="1">
+                <Grid Grid.Column="1" Cursor="">
                     <Grid.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                             <GradientStop Color="#0f2027" Offset="0.0"/>
@@ -536,251 +536,394 @@
                     </Grid>
 
                     <Grid x:Name="VistaMods" Margin="0" Visibility="Collapsed">
-                        <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="40,40,40,20">
+                            <TextBlock Text="{DynamicResource Mods_Title}" Foreground="{StaticResource TextMain}" FontSize="28" FontWeight="Bold"/>
+                            <Rectangle Height="3" Width="60" Fill="#9b59b6" HorizontalAlignment="Left" Margin="0,5,0,0" RadiusX="1.5" RadiusY="1.5"/>
+                        </StackPanel>
+
+                        <Grid Grid.Row="1" Margin="40,0,40,20" Cursor="">
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <StackPanel Grid.Row="0" Margin="40,40,40,20">
-                                <TextBlock Text="{DynamicResource Mods_Title}" Foreground="{StaticResource TextMain}" FontSize="28" FontWeight="Bold"/>
-                                <Rectangle Height="3" Width="60" Fill="#9b59b6" HorizontalAlignment="Left" Margin="0,5,0,0" RadiusX="1.5" RadiusY="1.5"/>
-                            </StackPanel>
+                            <Grid Grid.Row="0" Margin="0,0,0,15">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                            <Grid Grid.Row="1" Margin="40,0,40,20">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Mods_TargetProfile}" Foreground="{StaticResource TextSub}" FontSize="12" Margin="2,0,0,5" FontWeight="SemiBold"/>
+                                    <ComboBox x:Name="comboPerfilesMods" Height="45"
+                          DisplayMemberPath="Nombre"
+                          SelectionChanged="ComboPerfilesMods_SelectionChanged"
+                          Background="#252525" BorderBrush="#444"
+                          Foreground="White" FontSize="14" Padding="10,0">
+                                        <ComboBox.Resources>
+                                            <Style TargetType="Border">
+                                                <Setter Property="CornerRadius" Value="8"/>
+                                            </Style>
+                                        </ComboBox.Resources>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="15,0,0,0">
+                                    <Border Background="#252525" CornerRadius="8" Padding="15,10" Margin="0,0,10,0" BorderBrush="#333" BorderThickness="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Version: " Foreground="#888" FontSize="12"/>
+                                            <TextBlock x:Name="txtModVersion" Text="0.00.0" Foreground="{StaticResource TextMain}" FontWeight="Bold"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Background="#252525" CornerRadius="8" Padding="15,10" BorderBrush="#333" BorderThickness="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Loader: " Foreground="#888" FontSize="12"/>
+                                            <TextBlock x:Name="txtModLoader" Text="Minecraft" Foreground="{StaticResource TextMain}" FontWeight="Bold"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Grid.Row="1" Margin="0,0,0,20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="180"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox x:Name="txtBuscadorMods" 
+         Grid.Column="0" 
+         Height="50" 
+         Background="{StaticResource BgInput}" 
+         Foreground="{StaticResource TextMain}" 
+         FontSize="16" 
+         Padding="20,14" 
+         BorderThickness="0"
+         VerticalContentAlignment="Center">
+                                    <TextBox.Resources>
+                                        <Style TargetType="{x:Type Border}">
+                                            <Setter Property="CornerRadius" Value="10"/>
+                                        </Style>
+                                    </TextBox.Resources>
+                                </TextBox>
+
+                                <Button Grid.Column="2" Content="{DynamicResource Mods_BtnSearch}"
+                    Background="#9b59b6" Foreground="White"
+                    FontWeight="Bold" FontSize="14"
+                    Click="BtnBuscarOnline_Click">
+                                    <Button.Resources>
+                                        <Style TargetType="Border">
+                                            <Setter Property="CornerRadius" Value="10"/>
+                                        </Style>
+                                    </Button.Resources>
+                                    <Button.Effect>
+                                        <DropShadowEffect Color="#9b59b6" BlurRadius="15" Opacity="0.3" ShadowDepth="0"/>
+                                    </Button.Effect>
+                                </Button>
+                            </Grid>
+
+                            <Grid Grid.Row="2">
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="TabOnlineBtn" IsChecked="True" GroupName="TabsMods" Checked="TabOnlineBtn_Checked">
+                                        <RadioButton.Template>
+                                            <ControlTemplate TargetType="RadioButton">
+                                                <Border x:Name="bdr" Background="Transparent" BorderBrush="Transparent" BorderThickness="0,0,0,3" Padding="20,10">
+                                                    <TextBlock x:Name="txt" Text="{DynamicResource Mods_TabOnline}" Foreground="#8c9bb0" FontSize="15" FontWeight="SemiBold"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Setter TargetName="bdr" Property="BorderBrush" Value="#9b59b6"/>
+                                                        <Setter TargetName="txt" Property="Foreground" Value="White"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="bdr" Property="Background" Value="#11FFFFFF"/>
+                                                        <Setter TargetName="txt" Property="Foreground" Value="White"/>
+                                                        <Setter Property="Cursor" Value="Hand"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </RadioButton.Template>
+                                    </RadioButton>
+
+                                    <RadioButton x:Name="TabInstaladosBtn" GroupName="TabsMods" Checked="TabInstaladosBtn_Checked">
+                                        <RadioButton.Template>
+                                            <ControlTemplate TargetType="RadioButton">
+                                                <Border x:Name="bdr" Background="Transparent" BorderBrush="Transparent" BorderThickness="0,0,0,3" Padding="20,10">
+                                                    <TextBlock x:Name="txt" Text="{DynamicResource Mods_TabInstalled}" Foreground="#8c9bb0" FontSize="15" FontWeight="SemiBold"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Setter TargetName="bdr" Property="BorderBrush" Value="#9b59b6"/>
+                                                        <Setter TargetName="txt" Property="Foreground" Value="White"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="bdr" Property="Background" Value="#11FFFFFF"/>
+                                                        <Setter TargetName="txt" Property="Foreground" Value="White"/>
+                                                        <Setter Property="Cursor" Value="Hand"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </RadioButton.Template>
+                                    </RadioButton>
+                                </StackPanel>
+
+                                <Rectangle Height="1" Fill="#22FFFFFF" VerticalAlignment="Bottom"/>
+                            </Grid>
+
+                            <Grid Grid.Row="3" Margin="0,10,0,0">
+
+                                <Grid x:Name="PanelOnline" Visibility="Visible">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                        <Border Background="#08FFFFFF" CornerRadius="12" Padding="15">
+                                            <ListBox x:Name="listaModsGestor" 
+         Background="Transparent" 
+         BorderThickness="0"
+         PreviewMouseWheel="listaMods_PreviewMouseWheel"
+         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+         ScrollViewer.CanContentScroll="False">
+
+                                                <ListBox.ItemContainerStyle>
+                                                    <Style TargetType="ListBoxItem">
+                                                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                                        <Setter Property="Background" Value="Transparent"/>
+                                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                        <Setter Property="Margin" Value="0,0,0,8"/>
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="ListBoxItem">
+                                                                    <ContentPresenter/>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Style>
+                                                </ListBox.ItemContainerStyle>
+
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border x:Name="ContenedorFila" Background="#1E2328" CornerRadius="10" Padding="15" BorderThickness="1" BorderBrush="#33FFFFFF">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <Border Grid.Column="0" CornerRadius="8" Width="50" Height="50" ClipToBounds="True" Background="#111" Margin="0,0,15,0" VerticalAlignment="Center">
+                                                                    <Image Source="{Binding icon_url}" Stretch="UniformToFill"/>
+                                                                </Border>
+
+                                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,15,0">
+                                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                                                        <TextBlock Text="{Binding title}" FontWeight="Bold" FontSize="15" Foreground="White" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+
+                                                                        <Border x:Name="BadgeRecomendado" Background="#33FFD700" CornerRadius="4" Padding="6,2" Margin="10,0,0,0" Visibility="Collapsed" VerticalAlignment="Center">
+                                                                            <TextBlock x:Name="Mods_Recommended" Text="{DynamicResource Mods_Recommended}" Foreground="#FFD700" FontSize="10" FontWeight="Bold"/>
+                                                                        </Border>
+                                                                    </StackPanel>
+
+                                                                    <TextBlock Text="{Binding author}" Foreground="#8c9bb0" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                                                    <TextBlock Text="{Binding description}" FontSize="12" Foreground="#AAA" TextTrimming="CharacterEllipsis" MaxHeight="18"/>
+                                                                </StackPanel>
+
+                                                                <Button Grid.Column="2" x:Name="Mods_verVersiones" Content="{DynamicResource Mods_verVersiones}" Tag="{Binding}" Click="BtnAccionMod_Click"
+                            Height="36" Padding="15,0" Background="{StaticResource ColorAccent}" Foreground="White" BorderThickness="0" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center">
+                                                                    <Button.Resources>
+                                                                        <Style TargetType="Border">
+                                                                            <Setter Property="CornerRadius" Value="8"/>
+                                                                        </Style>
+                                                                    </Button.Resources>
+                                                                </Button>
+                                                            </Grid>
+                                                        </Border>
+
+                                                        <DataTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="ContenedorFila" Property="Background" Value="#252A30"/>
+                                                            </Trigger>
+
+                                                            <DataTrigger Binding="{Binding esRecomendado}" Value="True">
+                                                                <Setter TargetName="BadgeRecomendado" Property="Visibility" Value="Visible"/>
+                                                                <Setter TargetName="ContenedorFila" Property="BorderBrush" Value="#FFD700"/>
+                                                            </DataTrigger>
+                                                        </DataTemplate.Triggers>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                        </Border>
+                                    </ScrollViewer>
+                                </Grid>
+
+                                <Grid x:Name="PanelInstalados" Visibility="Collapsed">
+                                    <Border Background="#08FFFFFF" CornerRadius="12" Padding="10">
+                                        <ListBox x:Name="listaModsInstaladosGestor" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+                                            <ListBox.ItemContainerStyle>
+                                                <Style TargetType="ListBoxItem">
+                                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="ListBoxItem">
+                                                                <Border x:Name="bdr" Background="#1E2328" CornerRadius="10" Padding="15,10" Margin="0,0,0,8" BorderThickness="1" BorderBrush="#33FFFFFF">
+                                                                    <ContentPresenter/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="bdr" Property="Background" Value="#252A30"/>
+                                                                        <Setter TargetName="bdr" Property="BorderBrush" Value="#ff4a4a"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </ListBox.ItemContainerStyle>
+
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <Border Grid.Column="0" CornerRadius="6" Width="36" Height="36" Background="#111" Margin="0,0,15,0">
+                                                            <Image Source="{Binding icon_url}" Stretch="Uniform" Margin="5"/>
+                                                        </Border>
+
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding title}" FontWeight="Bold" FontSize="14" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding description}" Foreground="#8c9bb0" FontSize="11" Margin="0,2,0,0"/>
+                                                        </StackPanel>
+
+                                                        <Button Grid.Column="2" x:Name="Mods_Delete" Content="{DynamicResource Mods_Delete}" Tag="{Binding}" Click="BtnAccionMod_Click" 
+    Height="32" Padding="15,0" Background="#33ff4a4a" Foreground="#ff4a4a" BorderBrush="#ff4a4a" BorderThickness="1"
+    FontSize="11" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center">
+                                                            <Button.Resources>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="CornerRadius" Value="6"/>
+                                                                </Style>
+                                                            </Button.Resources>
+                                                        </Button>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+
+                    <Grid x:Name="OverlayVersiones" Visibility="Collapsed" Background="#CC000000"
+IsHitTestVisible="True" Panel.ZIndex="999">
+                        <Border Width="600" Height="550"
+      Background="{StaticResource BgSidebar}"
+      CornerRadius="16"
+      BorderBrush="{StaticResource ColorAccent}"
+      BorderThickness="1"
+      VerticalAlignment="Center"
+      HorizontalAlignment="Center">
+                            <Border.Effect>
+                                <DropShadowEffect Color="Black" BlurRadius="40" Opacity="0.7"/>
+                            </Border.Effect>
+                            <Grid Margin="30">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-
-                                <StackPanel Grid.Row="0" Margin="0,0,0,20">
-
-                                    <Grid Margin="0,0,0,15">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel>
-                                            <TextBlock Text="{DynamicResource Mods_TargetProfile}" Foreground="{StaticResource TextSub}" FontSize="12" Margin="2,0,0,5" FontWeight="SemiBold"/>
-                                            <ComboBox x:Name="comboPerfilesMods" Height="45" 
-                                  DisplayMemberPath="Nombre" SelectionChanged="ComboPerfilesMods_SelectionChanged"
-                                  Background="#252525" BorderBrush="#444" Foreground="White" FontSize="14" Padding="10,0"
-                                  HorizontalAlignment="Stretch">
-                                                <ComboBox.Resources>
-                                                    <Style TargetType="Border">
-                                                        <Setter Property="CornerRadius" Value="8"/>
-                                                    </Style>
-                                                </ComboBox.Resources>
-                                            </ComboBox>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="15,0,0,0">
-                                            <Border Background="#252525" CornerRadius="8" Padding="15,10" Margin="0,0,10,0" BorderBrush="#333" BorderThickness="1">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="Version: " Foreground="#888" FontSize="12"/>
-                                                    <TextBlock x:Name="txtModVersion" Text="0.00.0" Foreground="{StaticResource TextMain}" FontWeight="Bold"/>
-                                                </StackPanel>
-                                            </Border>
-                                            <Border Background="#252525" CornerRadius="8" Padding="15,10" BorderBrush="#333" BorderThickness="1">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="Loader: " Foreground="#888" FontSize="12"/>
-                                                    <TextBlock x:Name="txtModLoader" Text="Minecraft" Foreground="{StaticResource TextMain}" FontWeight="Bold"/>
-                                                </StackPanel>
-                                            </Border>
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="15"/>
-                                            <ColumnDefinition Width="180"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <TextBox x:Name="txtBuscadorMods" Grid.Column="0" Height="50" Background="{StaticResource BgInput}" Foreground="{StaticResource TextMain}" 
-                             FontSize="16" Padding="20,14" Text="{DynamicResource Mods_SearchPlaceholder}" BorderThickness="0"
-                             GotFocus="TxtBuscador_GotFocus" VerticalContentAlignment="Center">
-                                            <TextBox.Resources>
-                                                <Style TargetType="{x:Type Border}">
-                                                    <Setter Property="CornerRadius" Value="10"/>
-                                                </Style>
-                                            </TextBox.Resources>
-                                        </TextBox>
-
-                                        <Button Grid.Column="2" Content="{DynamicResource Mods_BtnSearch}" Background="#9b59b6" Foreground="White" FontWeight="Bold" FontSize="14" Click="BtnBuscarOnline_Click">
-                                            <Button.Resources>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="CornerRadius" Value="10"/>
-                                                </Style>
-                                            </Button.Resources>
-                                            <Button.Effect>
-                                                <DropShadowEffect Color="#9b59b6" BlurRadius="15" Opacity="0.3" ShadowDepth="0"/>
-                                            </Button.Effect>
-                                        </Button>
-                                    </Grid>
-
-                                    <StackPanel Orientation="Horizontal" Margin="5,15,0,0">
-                                        <RadioButton Content="{DynamicResource Mods_TabInstalled}" IsChecked="True" Foreground="{StaticResource TextMain}" FontSize="14" Margin="0,0,20,0" GroupName="TabsMods" Click="TabInstalados_Click" Cursor="Hand"/>
-                                        <RadioButton x:Name="radioOnline" Content="{DynamicResource Mods_TabOnline}" Foreground="{StaticResource TextMain}" FontSize="14" GroupName="TabsMods" Cursor="Hand"/>
-                                    </StackPanel>
+                                
+                                <StackPanel Grid.Row="0">
+                                    <TextBlock x:Name="txtNombreModVersiones" Text="Versiones Disponibles"
+                     FontSize="24" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock x:Name="Mods_DesDes" Text="{DynamicResource Mods_DesDes}"
+                     FontSize="14" Foreground="#AAA" Margin="0,5,0,20"/>
+                                    <Rectangle Height="1" Fill="#333" Margin="0,0,0,15"/>
                                 </StackPanel>
 
-                                <Border Grid.Row="1" Background="#11FFFFFF" CornerRadius="12" Padding="5" Margin="0,0,0,20">
-                                    <ListView x:Name="listaModsGestor" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                        <ListView.ItemContainerStyle>
-                                            <Style TargetType="ListViewItem">
-                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                <Setter Property="Margin" Value="0,0,0,8"/>
-                                                <Setter Property="Background" Value="Transparent"/>
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="ListViewItem">
-                                                            <Border x:Name="BorderItem" Background="#1E2328" CornerRadius="8" Padding="15,12" BorderThickness="1" BorderBrush="#33FFFFFF">
-                                                                <ContentPresenter/>
-                                                            </Border>
-                                                            <ControlTemplate.Triggers>
-                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter TargetName="BorderItem" Property="Background" Value="#2A2F35"/>
-                                                                    <Setter TargetName="BorderItem" Property="BorderBrush" Value="#9b59b6"/>
-                                                                </Trigger>
-                                                            </ControlTemplate.Triggers>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </ListView.ItemContainerStyle>
-
-                                        <ListView.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <Border CornerRadius="8" Width="55" Height="55" ClipToBounds="True" Background="#111">
-                                                        <Image Source="{Binding icon_url}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                                    </Border>
-
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="20,0,20,0">
-                                                        <TextBlock Text="{Binding title}" FontWeight="Bold" FontSize="16" Foreground="White" TextTrimming="CharacterEllipsis"/>
-                                                        <TextBlock Text="{Binding description}" FontSize="13" Foreground="#AAA" TextTrimming="CharacterEllipsis" MaxHeight="38" Margin="0,4,0,0" LineHeight="18"/>
-                                                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                                            <TextBlock Text="By " Foreground="#666" FontSize="11"/>
-                                                            <TextBlock Text="{Binding author}" Foreground="#888" FontSize="11" FontWeight="SemiBold"/>
-                                                        </StackPanel>
+                                <ListView x:Name="listaArchivosVersion" Grid.Row="1"
+                Background="Transparent" BorderThickness="0"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="Margin" Value="0,0,0,8"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListViewItem">
+                                                        <Border Background="#1E2328" CornerRadius="8" Padding="15" BorderThickness="1" BorderBrush="Transparent">
+                                                            <ContentPresenter/>
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Style.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter Property="Background" Value="#252A30"/>
+                                                                            <Setter Property="BorderBrush" Value="{StaticResource ColorAccent}"/>
+                                                                        </Trigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding NombreArchivo}" Foreground="White" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis"/>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                        <Border Background="#222" CornerRadius="4" Padding="6,2" Margin="0,0,10,0">
+                                                            <TextBlock Text="{Binding Tipo}" Foreground="{Binding ColorTipo}" FontSize="11" FontWeight="Bold"/>
+                                                        </Border>
+                                                        <TextBlock Text="{Binding Fecha}" Foreground="#888" FontSize="12" VerticalAlignment="Center"/>
                                                     </StackPanel>
+                                                </StackPanel>
+                                                <Button Grid.Column="1" x:Name="Mods_Install" Content="{DynamicResource Mods_Install}" Width="100" Height="36"
+                              Background="#22FFFFFF" Foreground="White" BorderThickness="0"
+                              FontSize="11" FontWeight="Bold"
+                              Tag="{Binding}" Click="BtnInstalarVersion_Click">
+                                                    <Button.Resources>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="CornerRadius" Value="6"/>
+                                                        </Style>
+                                                    </Button.Resources>
+                                                </Button>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
 
-                                                    <Button Grid.Column="2" Content="VER VERSIONES" Tag="{Binding}" Click="BtnAccionMod_Click" 
-                                        Width="140" Height="40" Background="{StaticResource ColorAccent}" Foreground="White" 
-                                        BorderThickness="0" FontSize="12" FontWeight="Bold" Cursor="Hand">
-                                                        <Button.Resources>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="CornerRadius" Value="8"/>
-                                                            </Style>
-                                                        </Button.Resources>
-                                                    </Button>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ListView.ItemTemplate>
-                                    </ListView>
-                                </Border>
+                                <Button Grid.Row="2" x:Name="Mods_cerrar" Content="{DynamicResource Mods_cerrar}" Margin="0,20,0,0" Height="45"
+              Background="#333" Foreground="White" FontWeight="Bold"
+              Click="BtnCerrarVersiones_Click" Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
                             </Grid>
-                        </Grid>
-
-                        <Grid x:Name="OverlayVersiones" Visibility="Collapsed" Background="#CC000000" IsHitTestVisible="True" Panel.ZIndex="999">
-                            <Border Width="600" Height="550" Background="{StaticResource BgSidebar}" CornerRadius="16" BorderBrush="{StaticResource ColorAccent}" BorderThickness="1" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <Border.Effect>
-                                    <DropShadowEffect Color="Black" BlurRadius="40" Opacity="0.7"/>
-                                </Border.Effect>
-
-                                <Grid Margin="30">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-
-                                    <StackPanel Grid.Row="0">
-                                        <TextBlock x:Name="txtNombreModVersiones" Text="Versiones Disponibles" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                                        <TextBlock Text="Selecciona una versión compatible para instalar" FontSize="14" Foreground="#AAA" Margin="0,5,0,20"/>
-                                        <Rectangle Height="1" Fill="#333" Margin="0,0,0,15"/>
-                                    </StackPanel>
-
-                                    <ListView x:Name="listaArchivosVersion" Grid.Row="1" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                        <ListView.ItemContainerStyle>
-                                            <Style TargetType="ListViewItem">
-                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                <Setter Property="Background" Value="Transparent"/>
-                                                <Setter Property="Margin" Value="0,0,0,8"/>
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="ListViewItem">
-                                                            <Border Background="#1E2328" CornerRadius="8" Padding="15" BorderThickness="1" BorderBrush="Transparent">
-                                                                <ContentPresenter/>
-                                                                <Border.Style>
-                                                                    <Style TargetType="Border">
-                                                                        <Style.Triggers>
-                                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                                <Setter Property="Background" Value="#252A30"/>
-                                                                                <Setter Property="BorderBrush" Value="{StaticResource ColorAccent}"/>
-                                                                            </Trigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </Border.Style>
-                                                            </Border>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </ListView.ItemContainerStyle>
-                                        <ListView.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding NombreArchivo}" Foreground="White" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis"/>
-                                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                            <Border Background="#222" CornerRadius="4" Padding="6,2" Margin="0,0,10,0">
-                                                                <TextBlock Text="{Binding Tipo}" Foreground="{Binding ColorTipo}" FontSize="11" FontWeight="Bold"/>
-                                                            </Border>
-                                                            <TextBlock Text="{Binding Fecha}" Foreground="#888" FontSize="12" VerticalAlignment="Center"/>
-                                                        </StackPanel>
-                                                    </StackPanel>
-
-                                                    <Button Grid.Column="2" Content="📥 INSTALAR" Width="100" Height="36" 
-                                        Background="#22FFFFFF" Foreground="White" BorderThickness="0" FontSize="11" FontWeight="Bold"
-                                        ToolTip="Instalar esta versión" Tag="{Binding}" Click="BtnInstalarVersion_Click">
-                                                        <Button.Resources>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="CornerRadius" Value="6"/>
-                                                            </Style>
-                                                        </Button.Resources>
-                                                    </Button>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ListView.ItemTemplate>
-                                    </ListView>
-
-                                    <Button Grid.Row="2" Content="CERRAR" Margin="0,20,0,0" Height="45" Background="#333" Foreground="White" FontWeight="Bold" Click="BtnCerrarVersiones_Click" Cursor="Hand">
-                                        <Button.Template>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}" CornerRadius="8">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Button.Template>
-                                    </Button>
-                                </Grid>
-                            </Border>
-                        </Grid>
+                        </Border>
                     </Grid>
 
                     <Grid x:Name="VistaModpacks" Visibility="Collapsed" Margin="40,30,40,30" IsVisibleChanged="VistaModpacks_IsVisibleChanged">
@@ -825,7 +968,7 @@
                                 </ListBox.ItemsPanel>
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Width="300" Height="130" Background="#1E2328" CornerRadius="10" Margin="5" Padding="15">
+                                        <Border Width="300" Height="160" Background="#1E2328" CornerRadius="10" Margin="5" Padding="15">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="75"/>

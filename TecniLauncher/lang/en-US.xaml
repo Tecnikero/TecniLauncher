@@ -29,6 +29,13 @@
     <sys:String x:Key="Mods_BtnSearch">🔍 SEARCH</sys:String>
     <sys:String x:Key="Mods_TabInstalled">📂 Installed</sys:String>
     <sys:String x:Key="Mods_TabOnline">☁️ Modrinth API</sys:String>
+    <sys:String x:Key="Mods_Delete">ELIMINATE</sys:String>
+    <sys:String x:Key="Mods_DesDes">Select a compatible version to install</sys:String>
+    <sys:String x:Key="Mods_Install">📥 Install</sys:String>
+    <sys:String x:Key="Mods_cerrar">CLOSE</sys:String>
+    <sys:String x:Key="Mods_verVersiones">VERSIONS</sys:String>
+    <sys:String x:Key="Mods_Recommended">⭐ Recommended</sys:String>
+    
     <sys:String x:Key="ModPack_Title">EXPLORE MODPACKS</sys:String>
     <sys:String x:Key="ModPack_SubTitle">Search and install complete mod packs from Modrinth</sys:String>
     <sys:String x:Key="ModPack_botonBus">SEARCH</sys:String>

@@ -61,7 +61,7 @@ namespace TecniLauncher
         //private string RutaSkinLocal;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        private const string VERSION_ACTUAL = "1.3.0";
+        private const string VERSION_ACTUAL = "1.3.1";
         private CancellationTokenSource ctsActualizacion;
         private bool estaCargando = false;
         private DispatcherTimer _timerNoticias;
@@ -79,6 +79,7 @@ namespace TecniLauncher
         {
             Core.Inicializar();
             Core.CargarConfiguracion();
+            Core.CambiarIdioma(Core.IdiomaActual);
             SeleccionarIdiomaEnCombo();
 
             ComprobarActualizaciones();
@@ -214,7 +215,12 @@ namespace TecniLauncher
 
             comboPerfilesMods.ItemsSource = null;
             comboPerfilesMods.ItemsSource = Core.Perfiles;
-            if (comboPerfilesMods.Items.Count > 0) comboPerfilesMods.SelectedIndex = 0;
+            if (comboPerfilesMods.Items.Count > 0)
+            {
+                comboPerfilesMods.SelectedIndex = 0;
+                BtnBuscarOnline_Click(null, null);
+            }
+
         }
         private void MenuEventos_Click(object sender, RoutedEventArgs e)
         {
@@ -1026,13 +1032,34 @@ namespace TecniLauncher
                 txtModVersion.Text = p.Version;
                 txtModLoader.Text = p.TipoLoader;
 
-                radioOnline.IsChecked = false;
-                TabInstalados_Click(null, null);
+                if (modoOnline)
+                    BtnBuscarOnline_Click(null, null);
+                else
+                    CargarModsLocal(p);
             }
         }
 
-        private void TabInstalados_Click(object sender, RoutedEventArgs e)
+        private void TabOnlineBtn_Checked(object sender, RoutedEventArgs e)
         {
+            if (PanelOnline == null || PanelInstalados == null) return;
+            PanelOnline.Visibility = Visibility.Visible;
+            PanelInstalados.Visibility = Visibility.Collapsed;
+
+            listaModsGestor.ItemsSource = null;
+            modoOnline = true;
+
+            if (comboPerfilesMods.SelectedItem is Perfil p)
+            {
+                BtnBuscarOnline_Click(null, null);
+            }
+        }
+
+        private void TabInstaladosBtn_Checked(object sender, RoutedEventArgs e)
+        {
+            if (PanelOnline == null || PanelInstalados == null) return;
+            PanelOnline.Visibility = Visibility.Collapsed;
+            PanelInstalados.Visibility = Visibility.Visible;
+
             modoOnline = false;
             if (comboPerfilesMods.SelectedItem is Perfil p)
                 CargarModsLocal(p);
@@ -1043,19 +1070,26 @@ namespace TecniLauncher
             if (comboPerfilesMods.SelectedItem is not Perfil p) return;
 
             modoOnline = true;
-            radioOnline.IsChecked = true;
-            listaModsGestor.ItemsSource = null;
 
-            var res = await ModrinthAPI.BuscarMods(txtBuscadorMods.Text, p.TipoLoader, p.Version);
+            string busqueda = txtBuscadorMods?.Text ?? "";
+
+            var res = await ModrinthAPI.BuscarMods(busqueda, p.TipoLoader, p.Version);
 
             foreach (var m in res)
             {
-                m.author = "⬇️ INSTALAR";
+                if (m.title.ToLower().Contains("sodium") ||
+                    m.title.ToLower().Contains("iris") ||
+                    m.title.ToLower().Contains("lithium"))
+                {
+                    m.esRecomendado = true;
+                }
                 if (string.IsNullOrEmpty(m.icon_url))
                     m.icon_url = "https://cdn.modrinth.com/assets/icon.png";
             }
-            listaModsGestor.ItemsSource = res;
+
+            listaModsGestor.ItemsSource = res.OrderByDescending(x => x.esRecomendado).ToList();
         }
+
         private async void BtnAccionMod_Click(object sender, RoutedEventArgs e)
         {
             var btn = (Button)sender;
@@ -1069,7 +1103,6 @@ namespace TecniLauncher
                     {
                         File.Delete(mod.project_id);
                         VentanaMensaje.Mostrar("Mod eliminado: " + mod.title);
-
                         if (comboPerfilesMods.SelectedItem is Perfil p) CargarModsLocal(p);
                     }
                 }
@@ -1079,6 +1112,7 @@ namespace TecniLauncher
                 }
                 return;
             }
+
             if (comboPerfilesMods.SelectedItem is Perfil perfilActual)
             {
                 OverlayVersiones.Visibility = Visibility.Visible;
@@ -1142,6 +1176,7 @@ namespace TecniLauncher
                 }
             }
         }
+
         private void BtnCerrarVersiones_Click(object sender, RoutedEventArgs e)
         {
             OverlayVersiones.Visibility = Visibility.Collapsed;
@@ -1160,15 +1195,29 @@ namespace TecniLauncher
                     list.Add(new ModInfo
                     {
                         title = f.Name,
-                        description = $"{f.Length / 1024} KB",
-                        author = "🗑️",
+                        description = $"Archivo local - {f.Length / 1024} KB",
+                        author = "Mod Instalado",
                         project_id = f.FullName,
-                        icon_url = "/Resources/Icons/java_file_icon.png"
+                        icon_url = "https://cdn-icons-png.flaticon.com/512/337/337941.png"
                     });
                 }
-                listaModsGestor.ItemsSource = list;
+                listaModsInstaladosGestor.ItemsSource = list;
             }
             catch { }
+        }
+        private void listaMods_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (!e.Handled)
+            {
+                e.Handled = true;
+                var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+                {
+                    RoutedEvent = UIElement.MouseWheelEvent,
+                    Source = sender
+                };
+                var parent = ((Control)sender).Parent as UIElement;
+                parent?.RaiseEvent(eventArg);
+            }
         }
         #endregion
         #region ModPacks
@@ -1446,6 +1495,9 @@ namespace TecniLauncher
         }
         private void SeleccionarIdiomaEnCombo()
         {
+            if(comboIdiomas == null || comboIdiomas.Items == null)
+                return;
+
             foreach (ComboBoxItem item in comboIdiomas.Items)
             {
                 if (item.Tag?.ToString() == Core.IdiomaActual)

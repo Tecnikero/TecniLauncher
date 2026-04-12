@@ -16,6 +16,8 @@ namespace TecniLauncher
         public string project_id { get; set; }
         public string author { get; set; }
         public string slug { get; set; }
+
+        public bool esRecomendado { get; set; } = false;
     }
 
     public class ModVersion
@@ -46,7 +48,8 @@ namespace TecniLauncher
             {
                 AsegurarUserAgent();
                 string facets = $"[[\"categories:{loader.ToLower()}\"],[\"versions:{version}\"],[\"project_type:mod\"]]";
-                string url = $"https://api.modrinth.com/v2/search?query={Uri.EscapeDataString(busqueda)}&facets={facets}&limit=20";
+                int limite = 200;
+                string url = $"https://api.modrinth.com/v2/search?query={Uri.EscapeDataString(busqueda)}&facets={Uri.EscapeDataString(facets)}&limit={limite}";
                 string json = await client.GetStringAsync(url);
 
                 using (JsonDocument doc = JsonDocument.Parse(json))

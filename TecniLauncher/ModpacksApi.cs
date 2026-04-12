@@ -48,7 +48,7 @@ namespace TecniLauncher
             {
                 string tipoOrden = string.IsNullOrWhiteSpace(busqueda) ? "downloads" : "relevance";
 
-                string url = $"https://api.modrinth.com/v2/search?query={busqueda}&index={tipoOrden}&facets=[[\"project_type:modpack\"]]&limit={limite}";
+                string url = $"https://api.modrinth.com/v2/search?query={Uri.EscapeDataString(busqueda)}&index={tipoOrden}&facets={Uri.EscapeDataString("[[\"project_type:modpack\"]]")}&limit={limite}";
 
                 string jsonRespuesta = await _client.GetStringAsync(url);
                 var datos = JsonConvert.DeserializeObject<ModrinthSearchResponse>(jsonRespuesta);
