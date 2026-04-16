@@ -9,6 +9,8 @@ namespace TecniLauncher
         public string Version { get; set; }
         public string TipoLoader { get; set; }
         public string RutaCarpeta { get; set; }
+        public long SegundosJugados { get; set; } = 0;
+        public bool ModoRendimientoActivado { get; set; } = false;
         public int MemoriaRam { get; set; }
         public string VersionLoaderExacta { get; set; }
         public string IconoPath { get; set; } = "/Resources/Icons/icon1.png";
@@ -28,6 +30,20 @@ namespace TecniLauncher
             if (!Directory.Exists(carpetaInstances)) Directory.CreateDirectory(carpetaInstances);
 
             RutaCarpeta = Path.Combine(carpetaInstances, nombre);
+        }
+        public string TiempoJugadoFormateado
+        {
+            get
+            {
+                if (SegundosJugados <= 0) return "0h 0m";
+
+                TimeSpan tiempo = TimeSpan.FromSeconds(SegundosJugados);
+
+                if (tiempo.TotalHours < 1)
+                    return $"{tiempo.Minutes}m ";
+
+                return $"{(int)tiempo.TotalHours}h {tiempo.Minutes}m";
+            }
         }
 
         public string DetallesVisuales

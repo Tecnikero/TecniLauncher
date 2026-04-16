@@ -510,14 +510,17 @@
 
                                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                         <TextBlock Text="{Binding Nombre}" Foreground="{StaticResource TextMain}" FontWeight="Bold" FontSize="18"/>
+
+                                                        <TextBlock Text="{Binding TiempoJugadoFormateado}" Foreground="#FFAA00" FontSize="11" FontWeight="SemiBold" Margin="0,2,0,0"/>
+
                                                         <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                                                             <Border Background="{StaticResource ColorAccentDim}" CornerRadius="4" Padding="5,2" Margin="0,0,10,0">
                                                                 <TextBlock Text="{Binding Version}" Foreground="{StaticResource ColorAccent}" FontSize="12" FontWeight="Bold"/>
                                                             </Border>
                                                             <TextBlock Text="{Binding DetallesVisuales}" 
-                                   Foreground="{StaticResource TextSub}" 
-                                   FontSize="12" 
-                                   VerticalAlignment="Center"/>
+                                                   Foreground="{StaticResource TextSub}" 
+                                                   FontSize="12" 
+                                                   VerticalAlignment="Center"/>
                                                         </StackPanel>
                                                     </StackPanel>
 
@@ -1398,14 +1401,67 @@ IsHitTestVisible="True" Panel.ZIndex="999">
                             <ComboBox x:Name="comboLoaderVersion" IsEnabled="False" Visibility="Collapsed" Height="35" Background="#202020" Foreground="White" Padding="10,5"/>
 
                             <TextBlock Text="{DynamicResource Config_Ram}" Foreground="{StaticResource TextSub}" Margin="0,15,0,5" FontSize="11"/>
+
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="50"/>
                                 </Grid.ColumnDefinitions>
+
                                 <Slider x:Name="sliderRam" Grid.Column="0" Minimum="1" Maximum="16" Value="2" TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="SliderRam_ValueChanged"/>
+
                                 <TextBlock x:Name="lblRam" Grid.Column="1" Text="2 GB" Foreground="{StaticResource ColorAccent}" FontWeight="Bold" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                             </Grid>
+
+                            <CheckBox x:Name="chkModoRendimiento" Margin="0,15,0,0" Cursor="Hand" Visibility="Collapsed">
+                                <CheckBox.Style>
+                                    <Style TargetType="CheckBox">
+                                        <Setter Property="Content" Value="{DynamicResource Config_flags}"/>
+                                        <Setter Property="Foreground" Value="#8c9bb0"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Template">
+
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="CheckBox">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+
+                                                        <Grid Width="46" Height="24">
+                                                            <Border x:Name="FondoSwitch" CornerRadius="12" Background="#3b3f46" BorderBrush="#2a2d32" BorderThickness="1"/>
+
+                                                            <Path x:Name="IconoCheck" Data="M 3 7 L 6 10 L 11 3" Stroke="White" StrokeThickness="2.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Left" Margin="8,0,0,0" VerticalAlignment="Center" Visibility="Hidden"/>
+
+                                                            <Path x:Name="IconoCruz" Data="M 4 4 L 10 10 M 10 4 L 4 10" Stroke="#23252a" StrokeThickness="2.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Visible"/>
+
+                                                            <Ellipse x:Name="BotonCirculo" Fill="White" Width="18" Height="18" HorizontalAlignment="Left" Margin="3,0,0,0">
+                                                                <Ellipse.Effect>
+                                                                    <DropShadowEffect ShadowDepth="1" BlurRadius="2" Opacity="0.3"/>
+                                                                </Ellipse.Effect>
+                                                            </Ellipse>
+                                                        </Grid>
+
+                                                        <ContentPresenter VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                                    </StackPanel>
+
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsChecked" Value="True">
+                                                            <Setter TargetName="FondoSwitch" Property="Background" Value="#1dd171"/>
+                                                            <Setter TargetName="FondoSwitch" Property="BorderBrush" Value="#1dd171"/>
+                                                            <Setter TargetName="BotonCirculo" Property="HorizontalAlignment" Value="Right"/>
+                                                            <Setter TargetName="BotonCirculo" Property="Margin" Value="0,0,3,0"/>
+                                                            <Setter TargetName="IconoCheck" Property="Visibility" Value="Visible"/>
+                                                            <Setter TargetName="IconoCruz" Property="Visibility" Value="Hidden"/>
+                                                            <Setter Property="Foreground" Value="White"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="BotonCirculo" Property="Fill" Value="#f0f0f0"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </CheckBox.Style>
+                            </CheckBox>
 
                             <TextBlock Text="{DynamicResource Config_Icon}" Foreground="{StaticResource TextSub}" Margin="0,15,0,5" FontSize="11"/>
 

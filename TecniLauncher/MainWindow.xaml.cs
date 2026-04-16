@@ -13,6 +13,7 @@ using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -58,10 +59,9 @@ namespace TecniLauncher
         private bool esPremium = false;
         private Perfil perfilAEditar = null;
         private bool modoOnline = false;
-        //private string RutaSkinLocal;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        private const string VERSION_ACTUAL = "1.3.1";
+        private const string VERSION_ACTUAL = "1.3.2";
         private CancellationTokenSource ctsActualizacion;
         private bool estaCargando = false;
         private DispatcherTimer _timerNoticias;
@@ -508,7 +508,24 @@ namespace TecniLauncher
                 btnJugar.IsEnabled = false;
                 PanelCarga.Visibility = Visibility.Visible;
 
-                await LanzarMinecraft(perfil);
+                System.Diagnostics.Process procesoMinecraft = await LanzarMinecraft(perfil);
+                PanelCarga.Visibility = Visibility.Collapsed;
+
+                if (procesoMinecraft != null)
+                {
+                    DateTime tiempoInicio = DateTime.Now;
+
+                    procesoMinecraft.EnableRaisingEvents = true;
+                    await Task.Run(() => procesoMinecraft.WaitForExit());
+
+                    DateTime tiempoFinal = DateTime.Now;
+                    long segundosJugados = (long)(tiempoFinal - tiempoInicio).TotalSeconds;
+
+                    perfil.SegundosJugados += segundosJugados;
+
+                    Core.GuardarPerfiles();
+                    ActualizarListaPerfiles();
+                }
             }
             catch (Exception ex)
             {
@@ -520,19 +537,7 @@ namespace TecniLauncher
                 PanelCarga.Visibility = Visibility.Collapsed;
             }
         }
-
-        private void ResetearBotonJugar()
-        {
-            estaCargando = false;
-            btnJugar.Content = "JUGAR AHORA";
-
-            btnJugar.Background = (SolidColorBrush)FindResource("ColorAccent");
-
-            PanelCarga.Visibility = Visibility.Collapsed;
-
-            barraCarga.Value = 0;
-        }
-        private async Task LanzarMinecraft(Perfil perfil)
+        private async Task<Process> LanzarMinecraft(Perfil perfil)
         {
             try
             {
@@ -596,6 +601,40 @@ namespace TecniLauncher
                     ScreenHeight = Core.JuegoAlto,
                     FullScreen = Core.PantallaCompleta,
                 };
+                if (perfil.TipoLoader == "Vanilla" && perfil.ModoRendimientoActivado)
+                {
+                    string[] banderasAikar = new string[]
+                    {
+        "-XX:+UseG1GC",
+        "-XX:+ParallelRefProcEnabled",
+        "-XX:MaxGCPauseMillis=200",
+        "-XX:+UnlockExperimentalVMOptions",
+        "-XX:+DisableExplicitGC",
+        "-XX:G1NewSizePercent=30",
+        "-XX:G1MaxNewSizePercent=40",
+        "-XX:G1HeapRegionSize=8M",
+        "-XX:G1ReservePercent=20",
+        "-XX:G1HeapWastePercent=5",
+        "-XX:G1MixedGCCountTarget=4",
+        "-XX:InitiatingHeapOccupancyPercent=15",
+        "-XX:G1MixedGCLiveThresholdPercent=90",
+        "-XX:G1RSetUpdatingPauseTimePercent=5",
+        "-XX:SurvivorRatio=32",
+        "-XX:+PerfDisableSharedMem",
+        "-XX:MaxTenuringThreshold=1"
+                    };
+
+                    var argumentosExtra = new System.Collections.Generic.List<CmlLib.Core.ProcessBuilder.MArgument>();
+
+                    foreach (string bandera in banderasAikar)
+                    {
+                        argumentosExtra.Add(new CmlLib.Core.ProcessBuilder.MArgument(bandera));
+                    }
+
+                    launchOption.ExtraJvmArguments = argumentosExtra;
+
+                    Dispatcher.Invoke(() => txtEstadoCarga.Text = "Inyectando optimizaciones de memoria Aikar...");
+                }
 
                 var process = await launcher.CreateProcessAsync(idVersion, launchOption);
 
@@ -610,10 +649,12 @@ namespace TecniLauncher
                 }
 
                 StartProcess(process);
+                return process;
             }
             catch (Exception ex)
             {
                 VentanaMensaje.Mostrar("Error crítico al lanzar: " + ex.Message);
+                return null;
             }
         }
         private async Task<string> PrepararAuthlibInjector(string carpetaBase)
@@ -790,6 +831,18 @@ namespace TecniLauncher
                 comboLoaderVersion.Visibility = Visibility.Collapsed;
                 return;
             }
+            if (chkModoRendimiento != null)
+            {
+                if (tipoLoader == "Vanilla")
+                {
+                    chkModoRendimiento.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    chkModoRendimiento.Visibility = Visibility.Collapsed;
+                    chkModoRendimiento.IsChecked = false;
+                }
+            }
 
             lblLoaderVersion.Visibility = Visibility.Visible;
             comboLoaderVersion.Visibility = Visibility.Visible;
@@ -912,6 +965,7 @@ namespace TecniLauncher
             if (perfilAEditar != null && duplicado != null && duplicado != perfilAEditar) { VentanaMensaje.Mostrar("Nombre ocupado"); return; }
 
             int ram = (int)sliderRam.Value * 1024;
+            bool activarRendimiento = chkModoRendimiento?.IsChecked == true;
             string versionExactaCapturada = "";
 
             if (comboLoader.SelectedIndex > 0 && comboLoaderVersion.SelectedItem != null)
@@ -931,6 +985,7 @@ namespace TecniLauncher
                 var nuevoPerfil = new Perfil(nombre, ver, loader, ram);
                 nuevoPerfil.VersionLoaderExacta = versionExactaCapturada;
                 nuevoPerfil.IconoPath = iconoFinal;
+                nuevoPerfil.ModoRendimientoActivado = activarRendimiento;
 
                 Core.Perfiles.Add(nuevoPerfil);
             }
@@ -950,6 +1005,7 @@ namespace TecniLauncher
                 perfilAEditar.Nombre = nombre;
                 perfilAEditar.MemoriaRam = ram;
                 perfilAEditar.IconoPath = iconoFinal;
+                perfilAEditar.ModoRendimientoActivado = activarRendimiento;
             }
             Core.GuardarPerfiles();
             ActualizarListaPerfiles();
@@ -963,6 +1019,19 @@ namespace TecniLauncher
 
             txtNombrePerfil.Text = perfilAEditar.Nombre;
             sliderRam.Value = perfilAEditar.MemoriaRam / 1024;
+            if (chkModoRendimiento != null)
+            {
+                chkModoRendimiento.IsChecked = perfilAEditar.ModoRendimientoActivado;
+
+                if (perfilAEditar.TipoLoader == "Vanilla")
+                {
+                    chkModoRendimiento.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    chkModoRendimiento.Visibility = Visibility.Collapsed;
+                }
+            }
             comboVersiones.IsEnabled = false;
             comboLoader.IsEnabled = false;
             comboLoaderVersion.IsEnabled = false;
@@ -1017,6 +1086,11 @@ namespace TecniLauncher
             perfilAEditar = null;
             txtNombrePerfil.Text = "";
             sliderRam.Value = 2;
+            if (chkModoRendimiento != null)
+            {
+                chkModoRendimiento.IsChecked = false;
+                chkModoRendimiento.Visibility = Visibility.Visible;
+            }
             comboVersiones.IsEnabled = true;
             comboLoader.IsEnabled = true;
             comboLoader.SelectedIndex = 0;

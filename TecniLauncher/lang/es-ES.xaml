@@ -92,6 +92,7 @@
     <sys:String x:Key="Config_LoaderVer">Versión del Loader</sys:String>
     <sys:String x:Key="Config_Ram">Memoria RAM (GB)</sys:String>
     <sys:String x:Key="Config_Icon">Icono del Perfil</sys:String>
+    <sys:String x:Key="Config_flags">Modo RENDIMIENTO (Aikar's Flags)</sys:String>
 
     <sys:String x:Key="Btn_Save">GUARDAR</sys:String>
     <sys:String x:Key="Btn_Cancel">CANCELAR</sys:String>

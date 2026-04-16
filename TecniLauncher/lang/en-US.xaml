@@ -91,6 +91,7 @@
     <sys:String x:Key="Config_LoaderVer">Loader Version</sys:String>
     <sys:String x:Key="Config_Ram">RAM Memory (GB)</sys:String>
     <sys:String x:Key="Config_Icon">Profile Icon</sys:String>
+    <sys:String x:Key="Config_flags">PERFORMANCE MODE (Aikar's Flags)</sys:String>
 
     <sys:String x:Key="Btn_Save">SAVE</sys:String>
     <sys:String x:Key="Btn_Cancel">CANCEL</sys:String>
