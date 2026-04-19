@@ -5,19 +5,9 @@
         Height="650" Width="1000"
         MinHeight="600" MinWidth="900"  
         WindowStyle="None" 
-        ResizeMode="CanResizeWithGrip" 
         AllowsTransparency="True"
         Background="Transparent"
         WindowStartupLocation="CenterScreen" xmlns:md="clr-namespace:MdXaml;assembly=MdXaml">
-
-    <WindowChrome.WindowChrome>
-        <WindowChrome 
-            CaptionHeight="0"  
-            ResizeBorderThickness="5" 
-            CornerRadius="0" 
-            GlassFrameThickness="0"
-            UseAeroCaptionButtons="False"/>
-    </WindowChrome.WindowChrome>
 
     <Window.Resources>
         <SolidColorBrush x:Key="ColorAccent" Color="#4facfe"/>

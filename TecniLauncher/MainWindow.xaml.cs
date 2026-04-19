@@ -4,6 +4,8 @@ using CmlLib.Core.Auth.Microsoft;
 using CmlLib.Core.Installer.Forge;
 using CmlLib.Core.Installer.NeoForge;
 using CmlLib.Core.ProcessBuilder;
+using DiscordRPC;
+using DiscordRPC.Logging;
 using Newtonsoft.Json;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -11,6 +13,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Windows.Interop;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -61,18 +64,44 @@ namespace TecniLauncher
         private bool modoOnline = false;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        private const string VERSION_ACTUAL = "1.3.2";
+        private const string VERSION_ACTUAL = "1.3.3";
         private CancellationTokenSource ctsActualizacion;
         private bool estaCargando = false;
         private DispatcherTimer _timerNoticias;
+        public DiscordRpcClient client;
 
 
         private static readonly HttpClient _httpClient = new HttpClient();
+        #endregion
+
+        #region MAXIMIZAR
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr handle, int flags);
+
+        [DllImport("user32.dll")]
+        private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT { public int left, top, right, bottom; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
+        }
+
+        private Rect _tamanoNormal;
+        private bool _esFalsoMaximizado = false;
         #endregion
         public MainWindow()
         {
             InitializeComponent();
             InicializarLauncher();
+            IniciarDiscordRPC();
+            this.StateChanged += Window_StateChanged;
         }
 
         private void InicializarLauncher()
@@ -105,6 +134,31 @@ namespace TecniLauncher
             txtUsuario.Text = Core.UltimoNombreOffline;
             chkSnapshots.IsChecked = Core.MostrarSnapshots;
         }
+        void IniciarDiscordRPC()
+        {
+            client = new DiscordRpcClient("1495130192572580012");
+
+            client.Initialize();
+
+            client.SetPresence(new RichPresence()
+            {
+                Details = "En el Menú Principal",
+                State = $"V{VERSION_ACTUAL}",
+                Assets = new Assets()
+                {
+                    LargeImageKey = "tecnilogo",
+                    LargeImageText = "TecniLauncher"
+                },
+                Timestamps = Timestamps.Now
+            });
+        }
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (client != null)
+            {
+                client.Dispose();
+            }
+        }
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             await CargarVersionesVanilla();
@@ -134,8 +188,14 @@ namespace TecniLauncher
             }
             this.StateChanged += (s, e) =>
             {
-                if (this.WindowState == WindowState.Maximized) btnMaximizar.Content = "❐";
-                else btnMaximizar.Content = "☐";
+                if (this.WindowState == WindowState.Maximized)
+                {
+                    btnMaximizar.Content = "❐";
+                }
+                else
+                {
+                    btnMaximizar.Content = "☐";
+                }
             };
         }
         #region Navegacion
@@ -164,20 +224,72 @@ namespace TecniLauncher
                 VentanaMensaje.Mostrar("No se pudo abrir el enlace: " + ex.Message);
             }
         }
-        private void MoverVentana_MouseDown(object sender, MouseButtonEventArgs e) { if (e.LeftButton == MouseButtonState.Pressed) this.DragMove(); }
+        private void MoverVentana_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                if (_esFalsoMaximizado)
+                {
+                    RestaurarManual();
+                }
+                this.DragMove();
+            }
+        }
         private void Cerrar_Click(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
-        private void Maximizar_Click(object sender, RoutedEventArgs e)
+        private void Window_StateChanged(object sender, EventArgs e)
         {
             if (this.WindowState == WindowState.Maximized)
             {
                 this.WindowState = WindowState.Normal;
-                btnMaximizar.Content = "☐";
+
+                if (!_esFalsoMaximizado)
+                {
+                    AplicarMaximizadoManual();
+                }
             }
+        }
+
+        private void Maximizar_Click(object sender, RoutedEventArgs e)
+        {
+            if (_esFalsoMaximizado)
+                RestaurarManual();
             else
+                AplicarMaximizadoManual();
+        }
+
+        private void AplicarMaximizadoManual()
+        {
+            if (!_esFalsoMaximizado)
+                _tamanoNormal = new Rect(this.Left, this.Top, this.Width, this.Height);
+
+            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+            IntPtr monitor = MonitorFromWindow(hwnd, 2);
+
+            if (monitor != IntPtr.Zero)
             {
-                this.WindowState = WindowState.Maximized;
+                MONITORINFO info = new MONITORINFO();
+                info.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
+                GetMonitorInfo(monitor, ref info);
+
+                this.Left = info.rcWork.left;
+                this.Top = info.rcWork.top;
+                this.Width = info.rcWork.right - info.rcWork.left;
+                this.Height = info.rcWork.bottom - info.rcWork.top;
+
+                _esFalsoMaximizado = true;
                 btnMaximizar.Content = "❐";
             }
+        }
+
+        private void RestaurarManual()
+        {
+            this.Left = _tamanoNormal.Left;
+            this.Top = _tamanoNormal.Top;
+            this.Width = _tamanoNormal.Width;
+            this.Height = _tamanoNormal.Height;
+
+            _esFalsoMaximizado = false;
+            btnMaximizar.Content = "☐";
         }
         private void Minimizar_Click(object sender, RoutedEventArgs e) => this.WindowState = WindowState.Minimized;
 
@@ -1014,7 +1126,7 @@ namespace TecniLauncher
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
         {
-            var btn = (Button)sender;
+            var btn = (System.Windows.Controls.Button)sender;
             perfilAEditar = (Perfil)btn.Tag;
 
             txtNombrePerfil.Text = perfilAEditar.Nombre;
@@ -1065,7 +1177,7 @@ namespace TecniLauncher
 
         private void BtnEliminar_Click(object sender, RoutedEventArgs e)
         {
-            var perfil = (Perfil)((Button)sender).Tag;
+            var perfil = (Perfil)((System.Windows.Controls.Button)sender).Tag;
             if (VentanaMensaje.Mostrar($"¿Eliminar {perfil.Nombre}?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
                 if (Directory.Exists(perfil.RutaCarpeta)) try { Directory.Delete(perfil.RutaCarpeta, true); } catch { }
@@ -1077,7 +1189,7 @@ namespace TecniLauncher
 
         private void BtnCarpeta_Click(object sender, RoutedEventArgs e)
         {
-            var perfil = (Perfil)((Button)sender).Tag;
+            var perfil = (Perfil)((System.Windows.Controls.Button)sender).Tag;
             if (!Directory.Exists(perfil.RutaCarpeta)) Directory.CreateDirectory(perfil.RutaCarpeta);
             Process.Start("explorer.exe", perfil.RutaCarpeta);
         }
@@ -1166,7 +1278,7 @@ namespace TecniLauncher
 
         private async void BtnAccionMod_Click(object sender, RoutedEventArgs e)
         {
-            var btn = (Button)sender;
+            var btn = (System.Windows.Controls.Button)sender;
             var mod = (ModInfo)btn.Tag;
 
             if (!modoOnline)
@@ -1213,7 +1325,7 @@ namespace TecniLauncher
 
         private async void BtnInstalarVersion_Click(object sender, RoutedEventArgs e)
         {
-            var btn = (Button)sender;
+            var btn = (System.Windows.Controls.Button)sender;
             var version = (ModVersion)btn.Tag;
 
             if (comboPerfilesMods.SelectedItem is Perfil p)
@@ -1847,7 +1959,7 @@ del ""%~f0""
         }
         private void BtnNoticia_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is string url)
+            if (sender is System.Windows.Controls.Button btn && btn.Tag is string url)
             {
                 try
                 {
@@ -1957,7 +2069,7 @@ del ""%~f0""
 
         private async void BtnAccionEvento_Click(object sender, RoutedEventArgs e)
         {
-            var evento = (EventoModelo)((Button)sender).Tag;
+            var evento = (EventoModelo)((System.Windows.Controls.Button)sender).Tag;
             if (evento == null) return;
 
             if (evento.TextoBoton == "INSTALAR" || evento.TextoBoton == "ACTUALIZAR")
@@ -2004,7 +2116,7 @@ del ""%~f0""
             }
             else if (evento.TextoBoton == "JUGAR")
             {
-                await LanzarMinecraftEvento(evento, (Button)sender);
+                await LanzarMinecraftEvento(evento, (System.Windows.Controls.Button)sender);
             }
         }
         private async Task InstalarArchivosEvento(EventoModelo evento)
@@ -2102,7 +2214,7 @@ del ""%~f0""
             }
         }
 
-        private async Task LanzarMinecraftEvento(EventoModelo evento, Button btnOrigen)
+        private async Task LanzarMinecraftEvento(EventoModelo evento, System.Windows.Controls.Button btnOrigen)
         {
             try
             {
@@ -2129,14 +2241,14 @@ del ""%~f0""
 
         private void BtnDiscordEvento_Click(object sender, RoutedEventArgs e)
         {
-            var evento = (EventoModelo)((Button)sender).Tag;
+            var evento = (EventoModelo)((System.Windows.Controls.Button)sender).Tag;
             if (!string.IsNullOrEmpty(evento.DiscordLink)) AbrirLink(evento.DiscordLink);
             else VentanaMensaje.Mostrar("Sin Discord configurado.");
         }
 
         private void BtnEliminarEvento_Click(object sender, RoutedEventArgs e)
         {
-            var evento = (EventoModelo)((Button)sender).Tag;
+            var evento = (EventoModelo)((System.Windows.Controls.Button)sender).Tag;
             if (Directory.Exists(evento.RutaCarpeta))
             {
                 if (VentanaMensaje.Mostrar($"¿Borrar '{evento.Nombre}'?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
