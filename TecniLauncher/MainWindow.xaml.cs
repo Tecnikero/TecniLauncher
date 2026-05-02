@@ -64,7 +64,7 @@ namespace TecniLauncher
         private bool modoOnline = false;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        private const string VERSION_ACTUAL = "1.3.3";
+        private const string VERSION_ACTUAL = "1.3.4";
         private CancellationTokenSource ctsActualizacion;
         private bool estaCargando = false;
         private DispatcherTimer _timerNoticias;
@@ -550,6 +550,20 @@ namespace TecniLauncher
 
             return null;
         }
+        private string GenerarUuidOffline(string nombreJugador)
+        {
+            string input = "OfflinePlayer:" + nombreJugador;
+
+            using (var md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] hash = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
+
+                hash[6] = (byte)(hash[6] & 0x0f | 0x30);
+                hash[8] = (byte)(hash[8] & 0x3f | 0x80);
+
+                return new Guid(hash).ToString("N");
+            }
+        }
         #endregion
         #region Skin
 
@@ -672,7 +686,17 @@ namespace TecniLauncher
                 if (Core.SesionUsuario == null)
                 {
                     string nombreFinal = string.IsNullOrEmpty(Core.UltimoNombreOffline) ? "Jugador" : Core.UltimoNombreOffline;
-                    Core.SesionUsuario = MSession.CreateOfflineSession(nombreFinal);
+
+                    string uuidFijo = GenerarUuidOffline(nombreFinal);
+
+                    Core.SesionUsuario = new MSession
+                    {
+                        Username = nombreFinal,
+                        UUID = uuidFijo,
+                        AccessToken = "token_offline",
+                        ClientToken = uuidFijo,
+                        UserType = "Legacy"
+                    };
                 }
 
                 if (Core.EsElyBy)
