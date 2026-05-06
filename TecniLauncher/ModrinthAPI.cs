@@ -16,7 +16,7 @@ namespace TecniLauncher
         public string project_id { get; set; }
         public string author { get; set; }
         public string slug { get; set; }
-
+        public bool estaInstalado { get; set; } = false;
         public bool esRecomendado { get; set; } = false;
     }
 
@@ -40,7 +40,7 @@ namespace TecniLauncher
                 client.DefaultRequestHeaders.Add("User-Agent", "TecniLauncher/1.0 (Johan/t3cnikero)");
         }
 
-        public static async Task<List<ModInfo>> BuscarMods(string busqueda, string loader, string version)
+        public static async Task<List<ModInfo>> BuscarMods(string busqueda, string loader, string version, int offset = 0, int limite = 30)
         {
             if (string.IsNullOrEmpty(loader) || string.IsNullOrEmpty(version)) return new List<ModInfo>();
 
@@ -48,8 +48,10 @@ namespace TecniLauncher
             {
                 AsegurarUserAgent();
                 string facets = $"[[\"categories:{loader.ToLower()}\"],[\"versions:{version}\"],[\"project_type:mod\"]]";
-                int limite = 200;
-                string url = $"https://api.modrinth.com/v2/search?query={Uri.EscapeDataString(busqueda)}&facets={Uri.EscapeDataString(facets)}&limit={limite}";
+
+                string indexOpt = string.IsNullOrEmpty(busqueda) ? "downloads" : "relevance";
+
+                string url = $"https://api.modrinth.com/v2/search?query={Uri.EscapeDataString(busqueda)}&facets={Uri.EscapeDataString(facets)}&index={indexOpt}&limit={limite}&offset={offset}";
                 string json = await client.GetStringAsync(url);
 
                 using (JsonDocument doc = JsonDocument.Parse(json))

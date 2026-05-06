@@ -11,7 +11,6 @@ using System.IO;
 
 namespace TecniLauncher
 {
-    // Clase para cada archivo individual (Mods, Configs, etc.)
     public class ArchivoEvento
     {
         public string Nombre { get; set; }
@@ -23,7 +22,6 @@ namespace TecniLauncher
         public bool Descomprimir { get; set; }
     }
 
-    // Clase principal del Evento
     public class EventoModelo : INotifyPropertyChanged
     {
         public string Id { get; set; }
@@ -45,11 +43,9 @@ namespace TecniLauncher
 
         public List<ArchivoEvento> Archivos { get; set; } = new List<ArchivoEvento>();
 
-        // --- LÓGICA UI ---
         public string RutaCarpeta => Path.Combine(
             Directory.GetParent(Core.RutaData).FullName, "GameData", "Eventos", Id ?? "Evento_Temp");
 
-        // Variable para el Slider de RAM (Corregido a "MemoriaRam" para que no te de error)
         private int _memoriaRam = 4096;
         public int MemoriaRam
         {
@@ -85,7 +81,6 @@ namespace TecniLauncher
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 
-    // Gestor de Descargas (Aquí ocurre la magia de leer GitHub -> GitLab)
     public static class EventosManager
     {
         private static readonly HttpClient client = new HttpClient();
@@ -106,15 +101,12 @@ namespace TecniLauncher
 
             try
             {
-                // 1. Descarga la lista de links desde GitHub
                 string rawIndice = await client.GetStringAsync(urlIndiceEventos);
 
-                // Convierte el texto `["https://gitlab...", "https://github..."]` en una lista
                 var urlsEventos = JsonSerializer.Deserialize<List<string>>(rawIndice, OpcionesJson);
 
                 if (urlsEventos == null) return listaResultados;
 
-                // 2. Va a cada link (sea GitLab, GitHub, etc) y descarga el evento
                 foreach (string urlEvento in urlsEventos)
                 {
                     try
@@ -126,7 +118,6 @@ namespace TecniLauncher
                         {
                             if (string.IsNullOrEmpty(evento.Id)) evento.Id = "sin_id_" + Guid.NewGuid();
 
-                            // Ajustar RAM si el evento pide más
                             if (evento.MemoriaMinima > 4096)
                             {
                                 evento.MemoriaRam = evento.MemoriaMinima;

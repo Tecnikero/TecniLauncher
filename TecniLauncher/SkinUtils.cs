@@ -1,87 +1,81 @@
-﻿using System;
+using System.IO;
 using System.Net.Http;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.IO;
+using TecniLauncher.Services;
+using Newtonsoft.Json;
 
 namespace TecniLauncher
 {
     public static class SkinUtils
     {
-        public static async Task<BitmapImage> ObtenerSkinOnline(string usuario, bool esPremium)
+        private static readonly HttpClient _http = AppHttpClient.Instance;
+
+        public static async Task<BitmapImage?> ObtenerSkinOnline(string usuario, bool esPremium)
         {
             if (string.IsNullOrEmpty(usuario)) return null;
 
+            if (Core.EsTecniStudio && Core.SesionUsuario?.AccessToken == "token_tecnistudio")
+                return await BuscarEnTecniStudio(Core.SesionUsuario.UUID);
+
             if (esPremium)
-            {
-                var skin = await BuscarEnMojang(usuario);
-                if (skin != null) return skin;
-
-                return await BuscarEnElyBy(usuario);
-            }
-            else
-            {
-                var skin = await BuscarEnElyBy(usuario);
-                if (skin != null) return skin;
-
                 return await BuscarEnMojang(usuario);
-            }
+
+            return null;
         }
-        private static async Task<BitmapImage> BuscarEnElyBy(string usuario)
+
+        private static async Task<BitmapImage?> BuscarEnTecniStudio(string uuidSinGuiones)
         {
             try
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Add("User-Agent", "TecniLauncher");
-                    string url = $"https://skinsystem.ely.by/skins/{usuario}.png";
-                    var response = await client.GetAsync(url);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        byte[] data = await response.Content.ReadAsByteArrayAsync();
-                        return BufferToImage(data);
-                    }
-                }
+                string url = $"https://kfxffvjakkcjbwkpvxtr.supabase.co/functions/v1/yggdrasil/sessionserver/session/minecraft/profile/{uuidSinGuiones}";
+                string json = await _http.GetStringAsync(url);
+
+                dynamic perfil = JsonConvert.DeserializeObject(json);
+                if (perfil?.properties == null || perfil.properties.Count == 0) return null;
+
+                string base64 = perfil.properties[0].value;
+                string texturaJson = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64));
+                dynamic texturas = JsonConvert.DeserializeObject(texturaJson);
+
+                string skinUrl = texturas?.textures?.SKIN?.url;
+                if (string.IsNullOrEmpty(skinUrl)) return null;
+
+                byte[] datos = await _http.GetByteArrayAsync(skinUrl);
+                return BufToImage(datos);
             }
-            catch { }
-            return null;
-        }
-        private static async Task<BitmapImage> BuscarEnMojang(string usuario)
-        {
-            try
+            catch (Exception ex)
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Add("User-Agent", "TecniLauncher");
-                    string url = $"https://minotar.net/skin/{usuario}";
-                    var response = await client.GetAsync(url);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        byte[] data = await response.Content.ReadAsByteArrayAsync();
-                        return BufferToImage(data);
-                    }
-                }
-            }
-            catch { }
-            return null;
-        }
-        private static BitmapImage BufferToImage(byte[] buffer)
-        {
-            using (var stream = new MemoryStream(buffer))
-            {
-                var image = new BitmapImage();
-                image.BeginInit();
-                image.CacheOption = BitmapCacheOption.OnLoad;
-                image.StreamSource = stream;
-                image.EndInit();
-                image.Freeze();
-                return image;
+                System.Diagnostics.Debug.WriteLine("Error cargando skin TecniStudio: " + ex.Message);
+                return null;
             }
         }
 
-        public static ImageBrush RecortarParte(BitmapSource skinCompleta, int x, int y, int w, int h)
+        private static async Task<BitmapImage?> BuscarEnMojang(string usuario)
+        {
+            try
+            {
+                var response = await _http.GetAsync($"https://minotar.net/skin/{usuario}");
+                if (!response.IsSuccessStatusCode) return null;
+                return BufToImage(await response.Content.ReadAsByteArrayAsync());
+            }
+            catch { return null; }
+        }
+
+        private static BitmapImage BufToImage(byte[] buffer)
+        {
+            using var stream = new MemoryStream(buffer);
+            var img = new BitmapImage();
+            img.BeginInit();
+            img.CacheOption = BitmapCacheOption.OnLoad;
+            img.StreamSource = stream;
+            img.EndInit();
+            img.Freeze();
+            return img;
+        }
+
+        public static ImageBrush? RecortarParte(BitmapSource skinCompleta, int x, int y, int w, int h)
         {
             if (skinCompleta == null) return null;
             try

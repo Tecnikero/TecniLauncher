@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using TecniLauncher.Services;
 
 namespace TecniLauncher
 {
@@ -22,7 +23,7 @@ namespace TecniLauncher
         public static int JuegoAncho { get; set; } = 854;
         public static int JuegoAlto { get; set; } = 480;
         public static bool PantallaCompleta { get; set; } = false;
-        public static bool EsElyBy { get; set; } = false;
+        public static bool EsTecniStudio { get; set; } = false;
         public static string IdiomaActual { get; set; } = "es-ES";
 
         public static async Task<bool> IntentarAutoLogin()
@@ -63,6 +64,24 @@ namespace TecniLauncher
             LauncherGlobal = new MinecraftLauncher(pathGlobal);
 
             CargarPerfiles();
+
+            try
+            {
+                if (string.IsNullOrEmpty(SecretsManager.ObtenerSecreto("supabase_anon_key")))
+                {
+                    string rutaSeed = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "seed.key");
+                    if (File.Exists(rutaSeed))
+                    {
+                        string clave = File.ReadAllText(rutaSeed).Trim();
+                        SecretsManager.GuardarSecreto("supabase_anon_key", clave);
+                        File.Delete(rutaSeed);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Error inicializando secretos: " + ex.Message);
+            }
         }
         public static bool EsVersionInstaladaGlobalmente(string idVersion)
         {
@@ -91,7 +110,7 @@ namespace TecniLauncher
                     JuegoAncho,
                     JuegoAlto,
                     PantallaCompleta,
-                    EsElyBy,
+                    EsTecniStudio,
                     IdiomaActual
                 };
                 string json = JsonSerializer.Serialize(datos, new JsonSerializerOptions { WriteIndented = true });
@@ -114,7 +133,7 @@ namespace TecniLauncher
                     if (doc.RootElement.TryGetProperty("JuegoAncho", out var w)) JuegoAncho = w.GetInt32();
                     if (doc.RootElement.TryGetProperty("JuegoAlto", out var h)) JuegoAlto = h.GetInt32();
                     if (doc.RootElement.TryGetProperty("PantallaCompleta", out var f)) PantallaCompleta = f.GetBoolean();
-                    if (doc.RootElement.TryGetProperty("EsElyBy", out var ely)) EsElyBy = ely.GetBoolean();
+                    if (doc.RootElement.TryGetProperty("EsTecniStudio", out var ely)) EsTecniStudio = ely.GetBoolean();
                     if (doc.RootElement.TryGetProperty("IdiomaActual", out var lang)) IdiomaActual = lang.GetString() ?? "es-ES";
                 }
             }

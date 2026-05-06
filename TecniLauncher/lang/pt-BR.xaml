@@ -62,8 +62,8 @@
 
     <sys:String x:Key="Settings_Customization">Personalização</sys:String>
     <sys:String x:Key="Settings_SkinTitle">Skin do Jogador</sys:String>
-    <sys:String x:Key="Settings_SkinDesc">A skin é detectada automaticamente (Ely.by).</sys:String>
-    <sys:String x:Key="Settings_UploadSkin">GERENCIAR NO ELY.BY</sys:String>
+    <sys:String x:Key="Settings_SkinDesc">A skin é detectada automaticamente.</sys:String>
+    <sys:String x:Key="Settings_UploadSkin">GERENCIAR NO TECNISTUDIO</sys:String>
     <sys:String x:Key="Settings_ElySub">Clique para enviar ou alterar sua skin</sys:String>
     <sys:String x:Key="Settings_DeleteSkin">Recarregar Skin</sys:String>
     <sys:String x:Key="Settings_Preview">PRÉ-VISUALIZAÇÃO</sys:String>
@@ -76,12 +76,12 @@
     <sys:String x:Key="Login_Enter">ENTRAR</sys:String>
     <sys:String x:Key="Login_NoSession">Sem Sessão</sys:String>
     <sys:String x:Key="Btn_Login">LOGIN</sys:String>
-    <sys:String x:Key="CuentaEly">☁️ Conta Ely.by</sys:String>
+    <sys:String x:Key="CuentaEly">☁️ Conta TecniStudio</sys:String>
     <sys:String x:Key="CuentaEly_Correo">E-mail</sys:String>
     <sys:String x:Key="CuentaEly_Contra">Senha</sys:String>
     <sys:String x:Key="CuentaEly_Entrar">Entrar</sys:String>
     <sys:String x:Key="CuentaEly_iniciar">☁️ Fazer login</sys:String>
-    <sys:String x:Key="CuentaEly_Creden">Usar suas credenciais Ely.by</sys:String>
+    <sys:String x:Key="CuentaEly_Creden">Usar suas credenciais TecniStudio</sys:String>
     <sys:String x:Key="CuentaEly_atras">← Voltar</sys:String>
 
     <sys:String x:Key="Config_Title">CONFIGURAR PERFIL</sys:String>
