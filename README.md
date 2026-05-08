@@ -1,7 +1,7 @@
-# 🎮 TecniLauncher
+#  TecniLauncher
 ¡Bienvenido al lanzador técnico de Minecraft! Diseñado para ser ligero, elegante y funcional.
 
-## ✨ Características
+##  Características
 
 * **Diseño Moderno:** Interfaz limpia con noticias integradas.
   
@@ -12,7 +12,7 @@
 * **Gestor de Mods:** Descarga de mods a través de la API de Modrinth.
 
 
-## 🚀 Descarga e Instalación
+##  Descarga e Instalación
 Para comenzar a jugar, descarga el instalador oficial desde el siguiente enlace:
 
 [📥 DESCARGAR TECNILAUNCHER INSTALADOR](https://github.com/Tecnikero/TecniLauncher/releases/download/v1.4.0/TecniLauncher_Setup_v1.4.0.exe)
