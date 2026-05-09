@@ -7,7 +7,7 @@
 **TecniLauncher** es un launcher de Minecraft (C#/.NET) diseñado para ofrecer independencia total a los jugadores No-Premium. Enfocado en el rendimiento extremo y la personalización de identidad sin complicaciones técnicas.
 
  **Web Oficial:** [tecnistudio.online](https://tecnistudio.online)
- **Comunidad:** [Únete a nuestro Discord](TU_LINK_DE_DISCORD)
+ **Comunidad:** [Únete a nuestro Discord]((https://discord.com/invite/adhVwrHbrJ))
 
 ---
 
