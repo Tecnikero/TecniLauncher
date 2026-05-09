@@ -15,7 +15,6 @@
 
 * ** Sistema de Skins Nativo:** Sube tu skin a nuestro portal web y búscala in-game sin necesidad de mods pesados.
 * ** Optimización Aikar's Flags:** Inyección automática de argumentos de Java para maximizar tus FPS y reducir el stuttering.
-* ** Persistencia de Sesión:** Sistema inteligente que mantiene tu sesión activa de forma segura.
 * ** Gestión de Perfiles:** Crea y personaliza tus instancias de juego fácilmente.
 
 ---
