@@ -19,14 +19,6 @@
 
 ---
 
-##  Seguridad y Transparencia (Auditoría)
-
-Sabemos que la seguridad es lo primero. Debido a que somos un proyecto independiente, **Microsoft SmartScreen** puede mostrar un aviso azul al instalar. 
-
-> **¿Por qué el aviso de Windows?** No pagamos la firma digital de Microsoft ($600/año) para invertir ese dinero en servidores y mejoras para la comunidad. Para instalar, haz clic en **"Más información"** -> **"Ejecutar de todas formas"**.
-
----
-
 ##  Instalación Rápida
 
 1. Ve a [tecnistudio.online](https://tecnistudio.online) y descarga el instalador de la **v1.4.0**(Tambien puedes ir a los releases).
