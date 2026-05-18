@@ -1,4 +1,4 @@
-# 🚀 TecniLauncher v1.4.1 - El Ecosistema Definitivo para Minecraft
+# TecniLauncher v1.4.1 - El Ecosistema Definitivo para Minecraft
 
 ![Licencia](https://img.shields.io/github/license/Tecnikero/TecniLauncher?style=flat-square&v=1)
 ![Vercel](https://img.shields.io/badge/Website-Vercel-black?style=flat-square&logo=vercel)
@@ -6,8 +6,8 @@
 
 **TecniLauncher** es un launcher de Minecraft (C#/.NET) diseñado para ofrecer independencia total a los jugadores No-Premium. Enfocado en el rendimiento extremo y la personalización de identidad sin complicaciones técnicas.
 
-🌐 **Web Oficial:** [tecnistudio.online](https://tecnistudio.online)  
-💬 **Comunidad:** [Únete a nuestro Discord](https://discord.com/invite/adhVwrHbrJ)
+ **Web Oficial:** [tecnistudio.online](https://tecnistudio.online)  
+ **Comunidad:** [Únete a nuestro Discord](https://discord.com/invite/adhVwrHbrJ)
 
 ---
 
