@@ -20,22 +20,14 @@ TecniLauncher es un programa que se ejecuta en tu computadora. Para funcionar, i
 * **Archivos del Juego:** El launcher únicamente crea, lee y modifica archivos dentro de las carpetas de las instancias del juego (típicamente relacionadas con la estructura de `.minecraft` o la carpeta local de TecniLauncher).
 * **Inyección y Optimización:** Accedemos a los directorios del juego de forma local para inyectar el sistema de skins (mediante parcheo del `.jar` o *authlib-injector*) y aplicar configuraciones de rendimiento, como los argumentos de Java (Aikar's Flags).
 
-##  3. Nuestro Compromiso (Lo que NUNCA hacemos)
 
-Sabemos que la confianza en los launchers de terceros es un tema delicado. Queremos dejar nuestro código de ética claro:
-
-* **NO** tocamos, leemos, ni exfiltramos tus archivos personales, documentos, ni datos fuera del entorno estricto de Minecraft.
-* **NO** rastreamos ni robamos tokens de sesión de Discord, navegadores web, ni de cuentas externas (como cuentas premium de Microsoft que utilices en el launcher).
-* **NO** instalamos mineros de criptomonedas, *adware*, ni procesos ocultos en segundo plano.
-* **NO** compartimos ni vendemos tu información personal (correos o nombres de usuario) a terceros para fines publicitarios.
-
-##  4. Servicios de Terceros integrados
+##  3. Servicios de Terceros integrados
 
 El launcher realiza conexiones legítimas a servicios públicos para descargar contenido oficial:
 * **Modrinth API:** Para buscar, visualizar y descargar modpacks o mods.
 * **Mojang / Microsoft:** Para validar cuentas premium y descargar los recursos originales del juego (`assets`, librerías y versiones).
 
-##  5. Eliminación de Datos y Contacto
+##  4. Eliminación de Datos y Contacto
 
 Eres dueño de tu información. Si en algún momento deseas que eliminemos tu cuenta, tus skins y todos los registros asociados de nuestra base de datos en Supabase, puedes contactarnos directamente y lo procesaremos de inmediato.
 
