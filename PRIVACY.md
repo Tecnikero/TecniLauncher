@@ -6,7 +6,7 @@ A continuación, te explicamos exactamente qué datos manejamos, dónde se guard
 
 ---
 
-## 📂 1. ¿Qué datos recopilamos y dónde se almacenan?
+##  1. ¿Qué datos recopilamos y dónde se almacenan?
 
 Para poder gestionar tu identidad en el juego y permitir que otros vean tu skin, utilizamos infraestructuras en la nube altamente seguras:
 
