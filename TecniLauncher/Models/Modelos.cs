@@ -15,6 +15,6 @@ namespace TecniLauncher.Models
         public string VersionMasReciente { get; set; } = "";
         public bool   EsCritica          { get; set; }
         public string LinkDescarga       { get; set; } = "";
-        public string Novedades          { get; set; } = "";
+        public string Sha256 { get; set; }
     }
 }

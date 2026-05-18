@@ -828,8 +828,7 @@
                         </Grid>
                     </Grid>
 
-                    <Grid x:Name="OverlayVersiones" Visibility="Collapsed" Background="#CC000000"
-IsHitTestVisible="True" Panel.ZIndex="999">
+                    <Grid x:Name="OverlayVersiones" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed" Background="#CC000000" IsHitTestVisible="True" Panel.ZIndex="999">
                         <Border Width="600" Height="550"
       Background="{StaticResource BgSidebar}"
       CornerRadius="16"
@@ -964,45 +963,60 @@ IsHitTestVisible="True" Panel.ZIndex="999">
 
                             <TextBlock x:Name="txtCargandoModpacks" Grid.Row="1" Text="Buscando modpacks en Modrinth..." Foreground="#4facfe" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,15" Visibility="Collapsed"/>
 
-                            <ListBox x:Name="listaModpacksUI" Grid.Row="2" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                <ListBox.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel IsItemsHost="True" Orientation="Horizontal"/>
-                                    </ItemsPanelTemplate>
-                                </ListBox.ItemsPanel>
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Width="300" Height="160" Background="#1E2328" CornerRadius="10" Margin="5" Padding="15">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="75"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <Border CornerRadius="8" Width="65" Height="65" VerticalAlignment="Top" HorizontalAlignment="Left">
-                                                    <Border.Background>
-                                                        <ImageBrush ImageSource="{Binding IconoUrl}" Stretch="UniformToFill"/>
-                                                    </Border.Background>
-                                                </Border>
-                                                <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                                                    <TextBlock Text="{Binding Titulo}" Foreground="White" FontWeight="Bold" FontSize="16" TextTrimming="CharacterEllipsis"/>
-                                                    <StackPanel Orientation="Horizontal" Margin="0,2,0,5">
-                                                        <TextBlock Text="Por " Foreground="#666666" FontSize="12"/>
-                                                        <TextBlock Text="{Binding Autor}" Foreground="#888888" FontWeight="Bold" FontSize="12"/>
+                            <ScrollViewer Grid.Row="2" x:Name="ScrollModpacks"
+                        VerticalScrollBarVisibility="Hidden" 
+                        HorizontalScrollBarVisibility="Disabled"
+                        ScrollChanged="ListaModpacks_ScrollChanged">
+
+                                <ListBox x:Name="listaModpacksUI" 
+         Background="Transparent" 
+         BorderThickness="0" 
+         HorizontalContentAlignment="Stretch" 
+         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+         ScrollViewer.VerticalScrollBarVisibility="Disabled"
+         ScrollViewer.CanContentScroll="False"
+         PreviewMouseWheel="listaMods_PreviewMouseWheel">
+
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel IsItemsHost="True" Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Width="300" Height="160" Background="#1E2328" CornerRadius="10" Margin="5" Padding="15">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="75"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border CornerRadius="8" Width="65" Height="65" VerticalAlignment="Top" HorizontalAlignment="Left">
+                                                        <Border.Background>
+                                                            <ImageBrush ImageSource="{Binding IconoUrl}" Stretch="UniformToFill"/>
+                                                        </Border.Background>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                                        <TextBlock Text="{Binding Titulo}" Foreground="White" FontWeight="Bold" FontSize="16" TextTrimming="CharacterEllipsis"/>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,5">
+                                                            <TextBlock Text="Por " Foreground="#666666" FontSize="12"/>
+                                                            <TextBlock Text="{Binding Autor}" Foreground="#888888" FontWeight="Bold" FontSize="12"/>
+                                                        </StackPanel>
+                                                        <TextBlock Text="{Binding Descripcion}" Foreground="#CCCCCC" FontSize="11" TextWrapping="Wrap" MaxHeight="45" TextTrimming="CharacterEllipsis"/>
                                                     </StackPanel>
-                                                    <TextBlock Text="{Binding Descripcion}" Foreground="#CCCCCC" FontSize="11" TextWrapping="Wrap" MaxHeight="45" TextTrimming="CharacterEllipsis"/>
-                                                </StackPanel>
-                                                <Button Grid.Column="1"  Style="{StaticResource PrimaryButton}" Content="VER DETALLES" VerticalAlignment="Bottom" HorizontalAlignment="Right" Padding="15,5" Background="#4facfe" Foreground="White" FontWeight="Bold" FontSize="11" BorderThickness="0" Cursor="Hand" Click="BtnVerModpack_Click" Tag="{Binding}">
-                                                    <Button.Resources>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="CornerRadius" Value="6"/>
-                                                        </Style>
-                                                    </Button.Resources>
-                                                </Button>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                                                    <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="VER DETALLES" VerticalAlignment="Bottom" HorizontalAlignment="Right" Padding="15,5" Background="#4facfe" Foreground="White" FontWeight="Bold" FontSize="11" BorderThickness="0" Cursor="Hand" Click="BtnVerModpack_Click" Tag="{Binding}">
+                                                        <Button.Resources>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="CornerRadius" Value="6"/>
+                                                            </Style>
+                                                        </Button.Resources>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </ScrollViewer>
                         </Grid>
 
                         <Grid x:Name="PanelDetalleModpack" Visibility="Collapsed">
@@ -1185,9 +1199,10 @@ IsHitTestVisible="True" Panel.ZIndex="999">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="220"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <StackPanel Grid.Column="0" VerticalAlignment="Top">
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Top" Margin="0,0,25,0">
                                             <TextBlock Text="{DynamicResource Settings_SkinTitle}" FontWeight="Bold" Foreground="{StaticResource TextMain}" FontSize="15"/>
                                             <TextBlock Text="{DynamicResource Settings_SkinDesc}" Foreground="{StaticResource TextSub}" FontSize="12" Margin="0,2,0,20" TextWrapping="Wrap"/>
 
@@ -1229,6 +1244,12 @@ IsHitTestVisible="True" Panel.ZIndex="999">
                                                 </Button.Template>
                                             </Button>
                                         </StackPanel>
+
+                                        <Border Grid.Column="1" Background="#0AFFFFFF" BorderBrush="#22FFFFFF" BorderThickness="1" CornerRadius="10" ClipToBounds="True" Height="230" VerticalAlignment="Top">
+                                            <Grid>
+                                                <wv2:WebView2 x:Name="VisorSkinWebView" DefaultBackgroundColor="Transparent"/>
+                                            </Grid>
+                                        </Border>
                                     </Grid>
                                 </Border>
 

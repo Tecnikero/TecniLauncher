@@ -149,6 +149,23 @@ namespace TecniLauncher.Services
             catch { }
             return null;
         }
+        public static void CerrarSesionTecni()
+        {
+            try
+            {
+                string ruta = Path.Combine(Core.RutaData, "tecni_session.json");
+                if (File.Exists(ruta))
+                {
+                    File.Delete(ruta);
+                }
+                Core.SesionUsuario = null;
+                Core.EsTecniStudio = false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Error al borrar sesión persistente: " + ex.Message);
+            }
+        }
         public static string GenerarUuidOffline(string nombreJugador)
         {
             byte[] hash = MD5.HashData(Encoding.UTF8.GetBytes("OfflinePlayer:" + nombreJugador));

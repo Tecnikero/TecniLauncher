@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
+using System.Security.Cryptography;
 using TecniLauncher.Models;
 
 namespace TecniLauncher.Services
@@ -19,17 +20,43 @@ namespace TecniLauncher.Services
             string json = await _http.GetStringAsync(URL_VERSION);
             return JsonConvert.DeserializeObject<DatosUpdate>(json);
         }
-        public static async Task InstalarDesdeZipAsync(string urlDescarga,
+
+        public static async Task InstalarDesdeZipAsync(string urlDescarga, string hashEsperado,
             IProgress<string> progreso = null)
         {
-            string rutaActual  = Process.GetCurrentProcess().MainModule!.FileName;
-            string directorio  = Path.GetDirectoryName(rutaActual)!;
-            string rutaZip     = Path.Combine(directorio, "Update.zip");
+            string rutaActual = Process.GetCurrentProcess().MainModule!.FileName;
+            string directorio = Path.GetDirectoryName(rutaActual)!;
+            string rutaZip = Path.Combine(directorio, "Update.zip");
             string carpetaTemp = Path.Combine(directorio, "Update_Temp");
+
+            // Validar que el hash fue provisto antes de descargar
+            if (string.IsNullOrWhiteSpace(hashEsperado))
+            {
+                throw new Exception("Error de seguridad: No se encontró el hash de verificación en el servidor. Actualización abortada.");
+            }
 
             progreso?.Report("Descargando paquete de actualización...");
             byte[] bytes = await _http.GetByteArrayAsync(urlDescarga);
             await File.WriteAllBytesAsync(rutaZip, bytes);
+
+            progreso?.Report("Verificando integridad del archivo (Seguridad)...");
+
+            using (var sha256 = SHA256.Create())
+            using (var stream = File.OpenRead(rutaZip))
+            {
+                byte[] hashBytes = sha256.ComputeHash(stream);
+                string hashLocal = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+                string hashComparar = hashEsperado.Trim().ToLower();
+
+                if (hashLocal != hashComparar)
+                {
+                    stream.Close();
+                    File.Delete(rutaZip);
+                    throw new Exception("¡ALERTA DE SEGURIDAD! El archivo descargado está corrupto o fue modificado. Actualización abortada para proteger tu PC.");
+                }
+            }
+
+            progreso?.Report("Archivo verificado con éxito.");
 
             progreso?.Report("Extrayendo archivos...");
             if (Directory.Exists(carpetaTemp)) Directory.Delete(carpetaTemp, true);
@@ -43,7 +70,7 @@ namespace TecniLauncher.Services
             string rutaActual, string directorio, string rutaZip, string carpetaTemp)
         {
             string nombreExe = Path.GetFileName(rutaActual);
-            string rutaBat   = Path.Combine(directorio, "update_script.bat");
+            string rutaBat = Path.Combine(directorio, "update_script.bat");
 
             string script = $"""
                 @echo off
@@ -62,11 +89,11 @@ namespace TecniLauncher.Services
 
             Process.Start(new ProcessStartInfo
             {
-                FileName        = "cmd.exe",
-                Arguments       = $"/c \"\"{rutaBat}\"\"",
-                CreateNoWindow  = true,
+                FileName = "cmd.exe",
+                Arguments = $"/c \"\"{rutaBat}\"\"",
+                CreateNoWindow = true,
                 UseShellExecute = false,
-                WindowStyle     = ProcessWindowStyle.Hidden
+                WindowStyle = ProcessWindowStyle.Hidden
             });
         }
     }

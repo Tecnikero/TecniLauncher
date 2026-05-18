@@ -27,16 +27,16 @@ namespace TecniLauncher
 
 
         public static async Task<List<ModpackProject>> BuscarModpacksAsync(
-            string busqueda, int limite = 20)
+    string busqueda, int offset = 0, int limite = 20)
         {
             try
             {
-                string orden  = string.IsNullOrWhiteSpace(busqueda) ? "downloads" : "relevance";
+                string orden = string.IsNullOrWhiteSpace(busqueda) ? "downloads" : "relevance";
                 string facets = Uri.EscapeDataString("[[\"project_type:modpack\"]]");
-                string url    = $"https://api.modrinth.com/v2/search?query={Uri.EscapeDataString(busqueda)}&index={orden}&facets={facets}&limit={limite}";
+                string url = $"https://api.modrinth.com/v2/search?query={Uri.EscapeDataString(busqueda)}&index={orden}&facets={facets}&limit={limite}&offset={offset}";
 
-                string json  = await _http.GetStringAsync(url);
-                var    datos = JsonConvert.DeserializeObject<ModrinthSearchResponse>(json);
+                string json = await _http.GetStringAsync(url);
+                var datos = JsonConvert.DeserializeObject<ModrinthSearchResponse>(json);
                 return datos?.Resultados ?? new();
             }
             catch (Exception ex)

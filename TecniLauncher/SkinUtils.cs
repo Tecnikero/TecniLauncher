@@ -87,5 +87,38 @@ namespace TecniLauncher
             }
             catch { return null; }
         }
+        public static async Task<string> ObtenerUrlDirecta(string usuario, bool esPremium)
+        {
+            if (string.IsNullOrEmpty(usuario)) return null;
+
+            if (Core.EsTecniStudio && Core.SesionUsuario != null)
+            {
+                try
+                {
+                    string url = $"https://kfxffvjakkcjbwkpvxtr.supabase.co/functions/v1/yggdrasil/sessionserver/session/minecraft/profile/{Core.SesionUsuario.UUID}";
+                    string json = await _http.GetStringAsync(url);
+                    dynamic perfil = JsonConvert.DeserializeObject(json);
+
+                    if (perfil?.properties != null && perfil.properties.Count > 0)
+                    {
+                        string base64 = perfil.properties[0].value;
+                        string texturaJson = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64));
+                        dynamic texturas = JsonConvert.DeserializeObject(texturaJson);
+
+                        return texturas.textures.SKIN.url;
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            if (esPremium)
+            {
+                return $"https://minotar.net/skin/{usuario}";
+            }
+
+            return "https://minotar.net/skin/steve";
+        }
     }
 }
