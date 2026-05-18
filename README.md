@@ -1,6 +1,6 @@
 # 🚀 TecniLauncher v1.4.1 - El Ecosistema Definitivo para Minecraft
 
-![Licencia](https://img.shields.io/github/license/Tecnikero/TecniLauncher?style=flat-square)
+![Licencia](https://img.shields.io/github/license/Tecnikero/TecniLauncher?style=flat-square&v=1)
 ![Vercel](https://img.shields.io/badge/Website-Vercel-black?style=flat-square&logo=vercel)
 ![Open Source](https://img.shields.io/badge/Open%20Source-Sí-brightgreen?style=flat-square)
 
