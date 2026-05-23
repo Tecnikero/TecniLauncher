@@ -9,9 +9,9 @@
     <sys:String x:Key="Menu_Settings">⚙️   Ajustes</sys:String>
     <sys:String x:Key="Menu_ModPacks">🧭​   ModPacks</sys:String>
 
-    <sys:String x:Key="Events_Header">EVENTOS TECNISTUDIOS</sys:String>
-    <sys:String x:Key="Events_Active">Eventos Activos</sys:String>
-    <sys:String x:Key="Events_Ram">RAM</sys:String>
+    <sys:String x:Key="client_des">Perfiles de juego hiper-optimizados, listos para instalar con un clic.</sys:String>
+    <sys:String x:Key="client_event_1">Optimizado para combate PvP. Máximo FPS, mínima latencia.</sys:String>
+    <sys:String x:Key="client_descarga">INSTALAR</sys:String>
     <sys:String x:Key="Events_GB">GB</sys:String>
 
     <sys:String x:Key="Play_NewsLoadingTitle">Cargando novedades...</sys:String>

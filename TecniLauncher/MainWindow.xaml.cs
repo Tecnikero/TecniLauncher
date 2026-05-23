@@ -48,7 +48,7 @@ namespace TecniLauncher
         private bool modoOnline = true;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        private const string VERSION_ACTUAL = "1.4.1";
+        private const string VERSION_ACTUAL = "1.4.2";
         private CancellationTokenSource ctsActualizacion;
         private bool estaCargando = false;
         private DispatcherTimer _timerNoticias;
@@ -97,7 +97,6 @@ namespace TecniLauncher
             SeleccionarIdiomaEnCombo();
 
             ComprobarActualizaciones();
-            CargarEventosSegunLinks();
             TxtVersion.Text = $"v{VERSION_ACTUAL}";
             if (TxtVersionAjustes != null)
             {
@@ -267,17 +266,17 @@ namespace TecniLauncher
 
         private void MenuJugar_Click(object sender, RoutedEventArgs e)
         {
-            NavigationHelper.Navegar(VistaJugar, VistaJugar, VistaPerfiles, VistaAjustes, VistaMods, VistaEventos, VistaModpacks);
+            NavigationHelper.Navegar(VistaJugar, VistaJugar, VistaPerfiles, VistaAjustes, VistaMods, vistaTecniClients, VistaModpacks);
             CargarNoticiasGitHub();
         }
         private void MenuPerfiles_Click(object sender, RoutedEventArgs e)
         {
-            NavigationHelper.Navegar(VistaPerfiles, VistaJugar, VistaPerfiles, VistaAjustes, VistaMods, VistaEventos, VistaModpacks);
+            NavigationHelper.Navegar(VistaPerfiles, VistaJugar, VistaPerfiles, VistaAjustes, VistaMods, vistaTecniClients, VistaModpacks);
         }
         private void MenuMods_Click(object sender, RoutedEventArgs e)
         {
             NavigationHelper.Navegar(VistaMods, VistaJugar, VistaPerfiles,
-                                     VistaAjustes, VistaMods, VistaEventos, VistaModpacks);
+                                     VistaAjustes, VistaMods, vistaTecniClients, VistaModpacks);
 
             comboPerfilesMods.ItemsSource = null;
             comboPerfilesMods.ItemsSource = Core.Perfiles;
@@ -288,19 +287,18 @@ namespace TecniLauncher
             BtnBuscarOnline_Click(null, null);
 
         }
-        private void MenuEventos_Click(object sender, RoutedEventArgs e)
+        private void MenuTecniClients_Click(object sender, RoutedEventArgs e)
         {
-            NavigationHelper.Navegar(VistaEventos, VistaJugar, VistaPerfiles, VistaAjustes, VistaMods, VistaEventos, VistaModpacks);
-            CargarEventosSegunLinks();
+            NavigationHelper.Navegar(vistaTecniClients, VistaJugar, VistaPerfiles, VistaAjustes, VistaMods, VistaModpacks);
         }
         private void MenuModpacks_Click(object sender, RoutedEventArgs e)
         {
-            NavigationHelper.Navegar(VistaModpacks, VistaJugar, VistaPerfiles, VistaAjustes, VistaMods, VistaEventos, VistaModpacks);
+            NavigationHelper.Navegar(VistaModpacks, VistaJugar, VistaPerfiles, VistaAjustes, VistaMods, vistaTecniClients, VistaModpacks);
         }
 
         private void MenuAjustes_Click(object sender, RoutedEventArgs e)
         {
-            NavigationHelper.Navegar(VistaAjustes, VistaJugar, VistaPerfiles, VistaAjustes, VistaMods, VistaEventos, VistaModpacks);
+            NavigationHelper.Navegar(VistaAjustes, VistaJugar, VistaPerfiles, VistaAjustes, VistaMods, vistaTecniClients, VistaModpacks);
             chkSnapshots.IsChecked = Core.MostrarSnapshots;
             chkFullscreen.IsChecked = Core.PantallaCompleta;
             txtResAncho.Text = Core.JuegoAncho.ToString();
@@ -531,7 +529,20 @@ namespace TecniLauncher
                 VentanaMensaje.Mostrar("Por favor, selecciona un perfil primero.");
                 return;
             }
-
+            if (client != null && client.IsInitialized)
+            {
+                client.SetPresence(new RichPresence()
+                {
+                    Details = $"Jugando a {perfil.Nombre}",
+                    State = $"Versión: {perfil.Version}",
+                    Assets = new Assets()
+                    {
+                        LargeImageKey = "tecnilogo",
+                        LargeImageText = "TecniLauncher"
+                    },
+                    Timestamps = Timestamps.Now
+                });
+            }
             try
             {
                 btnJugar.IsEnabled = false;
@@ -564,6 +575,20 @@ namespace TecniLauncher
                             this.Show();
                             this.WindowState = WindowState.Normal;
                             this.Activate();
+                            if (client != null && client.IsInitialized)
+                            {
+                                client.SetPresence(new RichPresence()
+                                {
+                                    Details = "En el Menú Principal",
+                                    State = $"V{VERSION_ACTUAL}",
+                                    Assets = new Assets()
+                                    {
+                                        LargeImageKey = "tecnilogo",
+                                        LargeImageText = "TecniLauncher"
+                                    },
+                                    Timestamps = Timestamps.Now
+                                });
+                            }
                         });
                     };
                 }
@@ -921,13 +946,6 @@ namespace TecniLauncher
             if (lblRam == null) return;
             lblRam.Text = $"{e.NewValue} GB";
 
-            if (listaEventosUI != null && listaEventosUI.ItemsSource is IEnumerable<EventoModelo> eventos)
-            {
-                foreach (var ev in eventos)
-                {
-                    ev.MemoriaRam = (int)e.NewValue * 1024; 
-                }
-            }
         }
 
 
@@ -1290,7 +1308,7 @@ namespace TecniLauncher
         private async void BtnInstalarVersion_Click(object sender, RoutedEventArgs e)
         {
             var btn = (System.Windows.Controls.Button)sender;
-            var version = (ModVersion)btn.Tag;
+            var versionPrincipal = (ModVersion)btn.Tag;
 
             if (comboPerfilesMods.SelectedItem is Perfil p)
             {
@@ -1299,30 +1317,60 @@ namespace TecniLauncher
                     string carpetaMods = Path.Combine(p.RutaCarpeta, "mods");
                     if (!Directory.Exists(carpetaMods)) Directory.CreateDirectory(carpetaMods);
 
-                    string destino = Path.Combine(carpetaMods, version.NombreArchivo);
-
-                    if (File.Exists(destino))
-                    {
-                        VentanaMensaje.Mostrar("Este mod ya está instalado.");
-                        return;
-                    }
-
-                    VentanaMensaje.Mostrar($"Descargando {version.NombreArchivo}...");
+                    VentanaMensaje.Mostrar($"Instalando {versionPrincipal.NombreArchivo} y sus dependencias (esto puede tardar)...");
                     OverlayVersiones.Visibility = Visibility.Collapsed;
 
-                    using (var client = new HttpClient())
-                    {
-                        client.DefaultRequestHeaders.Add("User-Agent", "TecniLauncher");
-                        var datos = await client.GetByteArrayAsync(version.UrlDescarga);
-                        File.WriteAllBytes(destino, datos);
-                    }
+                    await DescargarModYDependencias(versionPrincipal, p.Version, p.TipoLoader, carpetaMods);
 
-                    VentanaMensaje.Mostrar("¡Mod instalado correctamente!");
+                    VentanaMensaje.Mostrar("¡Mod y dependencias instalados correctamente!");
+
+                    if (!modoOnline) CargarModsLocal(p);
                 }
                 catch (Exception ex)
                 {
                     VentanaMensaje.Mostrar("Error en la descarga: " + ex.Message);
                     OverlayVersiones.Visibility = Visibility.Visible;
+                }
+            }
+        }
+        private async Task DescargarModYDependencias(ModVersion versionBase, string versionMC, string loader, string carpetaMods)
+        {
+            HashSet<string> idsProcesados = new HashSet<string>();
+
+            Queue<ModVersion> colaDescargas = new Queue<ModVersion>();
+
+            colaDescargas.Enqueue(versionBase);
+
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("User-Agent", "TecniLauncher");
+
+                while (colaDescargas.Count > 0)
+                {
+                    var modActual = colaDescargas.Dequeue();
+                    string destino = Path.Combine(carpetaMods, modActual.NombreArchivo);
+
+                    if (!File.Exists(destino))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Descargando: {modActual.NombreArchivo}");
+                        var datos = await client.GetByteArrayAsync(modActual.UrlDescarga);
+                        File.WriteAllBytes(destino, datos);
+                    }
+
+                    foreach (var depProjectId in modActual.DependenciasRequeridas)
+                    {
+                        if (!idsProcesados.Contains(depProjectId))
+                        {
+                            idsProcesados.Add(depProjectId);
+
+                            var versionesDep = await ModrinthAPI.ObtenerListaVersiones(depProjectId, versionMC, loader);
+
+                            if (versionesDep != null && versionesDep.Count > 0)
+                            {
+                                colaDescargas.Enqueue(versionesDep[0]);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1533,7 +1581,14 @@ namespace TecniLauncher
 
                 var archivoZip = versionSeleccionada.Archivos.Find(a => a.EsPrimario) ?? versionSeleccionada.Archivos[0];
                 string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                string rutaBaseMinecraft = System.IO.Path.Combine(appData, ".TecniLauncher", "Instances", modpackSeleccionado.Titulo);
+                string nombreCarpeta = modpackSeleccionado.Titulo;
+
+                foreach (char c in System.IO.Path.GetInvalidFileNameChars())
+                {
+                    nombreCarpeta = nombreCarpeta.Replace(c, '_');
+                }
+
+                string rutaBaseMinecraft = System.IO.Path.Combine(appData, ".TecniLauncher", "Instances", nombreCarpeta);
 
                 var receta = await ModpacksApi.PrepararInstalacionModpackAsync(archivoZip.UrlDescarga, rutaBaseMinecraft);
 
@@ -1972,237 +2027,18 @@ namespace TecniLauncher
             ActualizarNoticiaConEfecto(indiceActual);
         }
         #endregion
-        #region Eventos
-
-        private async void CargarEventosSegunLinks()
+        #region TecniClients
+        private void BtnInstalarTecniClient_Click(object sender, RoutedEventArgs e)
         {
-            string urlMaestra = "https://raw.githubusercontent.com/johan12390785/TecniLauncher-Data/main/Eventos/index_eventos.json";
+            var btn = (System.Windows.Controls.Button)sender;
+            string clienteId = btn.Tag?.ToString() ?? "desconocido";
 
-            try
-            {
-                PanelCarga.Visibility = Visibility.Visible;
-                txtEstadoCarga.Text = "Conectando con el servidor...";
-
-                var eventos = await EventosManager.CargarTodosLosEventos(urlMaestra);
-
-                if (eventos != null && eventos.Count > 0)
-                {
-                    foreach (var ev in eventos)
-                    {
-                        ActualizarEstadoBoton(ev);
-                    }
-                    listaEventosUI.ItemsSource = eventos;
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("La lista de eventos está vacía.");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Error crítico en CargarEventos: " + ex.Message);
-            }
-            finally
-            {
-                PanelCarga.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        private async void BtnAccionEvento_Click(object sender, RoutedEventArgs e)
-        {
-            var evento = (EventoModelo)((System.Windows.Controls.Button)sender).Tag;
-            if (evento == null) return;
-
-            if (evento.TextoBoton == "INSTALAR" || evento.TextoBoton == "ACTUALIZAR")
-            {
-                try
-                {
-                    evento.TextoBoton = "INSTALANDO...";
-                    evento.ColorEstado = Brushes.Gray;
-                    PanelCarga.Visibility = Visibility.Visible;
-
-                    var pathEvento = new CmlLib.Core.MinecraftPath(evento.RutaCarpeta);
-                    string rutaGlobal = Core.RutaGlobal;
-                    pathEvento.Assets = Path.Combine(rutaGlobal, "assets");
-                    pathEvento.Library = Path.Combine(rutaGlobal, "libraries");
-                    pathEvento.Versions = Path.Combine(rutaGlobal, "versions");
-                    pathEvento.Runtime = Path.Combine(rutaGlobal, "runtime");
-
-                    var launcher = new CmlLib.Core.MinecraftLauncher(pathEvento);
-
-                    var pTemp = new Perfil(evento.Nombre, evento.VersionMinecraft, evento.Loader, evento.MemoriaRam);
-                    pTemp.VersionLoaderExacta = evento.VersionLoader;
-                    pTemp.RutaCarpeta = evento.RutaCarpeta;
-
-                    txtEstadoCarga.Text = $"Instalando {evento.Loader}...";
-                    await InstalarModLoader(pTemp, launcher);
-
-                    await InstalarArchivosEvento(evento);
-
-                    if (!Directory.Exists(evento.RutaCarpeta)) Directory.CreateDirectory(evento.RutaCarpeta);
-                    File.WriteAllText(Path.Combine(evento.RutaCarpeta, "version_local.txt"), evento.VersionEvento);
-
-                    VentanaMensaje.Mostrar($"¡{evento.Nombre} listo para jugar!");
-                    ActualizarEstadoBoton(evento);
-                }
-                catch (Exception ex)
-                {
-                    VentanaMensaje.Mostrar("Error: " + ex.Message);
-                    ActualizarEstadoBoton(evento);
-                }
-                finally
-                {
-                    PanelCarga.Visibility = Visibility.Collapsed;
-                }
-            }
-            else if (evento.TextoBoton == "JUGAR")
-            {
-                await LanzarMinecraftEvento(evento, (System.Windows.Controls.Button)sender);
-            }
-        }
-        private async Task InstalarArchivosEvento(EventoModelo evento)
-        {
-            if (evento.Archivos == null || evento.Archivos.Count == 0) return;
-
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Add("User-Agent", "TecniLauncher-App");
-
-                int total = evento.Archivos.Count;
-                int actuales = 0;
-
-                foreach (var archivo in evento.Archivos)
-                {
-                    actuales++;
-                    string rutaDestino = Path.Combine(evento.RutaCarpeta, archivo.RutaRelativa);
-
-                    Application.Current.Dispatcher.Invoke(() => {
-                        txtEstadoCarga.Text = $"({actuales}/{total}) Verificando: {archivo.Nombre}...";
-                    });
-
-                    bool necesitaDescarga = true;
-                    if (File.Exists(rutaDestino) && !archivo.Descomprimir)
-                    {
-                        string hashLocal = CalcularHashSHA1(rutaDestino);
-                        if (hashLocal.Equals(archivo.HashSHA1, StringComparison.OrdinalIgnoreCase))
-                        {
-                            necesitaDescarga = false;
-                        }
-                    }
-
-                    if (necesitaDescarga)
-                    {
-                        Application.Current.Dispatcher.Invoke(() => {
-                            txtEstadoCarga.Text = $"({actuales}/{total}) Descargando: {archivo.Nombre}...";
-                        });
-
-                        Directory.CreateDirectory(Path.GetDirectoryName(rutaDestino));
-
-                        byte[] datos = await client.GetByteArrayAsync(archivo.UrlDescarga);
-
-                        if (archivo.Descomprimir)
-                        {
-                            string zipTemp = Path.Combine(evento.RutaCarpeta, "temp_" + Guid.NewGuid() + ".zip");
-                            await File.WriteAllBytesAsync(zipTemp, datos);
-
-                            Application.Current.Dispatcher.Invoke(() => txtEstadoCarga.Text = $"Extrayendo: {archivo.Nombre}...");
-                            try
-                            {
-                                string carpetaExtraction = Path.GetDirectoryName(rutaDestino);
-                                System.IO.Compression.ZipFile.ExtractToDirectory(zipTemp, carpetaExtraction, true);
-                            }
-                            catch { }
-                            finally { if (File.Exists(zipTemp)) File.Delete(zipTemp); }
-                        }
-                        else
-                        {
-                            await File.WriteAllBytesAsync(rutaDestino, datos);
-                        }
-                    }
-                }
-            }
-        }
-        private string CalcularHashSHA1(string filename)
-        {
-            try
-            {
-                using (var stream = File.OpenRead(filename))
-                using (var sha1 = System.Security.Cryptography.SHA1.Create())
-                {
-                    byte[] hash = sha1.ComputeHash(stream);
-                    return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-                }
-            }
-            catch { return "error"; }
-        }
-
-        private void ActualizarEstadoBoton(EventoModelo ev)
-        {
-            if (ev == null) return;
-            string fileVersion = Path.Combine(ev.RutaCarpeta, "version_local.txt");
-
-            if (!File.Exists(fileVersion))
-            {
-                ev.TextoBoton = "INSTALAR";
-                ev.ColorEstado = (Brush)new BrushConverter().ConvertFrom("#3498db");
-            }
-            else
-            {
-                string vLocal = File.ReadAllText(fileVersion).Trim();
-                bool hayUpdate = vLocal != ev.VersionEvento;
-                ev.TextoBoton = hayUpdate ? "ACTUALIZAR" : "JUGAR";
-                ev.ColorEstado = hayUpdate ? Brushes.Orange : Brushes.SeaGreen;
-            }
-        }
-
-        private async Task LanzarMinecraftEvento(EventoModelo evento, System.Windows.Controls.Button btnOrigen)
-        {
-            try
-            {
-                PanelCarga.Visibility = Visibility.Visible;
-                txtEstadoCarga.Text = "Iniciando juego...";
-                btnOrigen.IsEnabled = false;
-
-                var p = new Perfil(evento.Nombre, evento.VersionMinecraft, evento.Loader, evento.MemoriaRam);
-                p.RutaCarpeta = evento.RutaCarpeta;
-                p.VersionLoaderExacta = evento.VersionLoader;
-
-                await LanzarMinecraft(p);
-            }
-            catch (Exception ex)
-            {
-                VentanaMensaje.Mostrar("Error: " + ex.Message);
-            }
-            finally
-            {
-                PanelCarga.Visibility = Visibility.Collapsed;
-                btnOrigen.IsEnabled = true;
-            }
-        }
-
-        private void BtnDiscordEvento_Click(object sender, RoutedEventArgs e)
-        {
-            var evento = (EventoModelo)((System.Windows.Controls.Button)sender).Tag;
-            if (!string.IsNullOrEmpty(evento.DiscordLink)) AbrirLink(evento.DiscordLink);
-            else VentanaMensaje.Mostrar("Sin Discord configurado.");
-        }
-
-        private void BtnEliminarEvento_Click(object sender, RoutedEventArgs e)
-        {
-            var evento = (EventoModelo)((System.Windows.Controls.Button)sender).Tag;
-            if (Directory.Exists(evento.RutaCarpeta))
-            {
-                if (VentanaMensaje.Mostrar($"¿Borrar '{evento.Nombre}'?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                {
-                    try
-                    {
-                        Directory.Delete(evento.RutaCarpeta, true);
-                        ActualizarEstadoBoton(evento);
-                        listaEventosUI.Items.Refresh();
-                    }
-                    catch (Exception ex) { VentanaMensaje.Mostrar("Error: " + ex.Message); }
-                }
-            }
+            VentanaMensaje.Mostrar(
+                $"Próximamente: instalación de '{clienteId}'.\n" +
+                "Esta función estará disponible en la siguientes versiones.",
+                "TecniClients",
+                MessageBoxButton.OK
+            );
         }
         #endregion
     }

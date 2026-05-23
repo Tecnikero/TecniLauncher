@@ -28,6 +28,7 @@ namespace TecniLauncher
         public string NombreArchivo { get; set; }
         public string UrlDescarga { get; set; }
         public string ColorTipo => Tipo == "release" ? "#2ecc71" : (Tipo == "beta" ? "#f1c40f" : "#e74c3c");
+        public List<string> DependenciasRequeridas { get; set; } = new List<string>();
     }
 
     public class ModrinthAPI

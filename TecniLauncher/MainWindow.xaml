@@ -209,11 +209,11 @@
                                 <Rectangle Height="2" Width="50" Fill="{StaticResource ColorAccent}" Margin="0,10,0,0" HorizontalAlignment="Center"/>
                             </StackPanel>
 
-                            <RadioButton Content="{DynamicResource Menu_Events}" Style="{StaticResource MenuButtonStyle}" Height="50" Foreground="{StaticResource TextMain}" FontSize="15" Margin="0,2" Click="MenuEventos_Click" IsChecked="True"/>
-                            <RadioButton Content="{DynamicResource Menu_Play}" Style="{StaticResource MenuButtonStyle}" Click="MenuJugar_Click" Height="50" Foreground="{StaticResource TextMain}" FontSize="15" Margin="0,2"/>
+                            <RadioButton Content="{DynamicResource Menu_Play}" Style="{StaticResource MenuButtonStyle}" Click="MenuJugar_Click" Height="50" Foreground="{StaticResource TextMain}" FontSize="15" Margin="0,2" IsChecked="True"/>
                             <RadioButton Content="{DynamicResource Menu_Profiles}" Style="{StaticResource MenuButtonStyle}" Height="50" Foreground="{StaticResource TextMain}" FontSize="15" Margin="0,2" Click="MenuPerfiles_Click"/>
                             <RadioButton Content="{DynamicResource Menu_Mods}" Style="{StaticResource MenuButtonStyle}" Height="50" Foreground="{StaticResource TextMain}" FontSize="15" Margin="0,2" Click="MenuMods_Click"/>
                             <RadioButton Content="{DynamicResource Menu_ModPacks}" Style="{StaticResource MenuButtonStyle}" Height="50" Foreground="{StaticResource TextMain}" FontSize="15" Margin="0,2" Click="MenuModpacks_Click"/>
+                            <RadioButton Content="⚡ TecniClient" Style="{StaticResource MenuButtonStyle}" Height="50" Foreground="{StaticResource TextMain}" FontSize="15" Margin="0,2" Click="MenuTecniClients_Click"/>
 
                             <Rectangle Height="1" Fill="#22FFFFFF" Margin="10,20"/>
 
@@ -273,106 +273,99 @@
                         </StackPanel>
                     </Border>
 
-                    <Grid x:Name="VistaEventos" Visibility="Visible" Margin="40">
+                    <Grid x:Name="vistaTecniClients" Visibility="Collapsed" Margin="40">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Row="0" Margin="0,0,0,30">
-                            <TextBlock Text="{DynamicResource Events_Header}" FontSize="12" FontWeight="Bold" Foreground="#3498db" HorizontalAlignment="Left"/>
-                            <TextBlock Text="{DynamicResource Events_Active}" FontSize="32" FontWeight="Bold" Foreground="White" HorizontalAlignment="Left"/>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                            <TextBlock Text="⚡ TECNILAUNCHER" FontSize="12" FontWeight="Bold" 
+                   Foreground="#4facfe" HorizontalAlignment="Left"/>
+                            <TextBlock Text="TecniClient" FontSize="32" FontWeight="Bold" 
+                   Foreground="White" HorizontalAlignment="Left"/>
+                            <Rectangle Height="3" Width="60" Fill="#4facfe" 
+                   HorizontalAlignment="Left" Margin="0,8,0,0" RadiusX="1.5" RadiusY="1.5"/>
                         </StackPanel>
 
-                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                            <ItemsControl x:Name="listaEventosUI">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
+                        <TextBlock Grid.Row="1" 
+               Text="{DynamicResource client_des}" 
+               Foreground="#AAAAAA" FontSize="13" Margin="0,0,0,25"/>
 
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Background="#1AFFFFFF" CornerRadius="15" Margin="10" Width="260" Padding="20">
-                                            <StackPanel>
-                                                <Ellipse Width="90" Height="90" HorizontalAlignment="Center" Margin="0,0,0,15">
-                                                    <Ellipse.Fill>
-                                                        <ImageBrush ImageSource="{Binding FotoUrl}" Stretch="UniformToFill"/>
-                                                    </Ellipse.Fill>
-                                                </Ellipse>
+                        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                            <WrapPanel x:Name="PanelTecniClients" Orientation="Horizontal">
 
-                                                <TextBlock Text="{Binding Nombre}" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                                <Border Width="240" Background="#1E2328" CornerRadius="14"
+                    Margin="0,0,16,16" BorderBrush="#334facfe" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="110"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
 
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
-                                                    <Border BorderBrush="#3498db" BorderThickness="1.5" CornerRadius="4" Padding="6,2">
-                                                        <TextBlock Text="{DynamicResource Events_Ram}" Foreground="#3498db" FontSize="10" FontWeight="Black"/>
-                                                    </Border>
-                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="5,0,0,0">
-                                                        <ComboBox ItemsSource="{Binding OpcionesRamGB}"
-                                                                  SelectedItem="{Binding MemoriaRamGB, Mode=TwoWay}"
-                                                                  Width="50" Height="25" Padding="5,0"
-                                                                  VerticalContentAlignment="Center"
-                                                                  Background="#202020" Foreground="White" BorderBrush="#444444">
-                                                            <ComboBox.Resources>
-                                                                <Style TargetType="Border">
-                                                                    <Setter Property="CornerRadius" Value="4"/>
-                                                                </Style>
-                                                            </ComboBox.Resources>
-                                                        </ComboBox>
-                                                        <TextBlock Text="{DynamicResource Events_GB}" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="5,0,0,0" FontSize="10"/>
-                                                    </StackPanel>
-                                                </StackPanel>
-
-                                                <Grid Height="45">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="45"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="45"/>
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <Button Grid.Column="0" Margin="0,0,5,0" Background="#5865F2" BorderThickness="0" 
-                                                            ToolTip="Unirse al Discord" Tag="{Binding}" Click="BtnDiscordEvento_Click">
-                                                        <Path Fill="White" Stretch="Uniform" Width="20" Height="20" 
-                                                              Data="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1432-.1064.2868-.2132.4233-.3241a.0746.0746 0 00.0235-.0814c3.9204 1.7933 8.18 1.7933 12.0614 0a.0738.0738 0 00.024.0821c.1367.111.2803.2177.4233.3241a.076.076 0 01-.0077.1277 12.2946 12.2946 0 01-1.8722.8923.077.077 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6066 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0551c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z"/>
-                                                        <Button.Resources>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="CornerRadius" Value="10"/>
-                                                            </Style>
-                                                        </Button.Resources>
-                                                    </Button>
-
-                                                    <Button Grid.Column="1" Content="{Binding TextoBoton}" Background="{Binding ColorEstado}" 
-                                                            Tag="{Binding}" Click="BtnAccionEvento_Click" 
-                                                            Foreground="White" FontWeight="Bold" BorderThickness="0" FontSize="14">
-                                                        <Button.Resources>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="CornerRadius" Value="10"/>
-                                                            </Style>
-                                                        </Button.Resources>
-                                                    </Button>
-
-                                                    <Button Grid.Column="2" Margin="5,0,0,0" Background="#33FF5656" BorderThickness="0" 
-                                                            ToolTip="Eliminar Evento" Tag="{Binding}" Click="BtnEliminarEvento_Click">
-                                                        <Path Fill="#FF5656" Stretch="Uniform" Width="18" Height="18" 
-                                                              Data="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                                                        <Button.Resources>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="CornerRadius" Value="10"/>
-                                                            </Style>
-                                                        </Button.Resources>
-                                                    </Button>
-
-                                                </Grid>
+                                        <Border Grid.Row="0" CornerRadius="14,14,0,0" Background="#0f2a4a">
+                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                <TextBlock Text="⚡" FontSize="38" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="TecniPvP" Foreground="#4facfe" 
+                                       FontSize="17" FontWeight="Bold" HorizontalAlignment="Center"/>
                                             </StackPanel>
                                         </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+
+                                        <StackPanel Grid.Row="1" Margin="16,12,16,0">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="TecniPvP" Foreground="White" 
+                                       FontSize="15" FontWeight="Bold"/>
+                                                <Border Background="#334facfe" CornerRadius="4" 
+                                    Padding="5,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="v1.0" Foreground="#4facfe" 
+                                           FontSize="10" FontWeight="Bold"/>
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Text="{DynamicResource client_event_1}" 
+                                   Foreground="#AAAAAA" FontSize="11" 
+                                   TextWrapping="Wrap" Margin="0,5,0,0"/>
+                                        </StackPanel>
+
+                                        <WrapPanel Grid.Row="2" Margin="16,10,16,0" Orientation="Horizontal">
+                                            <Border Background="#2C3E20" CornerRadius="4" Padding="6,2" Margin="0,0,5,4">
+                                                <TextBlock Text="🟢 Fabric" Foreground="#2ecc71" FontSize="10" FontWeight="Bold"/>
+                                            </Border>
+                                            <Border Background="#1a2a3a" CornerRadius="4" Padding="6,2" Margin="0,0,5,4">
+                                                <TextBlock Text="⚡ Sodium" Foreground="#74b9ff" FontSize="10" FontWeight="Bold"/>
+                                            </Border>
+                                            <Border Background="#2a1a3a" CornerRadius="4" Padding="6,2" Margin="0,0,0,4">
+                                                <TextBlock Text="🛡 Lithium" Foreground="#a29bfe" FontSize="10" FontWeight="Bold"/>
+                                            </Border>
+                                        </WrapPanel>
+
+                                        <Button Grid.Row="3" Content="{DynamicResource client_descarga}" 
+                            Margin="16,12,16,16" Height="38"
+                            Background="#4facfe" Foreground="White" 
+                            FontWeight="Bold" FontSize="12" BorderThickness="0"
+                            Click="BtnInstalarTecniClient_Click"
+                            Tag="TecniPvP_v1.0">
+                                            <Button.Resources>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="CornerRadius" Value="9"/>
+                                                </Style>
+                                            </Button.Resources>
+                                            <Button.Effect>
+                                                <DropShadowEffect Color="#4facfe" BlurRadius="12" 
+                                              ShadowDepth="0" Opacity="0.35"/>
+                                            </Button.Effect>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+
+
+                            </WrapPanel>
                         </ScrollViewer>
                     </Grid>
 
-                    <Grid x:Name="VistaJugar" Margin="40,30,40,30" Visibility="Collapsed">
+                    <Grid x:Name="VistaJugar" Margin="40,30,40,30" Visibility="Visible">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
