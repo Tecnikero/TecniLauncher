@@ -3,33 +3,35 @@ using CmlLib.Core.Auth;
 using CmlLib.Core.Auth.Microsoft;
 using CmlLib.Core.Installer.Forge;
 using CmlLib.Core.Installer.NeoForge;
+using CmlLib.Core.Installers;
 using CmlLib.Core.ProcessBuilder;
 using DiscordRPC;
 using DiscordRPC.Logging;
-using Newtonsoft.Json;
 using Markdig;
+using Newtonsoft.Json;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
-using System.Windows.Interop;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
-using System.Text.RegularExpressions;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using TecniLauncher.Models;
+using TecniLauncher;
 using TecniLauncher.Helpers;
+using TecniLauncher.Models;
 using TecniLauncher.Services;
 using static System.Net.WebRequestMethods;
 using static TecniLauncher.ModpacksApi;
@@ -48,7 +50,7 @@ namespace TecniLauncher
         private bool modoOnline = true;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        private const string VERSION_ACTUAL = "1.4.2";
+        private const string VERSION_ACTUAL = "1.4.3";
         private CancellationTokenSource ctsActualizacion;
         private bool estaCargando = false;
         private DispatcherTimer _timerNoticias;
@@ -290,6 +292,7 @@ namespace TecniLauncher
         private void MenuTecniClients_Click(object sender, RoutedEventArgs e)
         {
             NavigationHelper.Navegar(vistaTecniClients, VistaJugar, VistaPerfiles, VistaAjustes, VistaMods, VistaModpacks);
+            CargarClientesDesdeInternet();
         }
         private void MenuModpacks_Click(object sender, RoutedEventArgs e)
         {
@@ -534,7 +537,7 @@ namespace TecniLauncher
                 client.SetPresence(new RichPresence()
                 {
                     Details = $"Jugando a {perfil.Nombre}",
-                    State = $"Versión: {perfil.Version}",
+                    State = $"Versión {perfil.Version}",
                     Assets = new Assets()
                     {
                         LargeImageKey = "tecnilogo",
@@ -2028,17 +2031,153 @@ namespace TecniLauncher
         }
         #endregion
         #region TecniClients
-        private void BtnInstalarTecniClient_Click(object sender, RoutedEventArgs e)
+        public async Task CargarClientesDesdeInternet()
+        {
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    string url = "https://raw.githubusercontent.com/Tecnikero/TecniLauncher-Data/refs/heads/main/tecniclient/tecniclients.json";
+                    string json = await client.GetStringAsync(url);
+
+                    var opciones = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var clientes = JsonSerializer.Deserialize<List<TecniClientModel>>(json, opciones);
+
+                    ListTecniClients.ItemsSource = clientes;
+                }
+            }
+            catch (Exception ex)
+            {
+                VentanaMensaje.Mostrar("Error cargando los clientes: " + ex.Message, "Error", MessageBoxButton.OK);
+            }
+        }
+
+        private async void BtnInstalarTecniClient_Click(object sender, RoutedEventArgs e)
         {
             var btn = (System.Windows.Controls.Button)sender;
-            string clienteId = btn.Tag?.ToString() ?? "desconocido";
 
-            VentanaMensaje.Mostrar(
-                $"Próximamente: instalación de '{clienteId}'.\n" +
-                "Esta función estará disponible en la siguientes versiones.",
-                "TecniClients",
-                MessageBoxButton.OK
-            );
+            if (btn.DataContext is TecniClientModel clienteSeleccionado)
+            {
+                btn.IsEnabled = false;
+
+                try
+                {
+                    string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                    string carpetaInstancia = System.IO.Path.Combine(appData, ".TecniLauncher", "Instances", clienteSeleccionado.Id);
+                    string carpetaMods = System.IO.Path.Combine(carpetaInstancia, "mods");
+                    string archivoZipTemp = System.IO.Path.Combine(carpetaInstancia, "modpack_temp.zip");
+                    string archivoVersion = System.IO.Path.Combine(carpetaInstancia, "version.txt");
+
+                    string versionLocal = "";
+                    if (System.IO.Directory.Exists(carpetaInstancia) && System.IO.File.Exists(archivoVersion))
+                    {
+                        versionLocal = System.IO.File.ReadAllText(archivoVersion);
+                    }
+                    else
+                    {
+                        System.IO.Directory.CreateDirectory(carpetaInstancia);
+                    }
+
+                    if (versionLocal != clienteSeleccionado.Version)
+                    {
+                        btn.Content = "Descargando Mods...";
+                        PanelCarga.Visibility = Visibility.Visible;
+                        txtEstadoCarga.Text = $"Descargando {clienteSeleccionado.Name}...";
+                        barraCarga.IsIndeterminate = true;
+
+                        if (System.IO.Directory.Exists(carpetaMods))
+                            System.IO.Directory.Delete(carpetaMods, true);
+
+                        System.IO.Directory.CreateDirectory(carpetaMods);
+
+                        using (HttpClient clientHttp = new HttpClient())
+                        {
+                            byte[] zipBytes = await clientHttp.GetByteArrayAsync(clienteSeleccionado.ModpackUrl);
+                            await System.IO.File.WriteAllBytesAsync(archivoZipTemp, zipBytes);
+                        }
+
+                        System.IO.Compression.ZipFile.ExtractToDirectory(archivoZipTemp, carpetaMods, true);
+                        System.IO.File.Delete(archivoZipTemp);
+
+                        System.IO.File.WriteAllText(archivoVersion, clienteSeleccionado.Version);
+                    }
+
+                    btn.Content = "Iniciando...";
+                    PanelCarga.Visibility = Visibility.Visible;
+                    barraCarga.IsIndeterminate = false;
+
+                    if (client != null && client.IsInitialized)
+                    {
+                        client.SetPresence(new DiscordRPC.RichPresence()
+                        {
+                            Details = $"Jugando a {clienteSeleccionado.Name}",
+                            State = "TecniClient Oficial",
+                            Assets = new DiscordRPC.Assets() { LargeImageKey = "tecnilogo", LargeImageText = "TecniLauncher" },
+                            Timestamps = DiscordRPC.Timestamps.Now
+                        });
+                    }
+
+                    Perfil perfilCliente = new Perfil()
+                    {
+                        Nombre = clienteSeleccionado.Name,
+                        Version = clienteSeleccionado.MinecraftVersion,
+                        TipoLoader = "Fabric",
+                        VersionLoaderExacta = clienteSeleccionado.LoaderVersion,
+                        MemoriaRam = (int)(clienteSeleccionado.SelectedRam * 1024),
+                        RutaCarpeta = carpetaInstancia,
+                        ModoRendimientoActivado = true
+                    };
+
+                    System.Diagnostics.Process procesoMinecraft = await LanzarMinecraft(perfilCliente);
+
+                    PanelCarga.Visibility = Visibility.Collapsed;
+
+                    if (procesoMinecraft != null)
+                    {
+                        if (chkOcultarLauncher.IsChecked == true)
+                            this.Hide();
+                        else
+                            this.WindowState = WindowState.Minimized;
+
+                        procesoMinecraft.EnableRaisingEvents = true;
+                        procesoMinecraft.Exited += (s, ev) =>
+                        {
+                            Dispatcher.Invoke(() =>
+                            {
+                                this.Show();
+                                this.WindowState = WindowState.Normal;
+                                this.Activate();
+                                btn.Content = "Jugar";
+
+                                if (client != null && client.IsInitialized)
+                                {
+                                    client.SetPresence(new DiscordRPC.RichPresence()
+                                    {
+                                        Details = "En el Menú Principal",
+                                        State = $"V{VERSION_ACTUAL}",
+                                        Assets = new DiscordRPC.Assets() { LargeImageKey = "tecnilogo", LargeImageText = "TecniLauncher" },
+                                        Timestamps = DiscordRPC.Timestamps.Now
+                                    });
+                                }
+                            });
+                        };
+                    }
+                    else
+                    {
+                        btn.Content = "Jugar";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    VentanaMensaje.Mostrar("Error: " + ex.Message, "Error", MessageBoxButton.OK);
+                    btn.Content = "Jugar";
+                }
+                finally
+                {
+                    btn.IsEnabled = true;
+                    PanelCarga.Visibility = Visibility.Collapsed;
+                }
+            }
         }
         #endregion
     }
