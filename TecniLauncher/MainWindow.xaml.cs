@@ -50,7 +50,7 @@ namespace TecniLauncher
         private bool modoOnline = true;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        private const string VERSION_ACTUAL = "1.4.3";
+        private const string VERSION_ACTUAL = "1.4.4";
         private CancellationTokenSource ctsActualizacion;
         private bool estaCargando = false;
         private DispatcherTimer _timerNoticias;
@@ -2121,7 +2121,7 @@ namespace TecniLauncher
                     {
                         Nombre = clienteSeleccionado.Name,
                         Version = clienteSeleccionado.MinecraftVersion,
-                        TipoLoader = "Fabric",
+                        TipoLoader = clienteSeleccionado.Loader,
                         VersionLoaderExacta = clienteSeleccionado.LoaderVersion,
                         MemoriaRam = (int)(clienteSeleccionado.SelectedRam * 1024),
                         RutaCarpeta = carpetaInstancia,

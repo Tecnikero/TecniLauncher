@@ -8,6 +8,7 @@ public class TecniClientModel : INotifyPropertyChanged
     public string Id { get; set; }
     public string Name { get; set; }
     public string Version { get; set; }
+    public string Loader { get; set; }
     public string MinecraftVersion { get; set; }
     public string LoaderVersion { get; set; }
     public string Description { get; set; }
