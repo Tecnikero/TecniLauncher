@@ -50,7 +50,7 @@ namespace TecniLauncher
         private bool modoOnline = true;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        private const string VERSION_ACTUAL = "1.4.4";
+        private const string VERSION_ACTUAL = "1.4.5";
         private CancellationTokenSource _ctsLoaderVersiones;
         private readonly Dictionary<string, string> _cacheProyectosLocales = new();
         private DispatcherTimer _timerNoticias;
