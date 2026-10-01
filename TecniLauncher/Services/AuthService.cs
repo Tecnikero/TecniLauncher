@@ -1,4 +1,4 @@
-using CmlLib.Core.Auth;
+﻿using CmlLib.Core.Auth;
 using CmlLib.Core.Auth.Microsoft;
 using Newtonsoft.Json;
 using System.IO;
@@ -25,13 +25,21 @@ namespace TecniLauncher.Services
 
         public static async Task<MSession> AutoLoginMicrosoftAsync(string rutaCacheSesion)
         {
-            if (!File.Exists(rutaCacheSesion)) return null;
+            try
+            {
+                if (!File.Exists(rutaCacheSesion)) return null;
 
-            var handler = new JELoginHandlerBuilder()
-                .WithAccountManager(rutaCacheSesion)
-                .Build();
+                var handler = new JELoginHandlerBuilder()
+                    .WithAccountManager(rutaCacheSesion)
+                    .Build();
 
-            return await handler.AuthenticateSilently();
+                return await handler.AuthenticateSilently();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Error en AutoLoginMicrosoft: " + ex.Message);
+                return null;
+            }
         }
 
         public static void CerrarSesionMicrosoft(string rutaCacheSesion)
@@ -65,6 +73,8 @@ namespace TecniLauncher.Services
                 string userId = authData.user.id;
                 string accessToken = authData.access_token;
 
+                if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(userId)) return null;
+
                 var perfilRequest = new HttpRequestMessage(HttpMethod.Get, $"{SUPABASE_URL}/rest/v1/perfiles?id=eq.{userId}&select=username");
                 perfilRequest.Headers.Add("apikey", SUPABASE_ANON_KEY);
                 perfilRequest.Headers.Add("Authorization", $"Bearer {accessToken}");
@@ -85,7 +95,7 @@ namespace TecniLauncher.Services
                 {
                     Username = username,
                     UUID = userId.Replace("-", ""),
-                    AccessToken = "token_tecnistudio",
+                    AccessToken = accessToken,
                     ClientToken = Guid.NewGuid().ToString("N"),
                     UserType = "mojang"
                 };
@@ -96,34 +106,9 @@ namespace TecniLauncher.Services
                 return null;
             }
         }
+        public static bool EsUuidValido(string? uuid) =>
+            !string.IsNullOrEmpty(uuid) && System.Text.RegularExpressions.Regex.IsMatch(uuid, "^[0-9a-fA-F]{32}$");
 
-        public static async Task<string> ObtenerUuidTecniStudioAsync(string nombreUsuario)
-        {
-            try
-            {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"{SUPABASE_URL}/rest/v1/perfiles?username=eq.{nombreUsuario}&select=id");
-                request.Headers.Add("apikey", SUPABASE_ANON_KEY);
-                request.Headers.Add("Authorization", $"Bearer {SUPABASE_ANON_KEY}");
-
-                var response = await _http.SendAsync(request);
-
-                if (!response.IsSuccessStatusCode) return null;
-
-                string json = await response.Content.ReadAsStringAsync();
-                dynamic resultado = JsonConvert.DeserializeObject(json);
-
-                if (resultado.Count > 0)
-                {
-                    string idSupabase = resultado[0].id;
-                    return idSupabase.Replace("-", "");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Error obteniendo UUID de TecniStudio: " + ex.Message);
-            }
-            return null;
-        }
         public static void GuardarSesionTecni(MSession sesion)
         {
             try
@@ -149,8 +134,34 @@ namespace TecniLauncher.Services
             catch { }
             return null;
         }
+        public static async Task CerrarSesionTecniAsync()
+        {
+            string? token = Core.EsSesionTecniStudio ? Core.SesionUsuario?.AccessToken : null;
+
+            if (!string.IsNullOrEmpty(token) && token.Split('.').Length == 3)
+            {
+                try
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    var request = new HttpRequestMessage(HttpMethod.Post, $"{SUPABASE_URL}/auth/v1/logout?scope=local");
+                    request.Headers.Add("apikey", SUPABASE_ANON_KEY);
+                    request.Headers.Add("Authorization", $"Bearer {token}");
+                    await _http.SendAsync(request, cts.Token);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine("No se pudo invalidar el token en Supabase: " + ex.Message);
+                }
+            }
+
+            CerrarSesionTecni();
+        }
+
         public static void CerrarSesionTecni()
         {
+            Core.SesionUsuario = null;
+            Core.EsTecniStudio = false;
+
             try
             {
                 string ruta = Path.Combine(Core.RutaData, "tecni_session.json");
@@ -158,8 +169,6 @@ namespace TecniLauncher.Services
                 {
                     File.Delete(ruta);
                 }
-                Core.SesionUsuario = null;
-                Core.EsTecniStudio = false;
             }
             catch (Exception ex)
             {
@@ -173,20 +182,8 @@ namespace TecniLauncher.Services
             hash[6] = (byte)((hash[6] & 0x0F) | 0x30);
             hash[8] = (byte)((hash[8] & 0x3F) | 0x80);
 
-            return new Guid(hash).ToString("N");
+            return Convert.ToHexString(hash).ToLowerInvariant();
         }
 
-        public static MSession CrearSesionOffline(string nombre)
-        {
-            string uuid = GenerarUuidOffline(nombre);
-            return new MSession
-            {
-                Username    = string.IsNullOrWhiteSpace(nombre) ? "Jugador" : nombre,
-                UUID        = uuid,
-                AccessToken = "token_offline",
-                ClientToken = uuid,
-                UserType    = "Legacy"
-            };
-        }
     }
 }

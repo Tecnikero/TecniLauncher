@@ -12,6 +12,7 @@
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <SolidColorBrush x:Key="ColorAccent" Color="#4facfe"/>
         <SolidColorBrush x:Key="ColorAccentDim" Color="#334facfe"/>
         <SolidColorBrush x:Key="BgDark" Color="#0f2027"/>
@@ -37,6 +38,36 @@
                 </GeometryDrawing>
             </DrawingBrush.Drawing>
         </DrawingBrush>
+
+        <Style x:Key="SwitchModStyle" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid Width="46" Height="24" Background="Transparent">
+                            <Border x:Name="FondoSwitch" CornerRadius="12" Background="#3b3f46" BorderBrush="#2a2d32" BorderThickness="1"/>
+                            <Path x:Name="IconoCheck" Data="M 3 7 L 6 10 L 11 3" Stroke="White" StrokeThickness="2.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Left" Margin="8,0,0,0" VerticalAlignment="Center" Visibility="Hidden"/>
+                            <Path x:Name="IconoCruz" Data="M 4 4 L 10 10 M 10 4 L 4 10" Stroke="#23252a" StrokeThickness="2.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Visible"/>
+                            <Ellipse x:Name="BotonCirculo" Fill="White" Width="18" Height="18" HorizontalAlignment="Left" Margin="3,0,0,0"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="FondoSwitch" Property="Background" Value="#1dd171"/>
+                                <Setter TargetName="FondoSwitch" Property="BorderBrush" Value="#1dd171"/>
+                                <Setter TargetName="BotonCirculo" Property="HorizontalAlignment" Value="Right"/>
+                                <Setter TargetName="BotonCirculo" Property="Margin" Value="0,0,3,0"/>
+                                <Setter TargetName="IconoCheck" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="IconoCruz" Property="Visibility" Value="Hidden"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BotonCirculo" Property="Fill" Value="#f0f0f0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
         <Style TargetType="ComboBox">
             <Setter Property="Foreground" Value="White"/>
@@ -367,7 +398,7 @@
                                                     </StackPanel>
                                                 </Border>
 
-                                                <Button Grid.Row="4" Content="INSTALAR CLIENTE" Margin="16,12,16,16" Height="38" Background="#4facfe" Foreground="White" FontWeight="Bold" FontSize="12" BorderThickness="0"
+                                                <Button Grid.Row="4" Content="{Binding TextoBoton}" IsEnabled="{Binding BotonHabilitado}" Margin="16,12,16,16" Height="38" Background="#4facfe" Foreground="White" FontWeight="Bold" FontSize="12" BorderThickness="0"
                                 Click="BtnInstalarTecniClient_Click">
                                                     <Button.Resources>
                                                         <Style TargetType="Border">
@@ -482,8 +513,12 @@
                             <Rectangle Height="2" Width="50" Fill="{StaticResource ColorAccent}" HorizontalAlignment="Left" Margin="0,5,0,0"/>
                         </StackPanel>
 
-                        <StackPanel Margin="0,70,0,0">
-                            <Button Content="{DynamicResource Profiles_CreateNew}" Height="50" Background="{StaticResource ColorAccentDim}" Foreground="{StaticResource ColorAccent}" BorderBrush="{StaticResource ColorAccent}" BorderThickness="1" Margin="0,0,0,20" Click="AbrirCrearPerfil_Click">
+                        <Grid Margin="0,70,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Button Grid.Row="0" Content="{DynamicResource Profiles_CreateNew}" Height="50" Background="{StaticResource ColorAccentDim}" Foreground="{StaticResource ColorAccent}" BorderBrush="{StaticResource ColorAccent}" BorderThickness="1" Margin="0,0,0,18" Click="AbrirCrearPerfil_Click">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="10">
@@ -496,52 +531,89 @@
                                 </Button.Template>
                             </Button>
 
-                            <ScrollViewer VerticalScrollBarVisibility="Auto" Height="380" PanningMode="VerticalOnly">
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
                                 <ItemsControl x:Name="listaPerfilesUI">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Height="80" Background="{StaticResource BgCard}" CornerRadius="10" Margin="0,0,5,10" Padding="20,0">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
+                                            <Border x:Name="TarjetaPerfil" Width="270" Margin="0,0,14,14" Background="{StaticResource BgCard}" CornerRadius="12" BorderThickness="1" BorderBrush="#33FFFFFF" ClipToBounds="True">
+                                                <Grid Margin="16,16,16,16">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
 
-                                                    <Ellipse Width="45" Height="45" Grid.Column="0" Margin="0,0,15,0" VerticalAlignment="Center">
-                                                        <Ellipse.Fill>
-                                                            <ImageBrush ImageSource="{Binding IconoPath}" Stretch="UniformToFill"/>
-                                                        </Ellipse.Fill>
-                                                    </Ellipse>
+                                                    <Grid Grid.Row="0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
 
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding Nombre}" Foreground="{StaticResource TextMain}" FontWeight="Bold" FontSize="18"/>
+                                                        <Border Grid.Column="0" Width="56" Height="56" CornerRadius="12" ClipToBounds="True" Background="#111" Margin="0,0,14,0" VerticalAlignment="Center">
+                                                            <Image Source="{Binding IconoPath}" Stretch="UniformToFill"/>
+                                                        </Border>
 
-                                                        <TextBlock Text="{Binding TiempoJugadoFormateado}" Foreground="#FFAA00" FontSize="11" FontWeight="SemiBold" Margin="0,2,0,0"/>
-
-                                                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                                            <Border Background="{StaticResource ColorAccentDim}" CornerRadius="4" Padding="5,2" Margin="0,0,10,0">
-                                                                <TextBlock Text="{Binding Version}" Foreground="{StaticResource ColorAccent}" FontSize="12" FontWeight="Bold"/>
-                                                            </Border>
-                                                            <TextBlock Text="{Binding DetallesVisuales}" 
-                                                   Foreground="{StaticResource TextSub}" 
-                                                   FontSize="12" 
-                                                   VerticalAlignment="Center"/>
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Nombre}" ToolTip="{Binding Nombre}" Foreground="{StaticResource TextMain}" FontWeight="Bold" FontSize="16" TextTrimming="CharacterEllipsis"/>
+                                                            <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                                                                <Border Background="{StaticResource ColorAccentDim}" CornerRadius="4" Padding="6,2" Margin="0,0,6,0">
+                                                                    <TextBlock Text="{Binding Version}" Foreground="{StaticResource ColorAccent}" FontSize="11" FontWeight="Bold"/>
+                                                                </Border>
+                                                                <Border x:Name="BadgeLoader" Background="#22FFFFFF" CornerRadius="4" Padding="6,2">
+                                                                    <TextBlock Text="{Binding TipoLoader}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                                                </Border>
+                                                            </StackPanel>
                                                         </StackPanel>
-                                                    </StackPanel>
+                                                    </Grid>
 
-                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                                        <Button Content="⚙️" Width="40" Height="40" Margin="0,0,5,0" Background="#22FFFFFF" Foreground="White" ToolTip="Editar" Tag="{Binding}" Click="BtnEditar_Click"/>
-                                                        <Button Content="📂" Width="40" Height="40" Margin="0,0,5,0" Background="#33FFAA00" Foreground="#FFAA00" ToolTip="Carpeta" Tag="{Binding}" Click="BtnCarpeta_Click"/>
-                                                        <Button Content="🗑️" Width="40" Height="40" Background="#33FF5656" Foreground="#FF5656" ToolTip="Eliminar" Tag="{Binding}" Click="BtnEliminar_Click"/>
-                                                    </StackPanel>
+                                                    <Border Grid.Row="1" BorderBrush="#22FFFFFF" BorderThickness="0,1,0,0" Margin="0,14,0,0" Padding="0,10,0,0">
+                                                        <StackPanel>
+                                                            <TextBlock Text="{Binding DetallesVisuales}" Foreground="{StaticResource TextSub}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding TiempoJugadoFormateado}" Foreground="#FFAA00" FontSize="11" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <Grid Grid.Row="2" Margin="0,14,0,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button Grid.Column="0" Content="⚙️" Height="34" Margin="0,0,5,0" Background="#22FFFFFF" Foreground="White" BorderThickness="0" ToolTip="{DynamicResource Txt_Editar}" Tag="{Binding}" Click="BtnEditar_Click"/>
+                                                        <Button Grid.Column="1" Content="📂" Height="34" Margin="0,0,5,0" Background="#33FFAA00" Foreground="#FFAA00" BorderThickness="0" ToolTip="{DynamicResource Txt_Carpeta}" Tag="{Binding}" Click="BtnCarpeta_Click"/>
+                                                        <Button Grid.Column="2" Content="🗑️" Height="34" Background="#33FF5656" Foreground="#FF5656" BorderThickness="0" ToolTip="{DynamicResource Txt_Eliminar}" Tag="{Binding}" Click="BtnEliminar_Click"/>
+                                                    </Grid>
                                                 </Grid>
                                             </Border>
+
+                                            <DataTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="TarjetaPerfil" Property="Background" Value="#252A30"/>
+                                                    <Setter TargetName="TarjetaPerfil" Property="BorderBrush" Value="{StaticResource ColorAccent}"/>
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding TipoLoader}" Value="Fabric">
+                                                    <Setter TargetName="BadgeLoader" Property="Background" Value="#55dbd0b4"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding TipoLoader}" Value="Forge">
+                                                    <Setter TargetName="BadgeLoader" Property="Background" Value="#55e8743b"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding TipoLoader}" Value="NeoForge">
+                                                    <Setter TargetName="BadgeLoader" Property="Background" Value="#55f0a030"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding TipoLoader}" Value="Vanilla">
+                                                    <Setter TargetName="BadgeLoader" Property="Background" Value="#552ecc71"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </ScrollViewer>
-                        </StackPanel>
+                        </Grid>
                     </Grid>
 
                     <Grid x:Name="VistaMods" Margin="0" Visibility="Collapsed">
@@ -615,7 +687,8 @@
          FontSize="16" 
          Padding="20,14" 
          BorderThickness="0"
-         VerticalContentAlignment="Center">
+         VerticalContentAlignment="Center"
+         KeyDown="TxtBuscadorMods_KeyDown">
                                     <TextBox.Resources>
                                         <Style TargetType="{x:Type Border}">
                                             <Setter Property="CornerRadius" Value="10"/>
@@ -689,29 +762,209 @@
                             <Grid Grid.Row="3" Margin="0,10,0,0">
 
                                 <Grid x:Name="PanelOnline" Visibility="Visible">
-                                    <ScrollViewer x:Name="ScrollModsOnline"
-              VerticalScrollBarVisibility="Hidden" 
-              HorizontalScrollBarVisibility="Disabled" 
-              ScrollChanged="ListaMods_ScrollChanged">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
 
-                                        <Border Background="#08FFFFFF" CornerRadius="12" Padding="15">
-                                            <ListBox x:Name="listaModsGestor" 
-             Background="Transparent" 
-             BorderThickness="0"
-             PreviewMouseWheel="listaMods_PreviewMouseWheel"
-             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-             ScrollViewer.CanContentScroll="False">
+                                    <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="10"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="10"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{DynamicResource Mods_FiltroCategoria}" Foreground="{StaticResource TextSub}" FontSize="11" FontWeight="SemiBold" Margin="2,0,0,4"/>
+                                                <ComboBox x:Name="comboFiltroCategoria" Height="36" DisplayMemberPath="Texto" SelectedValuePath="Clave"
+                                                          SelectionChanged="Filtro_SelectionChanged" Background="#252525" BorderBrush="#444" Foreground="White" FontSize="13" Padding="10,0"/>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="{DynamicResource Mods_FiltroVersion}" Foreground="{StaticResource TextSub}" FontSize="11" FontWeight="SemiBold" Margin="2,0,0,4"/>
+                                                <ComboBox x:Name="comboFiltroVersion" Height="36" DisplayMemberPath="Texto" SelectedValuePath="Clave"
+                                                          SelectionChanged="Filtro_SelectionChanged" Background="#252525" BorderBrush="#444" Foreground="White" FontSize="13" Padding="10,0"/>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="4">
+                                                <TextBlock Text="{DynamicResource Mods_FiltroLoader}" Foreground="{StaticResource TextSub}" FontSize="11" FontWeight="SemiBold" Margin="2,0,0,4"/>
+                                                <ComboBox x:Name="comboFiltroLoader" Height="36" DisplayMemberPath="Texto" SelectedValuePath="Clave"
+                                                          SelectionChanged="Filtro_SelectionChanged" Background="#252525" BorderBrush="#444" Foreground="White" FontSize="13" Padding="10,0"/>
+                                            </StackPanel>
+
+                                            <Button x:Name="btnResetFiltros" Grid.Column="5" Content="↺" Width="36" Height="36" Margin="10,0,0,0" VerticalAlignment="Bottom"
+                                                    Visibility="Collapsed" Background="#33FFFFFF" Foreground="White" BorderThickness="0" FontSize="16" FontWeight="Bold"
+                                                    ToolTip="{DynamicResource Mods_FiltroReset}" Click="BtnResetFiltros_Click">
+                                                <Button.Resources>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="CornerRadius" Value="8"/>
+                                                    </Style>
+                                                </Button.Resources>
+                                            </Button>
+                                        </Grid>
+                                        <TextBlock x:Name="txtAvisoFiltros" Foreground="#f1c40f" FontSize="11" Margin="2,8,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+                                    </StackPanel>
+
+                                    <Grid Grid.Row="1">
+                                        <ScrollViewer x:Name="ScrollModsOnline"
+                                                      VerticalScrollBarVisibility="Hidden"
+                                                      HorizontalScrollBarVisibility="Disabled"
+                                                      ScrollChanged="ListaMods_ScrollChanged">
+
+                                            <Border Background="#08FFFFFF" CornerRadius="12" Padding="15,15,5,5">
+                                                <ListBox x:Name="listaModsGestor"
+                                                         Background="Transparent"
+                                                         BorderThickness="0"
+                                                         PreviewMouseWheel="listaMods_PreviewMouseWheel"
+                                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                         ScrollViewer.CanContentScroll="False">
+
+                                                    <ListBox.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel/>
+                                                        </ItemsPanelTemplate>
+                                                    </ListBox.ItemsPanel>
+
+                                                    <ListBox.ItemContainerStyle>
+                                                        <Style TargetType="ListBoxItem">
+                                                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                                            <Setter Property="Background" Value="Transparent"/>
+                                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                            <Setter Property="Margin" Value="0"/>
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                                        <ContentPresenter/>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </ListBox.ItemContainerStyle>
+
+                                                    <ListBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border x:Name="ContenedorFila" Width="250" Height="200" Margin="0,0,10,10" Background="#1E2328" CornerRadius="12" Padding="14" BorderThickness="1" BorderBrush="#33FFFFFF">
+                                                                <Grid>
+                                                                    <Grid.RowDefinitions>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                        <RowDefinition Height="*"/>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                    </Grid.RowDefinitions>
+
+                                                                    <Grid Grid.Row="0">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                        </Grid.ColumnDefinitions>
+
+                                                                        <Border Grid.Column="0" CornerRadius="10" Width="52" Height="52" ClipToBounds="True" Background="#111" Margin="0,0,12,0" VerticalAlignment="Top">
+                                                                            <Image Source="{Binding icon_url}" Stretch="UniformToFill"/>
+                                                                        </Border>
+
+                                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                            <TextBlock Text="{Binding title}" ToolTip="{Binding title}" FontWeight="Bold" FontSize="14" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                                                            <TextBlock Text="{Binding author}" Foreground="#8c9bb0" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                                                <TextBlock Text="⬇ " Foreground="#8c9bb0" FontSize="11"/>
+                                                                                <TextBlock Text="{Binding DescargasTexto}" Foreground="#8c9bb0" FontSize="11" FontWeight="SemiBold"/>
+                                                                                <Border x:Name="BadgeRecomendado" Background="#33FFD700" CornerRadius="4" Padding="5,1" Margin="8,0,0,0" Visibility="Collapsed">
+                                                                                    <TextBlock Text="{DynamicResource Mods_Recommended}" Foreground="#FFD700" FontSize="9" FontWeight="Bold"/>
+                                                                                </Border>
+                                                                            </StackPanel>
+                                                                        </StackPanel>
+                                                                    </Grid>
+
+                                                                    <TextBlock Grid.Row="1" Text="{Binding description}" Foreground="#AAA" FontSize="12" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="52" Margin="0,10,0,0" VerticalAlignment="Top"/>
+
+                                                                    <Grid Grid.Row="2" Margin="0,8,0,0">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                        </Grid.ColumnDefinitions>
+
+                                                                        <Button Grid.Column="0" x:Name="BtnInstalar" Content="{Binding BotonTexto}" Tag="{Binding}" Click="BtnInstalarRapido_Click"
+                                                                                IsEnabled="{Binding PuedeInstalar}"
+                                                                                Height="34" Background="{StaticResource ColorAccent}" Foreground="White" BorderThickness="0" FontWeight="Bold" FontSize="12">
+                                                                            <Button.Resources>
+                                                                                <Style TargetType="Border">
+                                                                                    <Setter Property="CornerRadius" Value="8"/>
+                                                                                </Style>
+                                                                            </Button.Resources>
+                                                                        </Button>
+
+                                                                        <Button Grid.Column="1" Content="⋯" Tag="{Binding}" Click="BtnVerVersiones_Click"
+                                                                                ToolTip="{DynamicResource Mods_verVersiones}"
+                                                                                Width="40" Height="34" Margin="8,0,0,0" Background="#22FFFFFF" Foreground="White" BorderThickness="0" FontWeight="Bold" FontSize="16">
+                                                                            <Button.Resources>
+                                                                                <Style TargetType="Border">
+                                                                                    <Setter Property="CornerRadius" Value="8"/>
+                                                                                </Style>
+                                                                            </Button.Resources>
+                                                                        </Button>
+                                                                    </Grid>
+                                                                </Grid>
+                                                            </Border>
+
+                                                            <DataTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="ContenedorFila" Property="Background" Value="#252A30"/>
+                                                                </Trigger>
+                                                                <DataTrigger Binding="{Binding esRecomendado}" Value="True">
+                                                                    <Setter TargetName="BadgeRecomendado" Property="Visibility" Value="Visible"/>
+                                                                    <Setter TargetName="ContenedorFila" Property="BorderBrush" Value="#FFD700"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding instalando}" Value="True">
+                                                                    <Setter TargetName="BtnInstalar" Property="Background" Value="#3b4a63"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding estaInstalado}" Value="True">
+                                                                    <Setter TargetName="BtnInstalar" Property="Background" Value="#2ecc71"/>
+                                                                    <Setter TargetName="ContenedorFila" Property="BorderBrush" Value="#2ecc71"/>
+                                                                </DataTrigger>
+                                                            </DataTemplate.Triggers>
+                                                        </DataTemplate>
+                                                    </ListBox.ItemTemplate>
+                                                </ListBox>
+                                            </Border>
+                                        </ScrollViewer>
+
+                                        <TextBlock x:Name="txtEstadoMods" Foreground="#8c9bb0" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   TextWrapping="Wrap" TextAlignment="Center" Margin="30" Visibility="Collapsed" IsHitTestVisible="False"/>
+                                    </Grid>
+                                </Grid>
+
+                                <Grid x:Name="PanelInstalados" Visibility="Collapsed">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock x:Name="txtContadorInstalados" Grid.Row="0" Foreground="#8c9bb0" FontSize="12" FontWeight="SemiBold" Margin="4,0,0,10"/>
+
+                                    <Border Grid.Row="1" Background="#08FFFFFF" CornerRadius="12" Padding="10">
+                                        <Grid>
+                                            <ListBox x:Name="listaModsInstaladosGestor" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
 
                                                 <ListBox.ItemContainerStyle>
                                                     <Style TargetType="ListBoxItem">
                                                         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                                                         <Setter Property="Background" Value="Transparent"/>
                                                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                        <Setter Property="Margin" Value="0,0,0,8"/>
                                                         <Setter Property="Template">
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="ListBoxItem">
-                                                                    <ContentPresenter/>
+                                                                    <Border x:Name="bdr" Background="#1E2328" CornerRadius="10" Padding="15,10" Margin="0,0,0,8" BorderThickness="1" BorderBrush="#33FFFFFF">
+                                                                        <ContentPresenter/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter TargetName="bdr" Property="Background" Value="#252A30"/>
+                                                                            <Setter TargetName="bdr" Property="BorderBrush" Value="{StaticResource ColorAccent}"/>
+                                                                        </Trigger>
+                                                                    </ControlTemplate.Triggers>
                                                                 </ControlTemplate>
                                                             </Setter.Value>
                                                         </Setter>
@@ -720,126 +973,66 @@
 
                                                 <ListBox.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Border x:Name="ContenedorFila" Background="#1E2328" CornerRadius="10" Padding="15" BorderThickness="1" BorderBrush="#33FFFFFF">
-                                                            <Grid>
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="Auto"/>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="Auto"/>
-                                                                </Grid.ColumnDefinitions>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
 
-                                                                <Border Grid.Column="0" CornerRadius="8" Width="50" Height="50" ClipToBounds="True" Background="#111" Margin="0,0,15,0" VerticalAlignment="Center">
-                                                                    <Image Source="{Binding icon_url}" Stretch="UniformToFill"/>
-                                                                </Border>
+                                                            <Border x:Name="IconoMod" Grid.Column="0" CornerRadius="8" Width="38" Height="38" Background="#111" Margin="0,0,15,0">
+                                                                <TextBlock Text="🧩" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
 
-                                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,15,0">
-                                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                                                                        <TextBlock Text="{Binding title}" FontWeight="Bold" FontSize="15" Foreground="White" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                                            <StackPanel x:Name="InfoMod" Grid.Column="1" VerticalAlignment="Center" Margin="0,0,15,0">
+                                                                <TextBlock Text="{Binding Titulo}" ToolTip="{Binding NombreArchivo}" FontWeight="Bold" FontSize="14" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                                                <TextBlock Text="{Binding Detalle}" Foreground="#8c9bb0" FontSize="11" Margin="0,2,0,0"/>
+                                                            </StackPanel>
 
-                                                                        <Border x:Name="BadgeRecomendado" Background="#33FFD700" CornerRadius="4" Padding="6,2" Margin="10,0,0,0" Visibility="Collapsed" VerticalAlignment="Center">
-                                                                            <TextBlock x:Name="Mods_Recommended" Text="{DynamicResource Mods_Recommended}" Foreground="#FFD700" FontSize="10" FontWeight="Bold"/>
-                                                                        </Border>
-                                                                    </StackPanel>
+                                                            <CheckBox Grid.Column="2" Style="{StaticResource SwitchModStyle}" IsChecked="{Binding Habilitado, Mode=OneWay}" Tag="{Binding}"
+                                                                      Click="SwitchMod_Click" Margin="0,0,15,0" ToolTip="{DynamicResource Mods_SwitchTooltip}"/>
 
-                                                                    <TextBlock Text="{Binding author}" Foreground="#8c9bb0" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                                                    <TextBlock Text="{Binding description}" FontSize="12" Foreground="#AAA" TextTrimming="CharacterEllipsis" MaxHeight="18"/>
-                                                                </StackPanel>
-
-                                                                <Button Grid.Column="2" x:Name="Mods_verVersiones" Content="{DynamicResource Mods_verVersiones}" Tag="{Binding}" Click="BtnAccionMod_Click"
-                            Height="36" Padding="15,0" Background="{StaticResource ColorAccent}" Foreground="White" BorderThickness="0" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center">
-                                                                    <Button.Resources>
-                                                                        <Style TargetType="Border">
-                                                                            <Setter Property="CornerRadius" Value="8"/>
-                                                                        </Style>
-                                                                    </Button.Resources>
-                                                                </Button>
-                                                            </Grid>
-                                                        </Border>
-
+                                                            <Button Grid.Column="3" Content="{DynamicResource Mods_Delete}" Tag="{Binding}" Click="BtnEliminarModLocal_Click"
+                                                                    Height="32" Padding="15,0" Background="#33ff4a4a" Foreground="#ff4a4a" BorderBrush="#ff4a4a" BorderThickness="1"
+                                                                    FontSize="11" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center">
+                                                                <Button.Resources>
+                                                                    <Style TargetType="Border">
+                                                                        <Setter Property="CornerRadius" Value="6"/>
+                                                                    </Style>
+                                                                </Button.Resources>
+                                                            </Button>
+                                                        </Grid>
                                                         <DataTemplate.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="ContenedorFila" Property="Background" Value="#252A30"/>
-                                                            </Trigger>
-
-                                                            <DataTrigger Binding="{Binding esRecomendado}" Value="True">
-                                                                <Setter TargetName="BadgeRecomendado" Property="Visibility" Value="Visible"/>
-                                                                <Setter TargetName="ContenedorFila" Property="BorderBrush" Value="#FFD700"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding estaInstalado}" Value="True">
-                                                                <Setter TargetName="Mods_verVersiones" Property="Content" Value="INSTALADO"/>
-                                                                <Setter TargetName="Mods_verVersiones" Property="Background" Value="#2ecc71"/>
-                                                                <Setter TargetName="ContenedorFila" Property="BorderBrush" Value="#2ecc71"/>
+                                                            <DataTrigger Binding="{Binding Habilitado}" Value="False">
+                                                                <Setter TargetName="InfoMod" Property="Opacity" Value="0.45"/>
+                                                                <Setter TargetName="IconoMod" Property="Opacity" Value="0.45"/>
                                                             </DataTrigger>
                                                         </DataTemplate.Triggers>
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>
                                             </ListBox>
-                                        </Border>
-                                    </ScrollViewer>
-                                </Grid>
 
-                                <Grid x:Name="PanelInstalados" Visibility="Collapsed">
-                                    <Border Background="#08FFFFFF" CornerRadius="12" Padding="10">
-                                        <ListBox x:Name="listaModsInstaladosGestor" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-
-                                            <ListBox.ItemContainerStyle>
-                                                <Style TargetType="ListBoxItem">
-                                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                                                    <Setter Property="Background" Value="Transparent"/>
-                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="ListBoxItem">
-                                                                <Border x:Name="bdr" Background="#1E2328" CornerRadius="10" Padding="15,10" Margin="0,0,0,8" BorderThickness="1" BorderBrush="#33FFFFFF">
-                                                                    <ContentPresenter/>
-                                                                </Border>
-                                                                <ControlTemplate.Triggers>
-                                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                                        <Setter TargetName="bdr" Property="Background" Value="#252A30"/>
-                                                                        <Setter TargetName="bdr" Property="BorderBrush" Value="#ff4a4a"/>
-                                                                    </Trigger>
-                                                                </ControlTemplate.Triggers>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                </Style>
-                                            </ListBox.ItemContainerStyle>
-
-                                            <ListBox.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-
-                                                        <Border Grid.Column="0" CornerRadius="6" Width="36" Height="36" Background="#111" Margin="0,0,15,0">
-                                                            <Image Source="{Binding icon_url}" Stretch="Uniform" Margin="5"/>
-                                                        </Border>
-
-                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                            <TextBlock Text="{Binding title}" FontWeight="Bold" FontSize="14" Foreground="White" TextTrimming="CharacterEllipsis"/>
-                                                            <TextBlock Text="{Binding description}" Foreground="#8c9bb0" FontSize="11" Margin="0,2,0,0"/>
-                                                        </StackPanel>
-
-                                                        <Button Grid.Column="2" x:Name="Mods_Delete" Content="{DynamicResource Mods_Delete}" Tag="{Binding}" Click="BtnAccionMod_Click" 
-    Height="32" Padding="15,0" Background="#33ff4a4a" Foreground="#ff4a4a" BorderBrush="#ff4a4a" BorderThickness="1"
-    FontSize="11" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center">
-                                                            <Button.Resources>
-                                                                <Style TargetType="Border">
-                                                                    <Setter Property="CornerRadius" Value="6"/>
-                                                                </Style>
-                                                            </Button.Resources>
-                                                        </Button>
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ListBox.ItemTemplate>
-                                        </ListBox>
+                                            <TextBlock x:Name="txtVacioInstalados" Text="{DynamicResource Mods_SinInstalados}" Foreground="#8c9bb0" FontSize="14"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" IsHitTestVisible="False"/>
+                                        </Grid>
                                     </Border>
                                 </Grid>
                             </Grid>
                         </Grid>
+
+                        <Border x:Name="ToastMods" Grid.Row="1" Visibility="Collapsed" IsHitTestVisible="False"
+                                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,50,30" MaxWidth="420"
+                                Background="#F2111625" BorderBrush="#4facfe" BorderThickness="1" CornerRadius="10" Padding="16,12">
+                            <Border.Effect>
+                                <DropShadowEffect Color="Black" BlurRadius="20" Opacity="0.5" ShadowDepth="2"/>
+                            </Border.Effect>
+                            <StackPanel>
+                                <TextBlock x:Name="txtToastMods" Foreground="White" FontSize="13" TextWrapping="Wrap"/>
+                                <ProgressBar x:Name="barraToastMods" IsIndeterminate="True" Height="3" Margin="0,8,0,0" Visibility="Collapsed"
+                                             Background="#22FFFFFF" Foreground="#4facfe" BorderThickness="0"/>
+                            </StackPanel>
+                        </Border>
                     </Grid>
 
                     <Grid x:Name="OverlayVersiones" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed" Background="#CC000000" IsHitTestVisible="True" Panel.ZIndex="999">
@@ -859,9 +1052,9 @@
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                
+
                                 <StackPanel Grid.Row="0">
-                                    <TextBlock x:Name="txtNombreModVersiones" Text="Versiones Disponibles"
+                                    <TextBlock x:Name="txtNombreModVersiones" Text="{DynamicResource Txt_VersionesDisponibles}"
                      FontSize="24" FontWeight="Bold" Foreground="White"/>
                                     <TextBlock x:Name="Mods_DesDes" Text="{DynamicResource Mods_DesDes}"
                      FontSize="14" Foreground="#AAA" Margin="0,5,0,20"/>
@@ -965,7 +1158,7 @@
                                     <Border Background="#222222" CornerRadius="8" BorderBrush="#444444" BorderThickness="1">
                                         <TextBox x:Name="txtBuscadorModpacks" Height="40" FontSize="16" Foreground="White" Background="Transparent" BorderThickness="0" Padding="15,8" VerticalContentAlignment="Center" KeyDown="TxtBuscadorModpacks_KeyDown"/>
                                     </Border>
-                                    <Button x:Name="btnBuscarModpacks" Grid.Column="1" Content="BUSCAR" Width="120" Margin="10,0,0,0" Background="#9b59b6" Foreground="White" FontWeight="Bold" BorderThickness="0" Cursor="Hand" Click="BtnBuscarModpacks_Click">
+                                    <Button x:Name="btnBuscarModpacks" Grid.Column="1" Content="{DynamicResource Txt_Buscar}" Width="120" Margin="10,0,0,0" Background="#9b59b6" Foreground="White" FontWeight="Bold" BorderThickness="0" Cursor="Hand" Click="BtnBuscarModpacks_Click">
                                         <Button.Resources>
                                             <Style TargetType="Border">
                                                 <Setter Property="CornerRadius" Value="8"/>
@@ -975,7 +1168,7 @@
                                 </Grid>
                             </StackPanel>
 
-                            <TextBlock x:Name="txtCargandoModpacks" Grid.Row="1" Text="Buscando modpacks en Modrinth..." Foreground="#4facfe" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,15" Visibility="Collapsed"/>
+                            <TextBlock x:Name="txtCargandoModpacks" Grid.Row="1" Text="{DynamicResource Txt_BuscandoModpacks}" Foreground="#4facfe" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,15" Visibility="Collapsed"/>
 
                             <ScrollViewer Grid.Row="2" x:Name="ScrollModpacks"
                         VerticalScrollBarVisibility="Hidden" 
@@ -1018,7 +1211,7 @@
                                                         </StackPanel>
                                                         <TextBlock Text="{Binding Descripcion}" Foreground="#CCCCCC" FontSize="11" TextWrapping="Wrap" MaxHeight="45" TextTrimming="CharacterEllipsis"/>
                                                     </StackPanel>
-                                                    <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="VER DETALLES" VerticalAlignment="Bottom" HorizontalAlignment="Right" Padding="15,5" Background="#4facfe" Foreground="White" FontWeight="Bold" FontSize="11" BorderThickness="0" Cursor="Hand" Click="BtnVerModpack_Click" Tag="{Binding}">
+                                                    <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="{DynamicResource Txt_VerDetalles}" VerticalAlignment="Bottom" HorizontalAlignment="Right" Padding="15,5" Background="#4facfe" Foreground="White" FontWeight="Bold" FontSize="11" BorderThickness="0" Cursor="Hand" Click="BtnVerModpack_Click" Tag="{Binding}">
                                                         <Button.Resources>
                                                             <Style TargetType="Border">
                                                                 <Setter Property="CornerRadius" Value="6"/>
@@ -1040,7 +1233,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <Button Grid.Row="0" Content="← Volver a la búsqueda" HorizontalAlignment="Left" Background="Transparent" Foreground="#4facfe" BorderThickness="0" FontSize="14" FontWeight="Bold" Cursor="Hand" Click="BtnVolverModpacks_Click"/>
+                            <Button x:Name="btnVolverModpacks" Grid.Row="0" Content="{DynamicResource Txt_VolverBusqueda}" HorizontalAlignment="Left" Background="Transparent" Foreground="#4facfe" BorderThickness="0" FontSize="14" FontWeight="Bold" Cursor="Hand" Click="BtnVolverModpacks_Click"/>
 
                             <Grid Grid.Row="1" Margin="0,20,0,20">
 
@@ -1067,10 +1260,10 @@
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <ComboBox x:Name="comboVersionesModpack" Width="160" Margin="0,0,10,0" Height="45" 
+                                    <ComboBox x:Name="comboVersionesModpack" SelectionChanged="ComboVersionesModpack_SelectionChanged" Width="160" Margin="0,0,10,0" Height="45" 
                   VerticalContentAlignment="Center" Padding="10,0" DisplayMemberPath="NombreAgradable"/>
 
-                                    <Button x:Name="btnInstalarModpack" Content="INSTALAR" Background="#27ae60" Foreground="White" FontWeight="Bold" FontSize="14" Padding="20,0" Height="45" BorderThickness="0" Cursor="Hand" Click="BtnInstalarModpack_Click">
+                                    <Button x:Name="btnInstalarModpack" Content="{DynamicResource Txt_Instalar}" Background="#27ae60" Foreground="White" FontWeight="Bold" FontSize="14" Padding="20,0" Height="45" BorderThickness="0" Cursor="Hand" Click="BtnInstalarModpack_Click">
                                         <Button.Resources>
                                             <Style TargetType="Border">
                                                 <Setter Property="CornerRadius" Value="8"/>
@@ -1080,7 +1273,7 @@
                                 </StackPanel>
 
                                 <StackPanel x:Name="PanelProgresoDescarga" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,25,0,0" Visibility="Collapsed">
-                                    <TextBlock x:Name="txtEstadoDescarga" Text="Preparando descarga..." Foreground="#AAAAAA" FontSize="12" Margin="0,0,0,5" FontWeight="Bold"/>
+                                    <TextBlock x:Name="txtEstadoDescarga" Text="{DynamicResource Txt_PreparandoDescarga}" Foreground="#AAAAAA" FontSize="12" Margin="0,0,0,5" FontWeight="Bold"/>
                                     <ProgressBar x:Name="barraDescarga" Height="15" Minimum="0" Maximum="100" Value="0" Foreground="#27ae60" Background="#222222" BorderThickness="0">
                                         <ProgressBar.Resources>
                                             <Style TargetType="Border">
@@ -1310,6 +1503,14 @@
                                 </Button>
 
                                 <Button x:Name="btnAbrirTecni" Content="{DynamicResource CuentaEly}" Height="50" Background="#2c3e50" Foreground="White" FontWeight="Bold" FontSize="14" Click="BtnLoginTecni_Click">
+                                    <Button.Resources>
+                                        <Style TargetType="Border">
+                                            <Setter Property="CornerRadius" Value="10"/>
+                                        </Style>
+                                    </Button.Resources>
+                                </Button>
+
+                                <Button x:Name="btnCerrarSesionTecni" Content="{DynamicResource CuentaEly_Cerrar}" Height="50" Background="#C83232" Foreground="White" FontWeight="Bold" FontSize="14" Click="BtnCerrarSesionTecni_Click" Margin="0,10,0,0" Visibility="Collapsed">
                                     <Button.Resources>
                                         <Style TargetType="Border">
                                             <Setter Property="CornerRadius" Value="10"/>

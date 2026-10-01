@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Threading;
 
 namespace TecniLauncher
 {
@@ -7,6 +8,8 @@ namespace TecniLauncher
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            DispatcherUnhandledException += App_DispatcherUnhandledException;
 
             Core.Inicializar();
             Core.CargarConfiguracion();
@@ -19,6 +22,12 @@ namespace TecniLauncher
 
             var ventana = new MainWindow();
             ventana.Show();
+        }
+
+        private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine($"[UnhandledException] {e.Exception}");
+            e.Handled = true;
         }
     }
 }

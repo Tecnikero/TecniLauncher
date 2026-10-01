@@ -16,8 +16,8 @@ namespace TecniLauncher
         {
             if (string.IsNullOrEmpty(usuario)) return null;
 
-            if (Core.EsTecniStudio && Core.SesionUsuario?.AccessToken == "token_tecnistudio")
-                return await BuscarEnTecniStudio(Core.SesionUsuario.UUID);
+            if (Core.EsSesionTecniStudio)
+                return await BuscarEnTecniStudio(Core.SesionUsuario!.UUID);
 
             if (esPremium)
                 return await BuscarEnMojang(usuario);
@@ -27,6 +27,8 @@ namespace TecniLauncher
 
         private static async Task<BitmapImage?> BuscarEnTecniStudio(string uuidSinGuiones)
         {
+            if (!AuthService.EsUuidValido(uuidSinGuiones)) return null;
+
             try
             {
                 string url = $"https://kfxffvjakkcjbwkpvxtr.supabase.co/functions/v1/yggdrasil/sessionserver/session/minecraft/profile/{uuidSinGuiones}";
@@ -91,7 +93,7 @@ namespace TecniLauncher
         {
             if (string.IsNullOrEmpty(usuario)) return null;
 
-            if (Core.EsTecniStudio && Core.SesionUsuario != null)
+            if (Core.EsTecniStudio && Core.SesionUsuario != null && AuthService.EsUuidValido(Core.SesionUsuario.UUID))
             {
                 try
                 {

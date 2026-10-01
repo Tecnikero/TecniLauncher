@@ -25,18 +25,18 @@ namespace TecniLauncher
             _launcher = launcher;
         }
 
-        public async Task<List<string>> ObtenerVersiones(string mcVersion)
+        public async Task<List<string>> ObtenerVersiones(string mcVersion, CancellationToken ct = default)
         {
             try
             {
                 string versionLimpia = mcVersion.Replace("release", "").Replace("snapshot", "").Trim();
                 string url = $"https://meta.fabricmc.net/v2/versions/loader/{versionLimpia}";
 
-                using (var response = await _httpClient.GetAsync(url))
+                using (var response = await _httpClient.GetAsync(url, ct))
                 {
                     if (!response.IsSuccessStatusCode) return new List<string>();
 
-                    string json = await response.Content.ReadAsStringAsync();
+                    string json = await response.Content.ReadAsStringAsync(ct);
                     var lista = new List<string>();
 
                     using (JsonDocument doc = JsonDocument.Parse(json))

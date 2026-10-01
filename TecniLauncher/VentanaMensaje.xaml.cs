@@ -45,9 +45,9 @@ namespace TecniLauncher
             ResultadoUsuario = MessageBoxResult.No;
             this.Close();
         }
-        public static MessageBoxResult Mostrar(string mensaje, string titulo = "AVISO", MessageBoxButton botones = MessageBoxButton.OK)
+        public static MessageBoxResult Mostrar(string mensaje, string? titulo = null, MessageBoxButton botones = MessageBoxButton.OK)
         {
-            var ventana = new VentanaMensaje(mensaje, titulo, botones);
+            var ventana = new VentanaMensaje(mensaje, titulo ?? Core.T("Txt_TituloAviso"), botones);
             ventana.ShowDialog();
             return ventana.ResultadoUsuario;
         }

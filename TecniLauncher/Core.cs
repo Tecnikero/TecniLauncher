@@ -1,9 +1,9 @@
 ﻿using CmlLib.Core;
 using CmlLib.Core.Auth;
-using CmlLib.Core.Auth.Microsoft;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using TecniLauncher.Services;
@@ -14,39 +14,26 @@ namespace TecniLauncher
     {
         public static string RutaGlobal { get; private set; }
         public static string RutaData { get; private set; }
+        public static string RutaInstances { get; private set; }
         public static MSession? SesionUsuario { get; set; }
         public static MinecraftLauncher? LauncherGlobal { get; set; }
         public static bool MostrarSnapshots { get; set; } = false;
         public static List<Perfil> Perfiles { get; set; } = new List<Perfil>();
-        public static string UltimoNombreOffline { get; set; } = "Jugador";
+        public static string UltimoNombreOffline { get; set; } = "Player";
         public static string RutaSesion => Path.Combine(RutaData, "tcl_session.json");
         public static int JuegoAncho { get; set; } = 854;
         public static int JuegoAlto { get; set; } = 480;
         public static bool PantallaCompleta { get; set; } = false;
         public static bool EsTecniStudio { get; set; } = false;
-        public static string IdiomaActual { get; set; } = "es-ES";
-
-        public static async Task<bool> IntentarAutoLogin()
+        public static bool EsSesionTecniStudio =>
+            EsTecniStudio && SesionUsuario != null && SesionUsuario.UserType == "mojang";
+        public static string IdiomaActual { get; set; } = "en-US";
+        public static string T(string clave, params object[] args)
         {
-            try
-            {
-                if (File.Exists(RutaSesion))
-                {
-                    var loginHandler = new JELoginHandlerBuilder()
-                        .WithAccountManager(RutaSesion)
-                        .Build();
-
-                    var session = await loginHandler.AuthenticateSilently();
-
-                    if (session != null)
-                    {
-                        SesionUsuario = session;
-                        return true;
-                    }
-                }
-            }
-            catch { }
-            return false;
+            string texto = System.Windows.Application.Current?.TryFindResource(clave) as string ?? clave;
+            if (args == null || args.Length == 0) return texto;
+            try { return string.Format(texto, args); }
+            catch (FormatException) { return texto; }
         }
 
         public static void Inicializar()
@@ -56,6 +43,7 @@ namespace TecniLauncher
 
             RutaData = Path.Combine(raiz, "Data");
             RutaGlobal = Path.Combine(raiz, "Global");
+            RutaInstances = Path.Combine(raiz, "Instances");
 
             if (!Directory.Exists(RutaData)) Directory.CreateDirectory(RutaData);
             if (!Directory.Exists(RutaGlobal)) Directory.CreateDirectory(RutaGlobal);
@@ -83,18 +71,26 @@ namespace TecniLauncher
                 System.Diagnostics.Debug.WriteLine("Error inicializando secretos: " + ex.Message);
             }
         }
-        public static bool EsVersionInstaladaGlobalmente(string idVersion)
+        private static readonly object _lockArchivos = new object();
+        private static void EscribirAtomico(string ruta, string contenido)
         {
-            try
-            {
-                string rutaVersionJson = Path.Combine(RutaGlobal, "versions", idVersion, $"{idVersion}.json");
-                string rutaVersionJar = Path.Combine(RutaGlobal, "versions", idVersion, $"{idVersion}.jar");
+            string tmp = ruta + ".tmp";
+            string bak = ruta + ".bak";
 
-                return File.Exists(rutaVersionJson);
-            }
-            catch
+            lock (_lockArchivos)
             {
-                return false;
+                using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
+                using (var sw = new StreamWriter(fs, new UTF8Encoding(false)))
+                {
+                    sw.Write(contenido);
+                    sw.Flush();
+                    fs.Flush(true);
+                }
+
+                if (File.Exists(ruta))
+                    File.Replace(tmp, ruta, bak);
+                else
+                    File.Move(tmp, ruta);
             }
         }
 
@@ -114,7 +110,7 @@ namespace TecniLauncher
                     IdiomaActual
                 };
                 string json = JsonSerializer.Serialize(datos, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(archivo, json);
+                EscribirAtomico(archivo, json);
             }
             catch { }
         }
@@ -145,11 +141,20 @@ namespace TecniLauncher
             try
             {
                 string archivo = Path.Combine(RutaData, "perfiles.json");
-                string json = JsonSerializer.Serialize(Perfiles, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(archivo, json);
+                string json;
+                var dispatcher = System.Windows.Application.Current?.Dispatcher;
+                if (dispatcher == null || dispatcher.CheckAccess())
+                    json = SerializarPerfiles();
+                else
+                    json = dispatcher.Invoke(SerializarPerfiles);
+
+                EscribirAtomico(archivo, json);
             }
             catch { }
         }
+
+        private static string SerializarPerfiles()
+            => JsonSerializer.Serialize(Perfiles, new JsonSerializerOptions { WriteIndented = true });
 
         public static void CargarPerfiles()
         {

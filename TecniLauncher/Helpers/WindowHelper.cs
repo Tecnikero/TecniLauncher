@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -12,10 +12,6 @@ namespace TecniLauncher.Helpers
 
         [DllImport("user32.dll")]
         private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo lpmi);
-
-        [DllImport("kernel32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool GetPhysicallyInstalledSystemMemory(out long totalMemoryInKilobytes);
 
         [StructLayout(LayoutKind.Sequential)]
         private struct Win32Rect { public int left, top, right, bottom; }
@@ -43,28 +39,5 @@ namespace TecniLauncher.Helpers
                 info.rcWork.bottom - info.rcWork.top);
         }
 
-        private const double DISTANCIA_IMAN = 20.0;
-        public static void AplicarSnapping(Window ventana)
-        {
-            double anchoPantalla = SystemParameters.PrimaryScreenWidth;
-            double altoPantalla = SystemParameters.PrimaryScreenHeight;
-
-            if (Math.Abs(ventana.Left) < DISTANCIA_IMAN)
-                ventana.Left = 0;
-
-            if (Math.Abs(ventana.Top) < DISTANCIA_IMAN)
-                ventana.Top = 0;
-
-            if (Math.Abs((ventana.Left + ventana.Width) - anchoPantalla) < DISTANCIA_IMAN)
-                ventana.Left = anchoPantalla - ventana.Width;
-
-            if (Math.Abs((ventana.Top + ventana.Height) - altoPantalla) < DISTANCIA_IMAN)
-                ventana.Top = altoPantalla - ventana.Height;
-        }
-        public static int ObtenerRamTotalGB()
-        {
-            GetPhysicallyInstalledSystemMemory(out long kb);
-            return (int)Math.Ceiling(kb / 1024.0 / 1024.0);
-        }
     }
 }

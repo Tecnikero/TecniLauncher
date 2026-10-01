@@ -21,6 +21,34 @@ namespace TecniLauncher.Services
             return JsonConvert.DeserializeObject<DatosUpdate>(json);
         }
 
+        public static bool TryParseVersion(string? texto, out Version version)
+        {
+            version = new Version(0, 0, 0, 0);
+            if (string.IsNullOrWhiteSpace(texto)) return false;
+
+            string s = texto.Trim().TrimStart('v', 'V');
+            int corte = s.IndexOfAny(new[] { '-', '+', ' ' });
+            if (corte >= 0) s = s.Substring(0, corte);
+            if (!s.Contains('.')) s += ".0";
+
+            if (!Version.TryParse(s, out var p)) return false;
+            version = new Version(p.Major, p.Minor, Math.Max(p.Build, 0), Math.Max(p.Revision, 0));
+            return true;
+        }
+
+        public static bool HayActualizacion(string? versionRemota, string versionLocal)
+        {
+            if (!TryParseVersion(versionRemota, out var remota))
+            {
+                Debug.WriteLine($"Versión remota inválida: '{versionRemota}'. Se ignora la actualización.");
+                return false;
+            }
+            if (!TryParseVersion(versionLocal, out var local))
+                return !string.Equals(versionRemota?.Trim(), versionLocal?.Trim(), StringComparison.OrdinalIgnoreCase);
+
+            return remota > local;
+        }
+
         public static async Task InstalarDesdeZipAsync(string urlDescarga, string hashEsperado,
             IProgress<string> progreso = null)
         {
@@ -29,15 +57,13 @@ namespace TecniLauncher.Services
             string rutaZip = Path.Combine(directorio, "Update.zip");
             string carpetaTemp = Path.Combine(directorio, "Update_Temp");
 
-            // Validar que el hash fue provisto antes de descargar
             if (string.IsNullOrWhiteSpace(hashEsperado))
             {
                 throw new Exception("Error de seguridad: No se encontró el hash de verificación en el servidor. Actualización abortada.");
             }
 
             progreso?.Report("Descargando paquete de actualización...");
-            byte[] bytes = await _http.GetByteArrayAsync(urlDescarga);
-            await File.WriteAllBytesAsync(rutaZip, bytes);
+            await AppHttpClient.DescargarArchivoAsync(urlDescarga, rutaZip, TimeSpan.FromMinutes(30));
 
             progreso?.Report("Verificando integridad del archivo (Seguridad)...");
 
@@ -65,32 +91,36 @@ namespace TecniLauncher.Services
             progreso?.Report("Preparando instalación...");
             LanzarScriptActualizacion(rutaActual, directorio, rutaZip, carpetaTemp);
         }
+        private static string EscBat(string s) => s.Replace("%", "%%");
 
         private static void LanzarScriptActualizacion(
             string rutaActual, string directorio, string rutaZip, string carpetaTemp)
         {
             string nombreExe = Path.GetFileName(rutaActual);
-            string rutaBat = Path.Combine(directorio, "update_script.bat");
+            string nombreBat = "update_script.bat";
+            string rutaBat = Path.Combine(directorio, nombreBat);
 
             string script = $"""
                 @echo off
-                cd /d "{directorio}"
-                taskkill /f /im "{nombreExe}" >nul 2>&1
+                chcp 65001 >nul
+                cd /d "{EscBat(directorio)}"
+                taskkill /f /im "{EscBat(nombreExe)}" >nul 2>&1
                 timeout /t 2 /nobreak >nul
-                xcopy /y /e "{carpetaTemp}\*" "{directorio}\"
+                xcopy /y /e "{EscBat(carpetaTemp)}\*" "{EscBat(directorio)}\"
                 timeout /t 1 /nobreak >nul
-                start "" "{nombreExe}"
-                rd /s /q "{carpetaTemp}"
-                del "{rutaZip}"
+                start "" "{EscBat(nombreExe)}"
+                rd /s /q "{EscBat(carpetaTemp)}"
+                del "{EscBat(rutaZip)}"
                 del "%~f0"
                 """;
 
-            File.WriteAllText(rutaBat, script);
+            File.WriteAllText(rutaBat, script, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
             Process.Start(new ProcessStartInfo
             {
                 FileName = "cmd.exe",
-                Arguments = $"/c \"\"{rutaBat}\"\"",
+                Arguments = $"/c {nombreBat}",
+                WorkingDirectory = directorio,
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 WindowStyle = ProcessWindowStyle.Hidden

@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.IO;
 using System.Net.Http;
 using System.Windows.Media.Imaging;
@@ -74,10 +74,5 @@ namespace TecniLauncher.Services
             }
         }
 
-        public static void LimpiarCache()
-        {
-            _noticiasCache = null;
-            _cacheImagenes.Clear();
-        }
     }
 }
