@@ -22,7 +22,7 @@
 
 ## Instalación Rápida
 
-1. Ve a [tecnistudio.online](https://tecnistudio.online) y descarga el instalador de la versión **1.4.5** (También puedes obtenerlo en la pestaña de `Releases` de este repositorio).
+1. Ve a [tecnistudio.online](https://tecnistudio.online) y descarga el instalador de la versión **1.4.6** (También puedes obtenerlo en la pestaña de `Releases` de este repositorio).
 2. Crea tu cuenta en el portal para habilitar tu identidad y gestionar tu skin(opcional).
 3. ¡Lanza el juego y disfruta de una experiencia fluida y estable!
 
