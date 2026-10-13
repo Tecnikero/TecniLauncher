@@ -63,16 +63,6 @@ TecniLauncher incorpora distintas modalidades de acceso, según el servicio y la
 
 **Importante:** el modo offline no sustituye una licencia ni equivale a la autenticación oficial de Microsoft. El acceso a servidores depende de los requisitos de autenticación de cada servidor.
 
-## Última versión
-
-### v1.4.6 — Sistema de importación
-
-La versión 1.4.6 incorpora:
-
-* **Importación y exportación de instancias (Beta):** empaqueta y comparte configuraciones de juego mediante códigos.
-* **Gestor integrado de descargas:** búsqueda, descarga e instalación de shaders y paquetes de texturas desde el launcher.
-
-Consulta las notas de cada versión en [GitHub Releases](https://github.com/Tecnikero/TecniLauncher/releases) para conocer las novedades, correcciones y cambios relevantes.
 
 ## Descarga e instalación
 
