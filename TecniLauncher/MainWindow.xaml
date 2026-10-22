@@ -18,6 +18,7 @@
         <SolidColorBrush x:Key="BgDark" Color="#0f2027"/>
         <SolidColorBrush x:Key="BgSidebar" Color="#111625"/>
         <SolidColorBrush x:Key="BgCard" Color="#1E2328"/>
+        <SolidColorBrush x:Key="BgCardAlt" Color="#252525"/>
         <SolidColorBrush x:Key="BgInput" Color="#222222"/>
         <SolidColorBrush x:Key="TextMain" Color="White"/>
         <SolidColorBrush x:Key="TextSub" Color="#AAAAAA"/>
@@ -62,6 +63,33 @@
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="BotonCirculo" Property="Fill" Value="#f0f0f0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TipoComplementoStyle" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#8c9bb0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="bdr" Background="{StaticResource BgCardAlt}" BorderBrush="#444" BorderThickness="1" CornerRadius="18" Padding="18,8" Margin="0,0,10,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bdr" Property="Background" Value="#33FFFFFF"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bdr" Property="Background" Value="#9b59b6"/>
+                                <Setter TargetName="bdr" Property="BorderBrush" Value="#9b59b6"/>
+                                <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -114,7 +142,7 @@
                                               HorizontalAlignment="Left" />
                             <Popup Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
                                 <Grid Name="DropDown" SnapsToDevicePixels="True" MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}">
-                                    <Border x:Name="DropDownBorder" Background="#252525" BorderThickness="1" BorderBrush="#4facfe" CornerRadius="6" Margin="0,2,0,0">
+                                    <Border x:Name="DropDownBorder" Background="{StaticResource BgCardAlt}" BorderThickness="1" BorderBrush="#4facfe" CornerRadius="6" Margin="0,2,0,0">
                                         <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
                                             <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
                                         </ScrollViewer>
@@ -221,7 +249,7 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid x:Name="RaizContenido">
         <Border CornerRadius="12" Background="{StaticResource BgDark}" ClipToBounds="True">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -240,7 +268,7 @@
                                 <Rectangle Height="2" Width="50" Fill="{StaticResource ColorAccent}" Margin="0,10,0,0" HorizontalAlignment="Center"/>
                             </StackPanel>
 
-                            <RadioButton Content="{DynamicResource Menu_Play}" Style="{StaticResource MenuButtonStyle}" Click="MenuJugar_Click" Height="50" Foreground="{StaticResource TextMain}" FontSize="15" Margin="0,2" IsChecked="True"/>
+                            <RadioButton x:Name="MenuJugarBtn" Content="{DynamicResource Menu_Play}" Style="{StaticResource MenuButtonStyle}" Click="MenuJugar_Click" Height="50" Foreground="{StaticResource TextMain}" FontSize="15" Margin="0,2" IsChecked="True"/>
                             <RadioButton Content="{DynamicResource Menu_Profiles}" Style="{StaticResource MenuButtonStyle}" Height="50" Foreground="{StaticResource TextMain}" FontSize="15" Margin="0,2" Click="MenuPerfiles_Click"/>
                             <RadioButton Content="{DynamicResource Menu_Mods}" Style="{StaticResource MenuButtonStyle}" Height="50" Foreground="{StaticResource TextMain}" FontSize="15" Margin="0,2" Click="MenuMods_Click"/>
                             <RadioButton Content="{DynamicResource Menu_ModPacks}" Style="{StaticResource MenuButtonStyle}" Height="50" Foreground="{StaticResource TextMain}" FontSize="15" Margin="0,2" Click="MenuModpacks_Click"/>
@@ -292,7 +320,7 @@
                             <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
                                 <TextBlock x:Name="txtUsuario" Text="{DynamicResource Login_NoSession}" Foreground="{StaticResource TextMain}" FontWeight="SemiBold" FontSize="13"/>
                             </StackPanel>
-                            <Button Content="{DynamicResource Btn_Login}" Margin="5,0,0,0" Background="{StaticResource ColorAccent}" Foreground="White" BorderThickness="5" Padding="15,5" Height="30" FontSize="11" FontWeight="Bold" Click="AbrirLogin_Click" Width="50">
+                            <Button Content="{DynamicResource Btn_Login}" Margin="5,0,0,0" Background="{StaticResource ColorAccent}" Foreground="White" BorderThickness="5" Padding="15,5" Height="30" FontSize="11" FontWeight="Bold" Click="AbrirLogin_Click" MinWidth="64">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}" CornerRadius="15">
@@ -334,7 +362,7 @@
 
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Width="240" Background="#1E2328" CornerRadius="14" Margin="0,0,16,16" BorderBrush="#334facfe" BorderThickness="1">
+                                        <Border Width="240" Background="{StaticResource BgCard}" CornerRadius="14" Margin="0,0,16,16" BorderBrush="#334facfe" BorderThickness="1">
                                             <Grid>
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height="110"/>
@@ -423,55 +451,125 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <Viewbox Grid.Row="0" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20,50,20,20" MaxWidth="900">
-                            <Grid x:Name="ContenedorNoticia" Height="260" Width="500" MouseEnter="DetenerCarrusel" MouseLeave="IniciarCarrusel">
-                                <Border CornerRadius="15" BorderBrush="#33FFFFFF" BorderThickness="1">
-                                    <Border.Background>
-                                        <ImageBrush x:Name="ImgNoticiaFondoBrush" Stretch="UniformToFill" Opacity="0.5"/>
-                                    </Border.Background>
-                                    <Border.Effect>
-                                        <BlurEffect Radius="20"/>
-                                    </Border.Effect>
-                                </Border>
+                        <Grid Grid.Row="0">
+                            <Viewbox x:Name="VisorNoticias" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20,50,20,20" MaxWidth="900">
+                                <Grid x:Name="ContenedorNoticia" Height="260" Width="500" MouseEnter="DetenerCarrusel" MouseLeave="IniciarCarrusel">
+                                    <Border CornerRadius="15" BorderBrush="#33FFFFFF" BorderThickness="1">
+                                        <Border.Background>
+                                            <ImageBrush x:Name="ImgNoticiaFondoBrush" Stretch="UniformToFill" Opacity="0.5"/>
+                                        </Border.Background>
+                                        <Border.Effect>
+                                            <BlurEffect Radius="20"/>
+                                        </Border.Effect>
+                                    </Border>
 
-                                <Border CornerRadius="15" BorderBrush="#33FFFFFF" BorderThickness="1" ClipToBounds="True">
-                                    <Border.Background>
-                                        <ImageBrush x:Name="ImgNoticiaBrush" Stretch="UniformToFill"/>
-                                    </Border.Background>
-                                    <Grid>
-                                        <Border VerticalAlignment="Bottom" Height="180" CornerRadius="0,0,15,15">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                    <GradientStop Color="Transparent" Offset="0"/>
-                                                    <GradientStop Color="#CC000000" Offset="0.4"/>
-                                                    <GradientStop Color="#EE000000" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Border.Background>
-                                        </Border>
+                                    <Border CornerRadius="15" BorderBrush="#33FFFFFF" BorderThickness="1" ClipToBounds="True">
+                                        <Border.Background>
+                                            <ImageBrush x:Name="ImgNoticiaBrush" Stretch="UniformToFill"/>
+                                        </Border.Background>
+                                        <Grid>
+                                            <Border VerticalAlignment="Bottom" Height="180" CornerRadius="0,0,15,15">
+                                                <Border.Background>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                        <GradientStop Color="Transparent" Offset="0"/>
+                                                        <GradientStop Color="#CC000000" Offset="0.4"/>
+                                                        <GradientStop Color="#EE000000" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Border.Background>
+                                            </Border>
 
-                                        <StackPanel VerticalAlignment="Bottom" Margin="20,0,20,30">
-                                            <TextBlock x:Name="TxtTitulo" Text="{DynamicResource Play_NewsLoadingTitle}" FontSize="22" FontWeight="Bold" Foreground="White" TextWrapping="Wrap"/>
-                                            <TextBlock x:Name="TxtCuerpo" Text="{DynamicResource Play_NewsLoadingBody}" FontSize="12" Foreground="#FFEDEDED" FontWeight="SemiBold" Margin="0,2,0,10" TextWrapping="Wrap"/>
-                                            <Button x:Name="BtnNoticiaAccion" Style="{StaticResource PrimaryButton}" Content="{DynamicResource Play_NewsJoin}" Click="BtnNoticia_Click" Visibility="Visible" HorizontalAlignment="Left" Background="#5865F2" Foreground="White" FontWeight="Bold" FontSize="12" Padding="25,10" BorderThickness="0" Cursor="Hand">
-                                                <Button.Resources>
-                                                    <Style TargetType="Border">
-                                                        <Setter Property="CornerRadius" Value="8"/>
-                                                    </Style>
-                                                </Button.Resources>
+                                            <StackPanel VerticalAlignment="Bottom" Margin="20,0,20,30">
+                                                <TextBlock x:Name="TxtTitulo" Text="{DynamicResource Play_NewsLoadingTitle}" FontSize="22" FontWeight="Bold" Foreground="White" TextWrapping="Wrap"/>
+                                                <TextBlock x:Name="TxtCuerpo" Text="{DynamicResource Play_NewsLoadingBody}" FontSize="12" Foreground="#FFEDEDED" FontWeight="SemiBold" Margin="0,2,0,10" TextWrapping="Wrap"/>
+                                                <Button x:Name="BtnNoticiaAccion" Style="{StaticResource PrimaryButton}" Content="{DynamicResource Play_NewsJoin}" Click="BtnNoticia_Click" Visibility="Visible" HorizontalAlignment="Left" Background="#5865F2" Foreground="White" FontWeight="Bold" FontSize="12" Padding="25,10" BorderThickness="0" Cursor="Hand">
+                                                    <Button.Resources>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="CornerRadius" Value="8"/>
+                                                        </Style>
+                                                    </Button.Resources>
+                                                </Button>
+                                            </StackPanel>
+
+                                            <Button Click="BtnAnterior_Click" HorizontalAlignment="Left" VerticalAlignment="Center" Width="40" Height="60" Margin="5" Background="#22000000" BorderThickness="0">
+                                                <Path Data="M 15,0 L 5,15 L 15,30" Stroke="White" StrokeThickness="3" HorizontalAlignment="Center"/>
                                             </Button>
-                                        </StackPanel>
+                                            <Button Click="BtnSiguiente_Click" HorizontalAlignment="Right" VerticalAlignment="Center" Width="40" Height="60" Margin="5" Background="#22000000" BorderThickness="0">
+                                                <Path Data="M 5,0 L 15,15 L 5,30" Stroke="White" StrokeThickness="3" HorizontalAlignment="Center"/>
+                                            </Button>
+                                            <StackPanel x:Name="PanelPuntos" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10"/>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </Viewbox>
 
-                                        <Button Click="BtnAnterior_Click" HorizontalAlignment="Left" VerticalAlignment="Center" Width="40" Height="60" Margin="5" Background="#22000000" BorderThickness="0">
-                                            <Path Data="M 15,0 L 5,15 L 15,30" Stroke="White" StrokeThickness="3" HorizontalAlignment="Center"/>
-                                        </Button>
-                                        <Button Click="BtnSiguiente_Click" HorizontalAlignment="Right" VerticalAlignment="Center" Width="40" Height="60" Margin="5" Background="#22000000" BorderThickness="0">
-                                            <Path Data="M 5,0 L 15,15 L 5,30" Stroke="White" StrokeThickness="3" HorizontalAlignment="Center"/>
-                                        </Button>
-                                        <StackPanel x:Name="PanelPuntos" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10"/>
-                                    </Grid>
+                            <Grid x:Name="PanelConsola" Visibility="Collapsed" Margin="20,50,20,10" MaxWidth="900">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{DynamicResource Console_Title}" Foreground="{StaticResource TextMain}" FontWeight="Bold" FontSize="16"/>
+                                        <TextBlock x:Name="TxtEstadoConsola" Text="{DynamicResource Console_Waiting}" Foreground="{StaticResource TextSub}" FontSize="11" Margin="0,2,0,0"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <CheckBox x:Name="chkAutoScrollConsola" IsChecked="True" Content="{DynamicResource Console_AutoScroll}" Foreground="{StaticResource TextSub}" FontSize="12" VerticalAlignment="Center" Margin="0,0,15,0" Cursor="Hand"/>
+                                        <Button Content="{DynamicResource Console_Copy}" Style="{StaticResource PrimaryButton}" Click="BtnCopiarConsola_Click" Background="{StaticResource BgCardAlt}" BorderBrush="#444" BorderThickness="1" Padding="12,6" FontSize="12" Margin="0,0,8,0"/>
+                                        <Button Content="{DynamicResource Console_Clear}" Style="{StaticResource PrimaryButton}" Click="BtnLimpiarConsola_Click" Background="{StaticResource BgCardAlt}" BorderBrush="#444" BorderThickness="1" Padding="12,6" FontSize="12" Margin="0,0,8,0"/>
+                                        <Button Content="{DynamicResource Console_OpenLogs}" Style="{StaticResource PrimaryButton}" Click="BtnAbrirLogs_Click" Background="{StaticResource BgCardAlt}" BorderBrush="#444" BorderThickness="1" Padding="12,6" FontSize="12"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Grid.Row="1" Background="#0B0F14" BorderBrush="#22FFFFFF" BorderThickness="1" CornerRadius="10" ClipToBounds="True">
+                                    <ListBox x:Name="ListaConsola" Background="Transparent" BorderThickness="0" Padding="8"
+                                             SelectionMode="Extended" PreviewKeyDown="ListaConsola_PreviewKeyDown"
+                                             VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                                             ScrollViewer.CanContentScroll="True"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Padding" Value="2,0"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ListBoxItem">
+                                                            <Border x:Name="Bd" Background="Transparent" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Background" Value="#334FACFE"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Texto}" Foreground="{Binding Pincel}" FontFamily="Consolas" FontSize="12" TextWrapping="NoWrap"/>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
                                 </Border>
                             </Grid>
-                        </Viewbox>
+
+                            <StackPanel x:Name="PanelPestanasJugar" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,5,0,0" Visibility="Collapsed">
+                                <RadioButton x:Name="TabNoticiasBtn" GroupName="TabsJugar" IsChecked="True"
+                                             Content="{DynamicResource Play_TabNews}" Style="{StaticResource TipoComplementoStyle}"
+                                             Click="TabJugar_Click"/>
+                                <RadioButton x:Name="TabConsolaBtn" GroupName="TabsJugar"
+                                             Content="{DynamicResource Play_TabConsole}" Style="{StaticResource TipoComplementoStyle}"
+                                             Click="TabJugar_Click"/>
+                            </StackPanel>
+                        </Grid>
 
                         <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Margin="0,10,0,0">
 
@@ -516,6 +614,7 @@
                         <Grid Margin="0,70,0,0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
                             <Button Grid.Row="0" Content="{DynamicResource Profiles_CreateNew}" Height="50" Background="{StaticResource ColorAccentDim}" Foreground="{StaticResource ColorAccent}" BorderBrush="{StaticResource ColorAccent}" BorderThickness="1" Margin="0,0,0,18" Click="AbrirCrearPerfil_Click">
@@ -531,7 +630,20 @@
                                 </Button.Template>
                             </Button>
 
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                            <Button Grid.Row="1" Height="44" Background="#22FFFFFF" Foreground="White" BorderBrush="#33FFFFFF" BorderThickness="1" Margin="0,0,0,18" Click="BtnImportarPerfil_Click">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="10">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock Text="📥" FontSize="16" Margin="0,0,10,0"/>
+                                                <TextBlock Text="{DynamicResource Import_Btn}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
                                 <ItemsControl x:Name="listaPerfilesUI">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
@@ -583,10 +695,12 @@
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
                                                         </Grid.ColumnDefinitions>
                                                         <Button Grid.Column="0" Content="⚙️" Height="34" Margin="0,0,5,0" Background="#22FFFFFF" Foreground="White" BorderThickness="0" ToolTip="{DynamicResource Txt_Editar}" Tag="{Binding}" Click="BtnEditar_Click"/>
                                                         <Button Grid.Column="1" Content="📂" Height="34" Margin="0,0,5,0" Background="#33FFAA00" Foreground="#FFAA00" BorderThickness="0" ToolTip="{DynamicResource Txt_Carpeta}" Tag="{Binding}" Click="BtnCarpeta_Click"/>
-                                                        <Button Grid.Column="2" Content="🗑️" Height="34" Background="#33FF5656" Foreground="#FF5656" BorderThickness="0" ToolTip="{DynamicResource Txt_Eliminar}" Tag="{Binding}" Click="BtnEliminar_Click"/>
+                                                        <Button Grid.Column="2" Content="📤" Height="34" Margin="0,0,5,0" Background="#334facfe" Foreground="#4facfe" BorderThickness="0" ToolTip="{DynamicResource Share_Tooltip}" Tag="{Binding}" Click="BtnCompartir_Click"/>
+                                                        <Button Grid.Column="3" Content="🗑️" Height="34" Background="#33FF5656" Foreground="#FF5656" BorderThickness="0" ToolTip="{DynamicResource Txt_Eliminar}" Tag="{Binding}" Click="BtnEliminar_Click"/>
                                                     </Grid>
                                                 </Grid>
                                             </Border>
@@ -625,6 +739,18 @@
                         <StackPanel Grid.Row="0" Margin="40,40,40,20">
                             <TextBlock Text="{DynamicResource Mods_Title}" Foreground="{StaticResource TextMain}" FontSize="28" FontWeight="Bold"/>
                             <Rectangle Height="3" Width="60" Fill="#9b59b6" HorizontalAlignment="Left" Margin="0,5,0,0" RadiusX="1.5" RadiusY="1.5"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                                <RadioButton x:Name="TipoModsBtn" GroupName="TipoComplemento" Tag="Mod" IsChecked="True"
+                                             Content="{DynamicResource Addons_TipoMods}" Style="{StaticResource TipoComplementoStyle}"
+                                             Checked="TipoComplemento_Checked"/>
+                                <RadioButton x:Name="TipoTexturasBtn" GroupName="TipoComplemento" Tag="Textura"
+                                             Content="{DynamicResource Addons_TipoTexturas}" Style="{StaticResource TipoComplementoStyle}"
+                                             Checked="TipoComplemento_Checked"/>
+                                <RadioButton x:Name="TipoShadersBtn" GroupName="TipoComplemento" Tag="Shader"
+                                             Content="{DynamicResource Addons_TipoShaders}" Style="{StaticResource TipoComplementoStyle}"
+                                             Checked="TipoComplemento_Checked"/>
+                            </StackPanel>
                         </StackPanel>
 
                         <Grid Grid.Row="1" Margin="40,0,40,20" Cursor="">
@@ -646,7 +772,7 @@
                                     <ComboBox x:Name="comboPerfilesMods" Height="45"
                           DisplayMemberPath="Nombre"
                           SelectionChanged="ComboPerfilesMods_SelectionChanged"
-                          Background="#252525" BorderBrush="#444"
+                          Background="{StaticResource BgCardAlt}" BorderBrush="#444"
                           Foreground="White" FontSize="14" Padding="10,0">
                                         <ComboBox.Resources>
                                             <Style TargetType="Border">
@@ -657,13 +783,13 @@
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="15,0,0,0">
-                                    <Border Background="#252525" CornerRadius="8" Padding="15,10" Margin="0,0,10,0" BorderBrush="#333" BorderThickness="1">
+                                    <Border Background="{StaticResource BgCardAlt}" CornerRadius="8" Padding="15,10" Margin="0,0,10,0" BorderBrush="#333" BorderThickness="1">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Version: " Foreground="#888" FontSize="12"/>
                                             <TextBlock x:Name="txtModVersion" Text="0.00.0" Foreground="{StaticResource TextMain}" FontWeight="Bold"/>
                                         </StackPanel>
                                     </Border>
-                                    <Border Background="#252525" CornerRadius="8" Padding="15,10" BorderBrush="#333" BorderThickness="1">
+                                    <Border x:Name="badgeLoader" Background="{StaticResource BgCardAlt}" CornerRadius="8" Padding="15,10" BorderBrush="#333" BorderThickness="1">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Loader: " Foreground="#888" FontSize="12"/>
                                             <TextBlock x:Name="txtModLoader" Text="Minecraft" Foreground="{StaticResource TextMain}" FontWeight="Bold"/>
@@ -781,19 +907,19 @@
                                             <StackPanel Grid.Column="0">
                                                 <TextBlock Text="{DynamicResource Mods_FiltroCategoria}" Foreground="{StaticResource TextSub}" FontSize="11" FontWeight="SemiBold" Margin="2,0,0,4"/>
                                                 <ComboBox x:Name="comboFiltroCategoria" Height="36" DisplayMemberPath="Texto" SelectedValuePath="Clave"
-                                                          SelectionChanged="Filtro_SelectionChanged" Background="#252525" BorderBrush="#444" Foreground="White" FontSize="13" Padding="10,0"/>
+                                                          SelectionChanged="Filtro_SelectionChanged" Background="{StaticResource BgCardAlt}" BorderBrush="#444" Foreground="White" FontSize="13" Padding="10,0"/>
                                             </StackPanel>
 
                                             <StackPanel Grid.Column="2">
                                                 <TextBlock Text="{DynamicResource Mods_FiltroVersion}" Foreground="{StaticResource TextSub}" FontSize="11" FontWeight="SemiBold" Margin="2,0,0,4"/>
                                                 <ComboBox x:Name="comboFiltroVersion" Height="36" DisplayMemberPath="Texto" SelectedValuePath="Clave"
-                                                          SelectionChanged="Filtro_SelectionChanged" Background="#252525" BorderBrush="#444" Foreground="White" FontSize="13" Padding="10,0"/>
+                                                          SelectionChanged="Filtro_SelectionChanged" Background="{StaticResource BgCardAlt}" BorderBrush="#444" Foreground="White" FontSize="13" Padding="10,0"/>
                                             </StackPanel>
 
-                                            <StackPanel Grid.Column="4">
+                                            <StackPanel x:Name="panelFiltroLoader" Grid.Column="4">
                                                 <TextBlock Text="{DynamicResource Mods_FiltroLoader}" Foreground="{StaticResource TextSub}" FontSize="11" FontWeight="SemiBold" Margin="2,0,0,4"/>
                                                 <ComboBox x:Name="comboFiltroLoader" Height="36" DisplayMemberPath="Texto" SelectedValuePath="Clave"
-                                                          SelectionChanged="Filtro_SelectionChanged" Background="#252525" BorderBrush="#444" Foreground="White" FontSize="13" Padding="10,0"/>
+                                                          SelectionChanged="Filtro_SelectionChanged" Background="{StaticResource BgCardAlt}" BorderBrush="#444" Foreground="White" FontSize="13" Padding="10,0"/>
                                             </StackPanel>
 
                                             <Button x:Name="btnResetFiltros" Grid.Column="5" Content="↺" Width="36" Height="36" Margin="10,0,0,0" VerticalAlignment="Bottom"
@@ -807,6 +933,7 @@
                                             </Button>
                                         </Grid>
                                         <TextBlock x:Name="txtAvisoFiltros" Foreground="#f1c40f" FontSize="11" Margin="2,8,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+                                        <TextBlock x:Name="txtAvisoTipo" Foreground="#8c9bb0" FontSize="11" Margin="2,8,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
                                     </StackPanel>
 
                                     <Grid Grid.Row="1">
@@ -847,7 +974,7 @@
 
                                                     <ListBox.ItemTemplate>
                                                         <DataTemplate>
-                                                            <Border x:Name="ContenedorFila" Width="250" Height="200" Margin="0,0,10,10" Background="#1E2328" CornerRadius="12" Padding="14" BorderThickness="1" BorderBrush="#33FFFFFF">
+                                                            <Border x:Name="ContenedorFila" Width="250" Height="200" Margin="0,0,10,10" Background="{StaticResource BgCard}" CornerRadius="12" Padding="14" BorderThickness="1" BorderBrush="#33FFFFFF">
                                                                 <Grid>
                                                                     <Grid.RowDefinitions>
                                                                         <RowDefinition Height="Auto"/>
@@ -956,7 +1083,7 @@
                                                         <Setter Property="Template">
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="ListBoxItem">
-                                                                    <Border x:Name="bdr" Background="#1E2328" CornerRadius="10" Padding="15,10" Margin="0,0,0,8" BorderThickness="1" BorderBrush="#33FFFFFF">
+                                                                    <Border x:Name="bdr" Background="{StaticResource BgCard}" CornerRadius="10" Padding="15,10" Margin="0,0,0,8" BorderThickness="1" BorderBrush="#33FFFFFF">
                                                                         <ContentPresenter/>
                                                                     </Border>
                                                                     <ControlTemplate.Triggers>
@@ -982,7 +1109,7 @@
                                                             </Grid.ColumnDefinitions>
 
                                                             <Border x:Name="IconoMod" Grid.Column="0" CornerRadius="8" Width="38" Height="38" Background="#111" Margin="0,0,15,0">
-                                                                <TextBlock Text="🧩" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                <TextBlock Text="{Binding Icono}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                             </Border>
 
                                                             <StackPanel x:Name="InfoMod" Grid.Column="1" VerticalAlignment="Center" Margin="0,0,15,0">
@@ -1021,18 +1148,6 @@
                             </Grid>
                         </Grid>
 
-                        <Border x:Name="ToastMods" Grid.Row="1" Visibility="Collapsed" IsHitTestVisible="False"
-                                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,50,30" MaxWidth="420"
-                                Background="#F2111625" BorderBrush="#4facfe" BorderThickness="1" CornerRadius="10" Padding="16,12">
-                            <Border.Effect>
-                                <DropShadowEffect Color="Black" BlurRadius="20" Opacity="0.5" ShadowDepth="2"/>
-                            </Border.Effect>
-                            <StackPanel>
-                                <TextBlock x:Name="txtToastMods" Foreground="White" FontSize="13" TextWrapping="Wrap"/>
-                                <ProgressBar x:Name="barraToastMods" IsIndeterminate="True" Height="3" Margin="0,8,0,0" Visibility="Collapsed"
-                                             Background="#22FFFFFF" Foreground="#4facfe" BorderThickness="0"/>
-                            </StackPanel>
-                        </Border>
                     </Grid>
 
                     <Grid x:Name="OverlayVersiones" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed" Background="#CC000000" IsHitTestVisible="True" Panel.ZIndex="999">
@@ -1072,7 +1187,7 @@
                                             <Setter Property="Template">
                                                 <Setter.Value>
                                                     <ControlTemplate TargetType="ListViewItem">
-                                                        <Border Background="#1E2328" CornerRadius="8" Padding="15" BorderThickness="1" BorderBrush="Transparent">
+                                                        <Border Background="{StaticResource BgCard}" CornerRadius="8" Padding="15" BorderThickness="1" BorderBrush="Transparent">
                                                             <ContentPresenter/>
                                                             <Border.Style>
                                                                 <Style TargetType="Border">
@@ -1192,7 +1307,7 @@
 
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Width="300" Height="160" Background="#1E2328" CornerRadius="10" Margin="5" Padding="15">
+                                            <Border Width="300" Height="160" Background="{StaticResource BgCard}" CornerRadius="10" Margin="5" Padding="15">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="75"/>
@@ -1283,7 +1398,7 @@
                                     </ProgressBar>
                                 </StackPanel>
                             </Grid>
-                            <Border Grid.Row="2" Background="#1E2328" CornerRadius="12" Margin="0,10,0,0" ClipToBounds="True" BorderBrush="#33FFFFFF" BorderThickness="1">
+                            <Border Grid.Row="2" Background="{StaticResource BgCard}" CornerRadius="12" Margin="0,10,0,0" ClipToBounds="True" BorderBrush="#33FFFFFF" BorderThickness="1">
 
                                 <wv2:WebView2 x:Name="wvDetalleDescripcion" DefaultBackgroundColor="Transparent" />
 
@@ -1315,7 +1430,7 @@
                                         </StackPanel>
 
                                         <ComboBox x:Name="comboIdiomas" Grid.Column="1" Width="200" Height="35" SelectionChanged="ComboIdiomas_SelectionChanged"
-                              Background="#252525" BorderBrush="#444" Foreground="White" VerticalContentAlignment="Center" Padding="10,0">
+                              Background="{StaticResource BgCardAlt}" BorderBrush="#444" Foreground="White" VerticalContentAlignment="Center" Padding="10,0">
                                             <ComboBox.Resources>
                                                 <Style TargetType="Border">
                                                     <Setter Property="CornerRadius" Value="6"/>
@@ -1365,7 +1480,7 @@
 
                                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                                 <TextBlock Text="{DynamicResource Settings_Width}" Foreground="{StaticResource TextSub}" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="11"/>
-                                                <TextBox x:Name="txtResAncho" Width="60" Height="30" Text="854" Background="#252525" Foreground="White" BorderBrush="#444"
+                                                <TextBox x:Name="txtResAncho" Width="60" Height="30" Text="854" Background="{StaticResource BgCardAlt}" Foreground="White" BorderBrush="#444"
                                      VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Padding="0"
                                      TextChanged="TxtRes_TextChanged" PreviewTextInput="SoloNumeros_PreviewTextInput">
                                                     <TextBox.Resources>
@@ -1378,7 +1493,7 @@
                                                 <TextBlock Text="x" Foreground="{StaticResource ColorAccent}" VerticalAlignment="Center" Margin="10,0" FontWeight="Bold"/>
 
                                                 <TextBlock Text="{DynamicResource Settings_Height}" Foreground="{StaticResource TextSub}" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="11"/>
-                                                <TextBox x:Name="txtResAlto" Width="60" Height="30" Text="480" Background="#252525" Foreground="White" BorderBrush="#444"
+                                                <TextBox x:Name="txtResAlto" Width="60" Height="30" Text="480" Background="{StaticResource BgCardAlt}" Foreground="White" BorderBrush="#444"
                                      VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Padding="0"
                                      TextChanged="TxtRes_TextChanged" PreviewTextInput="SoloNumeros_PreviewTextInput">
                                                     <TextBox.Resources>
@@ -1399,6 +1514,44 @@
                                             </StackPanel>
                                         </CheckBox>
                                     </StackPanel>
+                                </Border>
+
+                                <TextBlock Text="{DynamicResource Settings_Storage}" Foreground="{StaticResource ColorAccent}" FontWeight="Bold" FontSize="14" Margin="5,0,0,8"/>
+                                <Border Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" Margin="0,0,0,25" BorderThickness="1" BorderBrush="#22FFFFFF">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
+                                            <TextBlock Text="{DynamicResource Settings_ClearCache}" FontWeight="Bold" Foreground="{StaticResource TextMain}" FontSize="14"/>
+                                            <TextBlock Text="{DynamicResource Settings_ClearCacheDesc}" Foreground="{StaticResource TextSub}" FontSize="12" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                            <TextBlock x:Name="TxtTamanoCache" Foreground="{StaticResource ColorAccent}" FontSize="12" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                                        </StackPanel>
+
+                                        <Button x:Name="BtnLimpiarCache" Grid.Column="1" Content="{DynamicResource Settings_ClearCacheBtn}" Style="{StaticResource PrimaryButton}" Height="38" MinWidth="150" FontWeight="SemiBold" BorderThickness="0" Click="BtnLimpiarCache_Click"/>
+                                    </Grid>
+                                </Border>
+
+                                <TextBlock Text="{DynamicResource Settings_Debug}" Foreground="{StaticResource ColorAccent}" FontWeight="Bold" FontSize="14" Margin="5,0,0,8"/>
+                                <Border Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" Margin="0,0,0,25" BorderThickness="1" BorderBrush="#22FFFFFF">
+                                    <CheckBox x:Name="chkConsola" Click="ChkConsola_Click" Cursor="Hand" Foreground="White">
+                                        <StackPanel Margin="10,-2,0,0">
+                                            <TextBlock Text="{DynamicResource Settings_DebugConsole}" FontWeight="Bold" Foreground="{StaticResource TextMain}" FontSize="14"/>
+                                            <TextBlock Text="{DynamicResource Settings_DebugConsoleDesc}" Foreground="{StaticResource TextSub}" FontSize="12" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </CheckBox>
+                                </Border>
+
+                                <TextBlock Text="{DynamicResource Settings_Integrations}" Foreground="{StaticResource ColorAccent}" FontWeight="Bold" FontSize="14" Margin="5,0,0,8"/>
+                                <Border Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" Margin="0,0,0,25" BorderThickness="1" BorderBrush="#22FFFFFF">
+                                    <CheckBox x:Name="chkDiscordRpc" Click="ChkDiscordRpc_Click" Cursor="Hand" Foreground="White">
+                                        <StackPanel Margin="10,-2,0,0">
+                                            <TextBlock Text="{DynamicResource Settings_DiscordRpc}" FontWeight="Bold" Foreground="{StaticResource TextMain}" FontSize="14"/>
+                                            <TextBlock Text="{DynamicResource Settings_DiscordRpcDesc}" Foreground="{StaticResource TextSub}" FontSize="12" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </CheckBox>
                                 </Border>
 
                                 <TextBlock Text="{DynamicResource Settings_Customization}" Foreground="{StaticResource ColorAccent}" FontWeight="Bold" FontSize="14" Margin="5,0,0,8"/>
@@ -1841,6 +1994,129 @@
                        HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
+
+                <Grid x:Name="GridCompartir" Grid.ColumnSpan="2" Visibility="Collapsed" Background="#CC000000" Panel.ZIndex="900">
+                    <Border Width="420" VerticalAlignment="Center" Background="{StaticResource BgSidebar}" CornerRadius="15" BorderBrush="{StaticResource ColorAccent}" BorderThickness="1">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="30" Opacity="0.6"/>
+                        </Border.Effect>
+                        <StackPanel Margin="30,25">
+                            <TextBlock Text="{DynamicResource Share_Title}" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+                            <StackPanel x:Name="PanelCompartirOpciones">
+                                <TextBlock Text="{DynamicResource Share_Incluir}" Foreground="{StaticResource TextSub}" FontSize="11" Margin="0,0,0,12"/>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{DynamicResource Share_Mods}" Foreground="White" FontSize="14" VerticalAlignment="Center"/>
+                                    <CheckBox x:Name="chkCompartirMods" Grid.Column="1" Style="{StaticResource SwitchModStyle}" IsChecked="True" VerticalAlignment="Center"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{DynamicResource Share_Shaders}" Foreground="White" FontSize="14" VerticalAlignment="Center"/>
+                                    <CheckBox x:Name="chkCompartirShaders" Grid.Column="1" Style="{StaticResource SwitchModStyle}" IsChecked="False" VerticalAlignment="Center"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{DynamicResource Share_Texturas}" Foreground="White" FontSize="14" VerticalAlignment="Center"/>
+                                    <CheckBox x:Name="chkCompartirTexturas" Grid.Column="1" Style="{StaticResource SwitchModStyle}" IsChecked="False" VerticalAlignment="Center"/>
+                                </Grid>
+                                <Button x:Name="btnGenerarCodigo" Content="{DynamicResource Share_Generar}" Height="40" Margin="0,8,0,0" Background="{StaticResource ColorAccentDim}" Foreground="{StaticResource ColorAccent}" BorderBrush="{StaticResource ColorAccent}" BorderThickness="1" FontWeight="Bold" Click="BtnGenerarCodigo_Click">
+                                    <Button.Resources>
+                                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style>
+                                    </Button.Resources>
+                                </Button>
+                            </StackPanel>
+
+                            <StackPanel x:Name="PanelCompartirCargando" Visibility="Collapsed">
+                                <TextBlock Text="{DynamicResource Share_Generando}" Foreground="{StaticResource TextSub}" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                                <ProgressBar IsIndeterminate="True" Height="4" Background="#22FFFFFF" Foreground="#4facfe" BorderThickness="0"/>
+                            </StackPanel>
+
+                            <StackPanel x:Name="PanelCompartirResultado" Visibility="Collapsed">
+                                <TextBlock Text="{DynamicResource Share_CodigoLabel}" Foreground="{StaticResource TextSub}" FontSize="11" Margin="0,0,0,5"/>
+                                <Border Background="{StaticResource BgInput}" CornerRadius="8" Padding="10,12">
+                                    <TextBox x:Name="txtCodigoCompartir" IsReadOnly="True" Background="Transparent" BorderThickness="0" Foreground="#4facfe" FontSize="34" FontWeight="Bold" FontFamily="Consolas" HorizontalContentAlignment="Center"/>
+                                </Border>
+                                <TextBlock x:Name="txtResumenCompartir" Foreground="{StaticResource TextSub}" FontSize="12" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+
+                                <Border Background="#22FFAA00" BorderBrush="#66FFAA00" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,14,0,0">
+                                    <TextBlock Text="{DynamicResource Share_Aviso}" Foreground="#FFAA00" FontSize="12" TextWrapping="Wrap"/>
+                                </Border>
+
+                                <Button x:Name="btnCopiarCodigo" Content="{DynamicResource Share_Copiar}" Height="40" Margin="0,16,0,0" Background="{StaticResource ColorAccentDim}" Foreground="{StaticResource ColorAccent}" BorderBrush="{StaticResource ColorAccent}" BorderThickness="1" FontWeight="Bold" Click="BtnCopiarCodigo_Click">
+                                    <Button.Resources>
+                                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style>
+                                    </Button.Resources>
+                                </Button>
+                            </StackPanel>
+
+                            <Button Content="{DynamicResource Share_Cerrar}" Height="38" Margin="0,10,0,0" Background="#22FFFFFF" Foreground="White" BorderThickness="0" Click="BtnCerrarCompartir_Click">
+                                <Button.Resources>
+                                    <Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style>
+                                </Button.Resources>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Grid x:Name="GridImportar" Grid.ColumnSpan="2" Visibility="Collapsed" Background="#CC000000" Panel.ZIndex="900">
+                    <Border Width="420" VerticalAlignment="Center" Background="{StaticResource BgSidebar}" CornerRadius="15" BorderBrush="{StaticResource ColorAccent}" BorderThickness="1">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="30" Opacity="0.6"/>
+                        </Border.Effect>
+                        <StackPanel Margin="30,25">
+                            <TextBlock Text="{DynamicResource Import_Title}" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+                            <TextBlock Text="{DynamicResource Import_CodigoLabel}" Foreground="{StaticResource TextSub}" Margin="0,0,0,5" FontSize="11"/>
+                            <TextBox x:Name="txtCodigoImportar" Height="52" MaxLength="6" Background="{StaticResource BgInput}" Foreground="White" BorderThickness="0" Padding="10,8" FontSize="28" FontWeight="Bold" FontFamily="Consolas" HorizontalContentAlignment="Center" PreviewTextInput="SoloNumeros_PreviewTextInput" KeyDown="TxtCodigoImportar_KeyDown"/>
+
+                            <StackPanel x:Name="PanelProgresoImportar" Visibility="Collapsed" Margin="0,16,0,0">
+                                <TextBlock x:Name="txtEstadoImportar" Foreground="{StaticResource TextSub}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,0,0,6"/>
+                                <ProgressBar x:Name="barraImportar" Height="6" Background="#22FFFFFF" Foreground="#4facfe" BorderThickness="0" IsIndeterminate="True"/>
+                            </StackPanel>
+
+                            <Grid Margin="0,20,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="{DynamicResource Btn_Cancel}" Height="40" Background="#22FFFFFF" Foreground="White" BorderThickness="0" Click="BtnCancelarImportar_Click">
+                                    <Button.Resources>
+                                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style>
+                                    </Button.Resources>
+                                </Button>
+                                <Button x:Name="btnConfirmarImportar" Grid.Column="2" Content="{DynamicResource Import_Confirmar}" Height="40" Background="{StaticResource ColorAccentDim}" Foreground="{StaticResource ColorAccent}" BorderBrush="{StaticResource ColorAccent}" BorderThickness="1" FontWeight="Bold" Click="BtnConfirmarImportar_Click">
+                                    <Button.Resources>
+                                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style>
+                                    </Button.Resources>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Border x:Name="ToastGlobal" Grid.ColumnSpan="2" Panel.ZIndex="1000" Visibility="Collapsed" IsHitTestVisible="False"
+                        HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,30,30" MaxWidth="420"
+                        Background="#F2111625" BorderBrush="#4facfe" BorderThickness="1" CornerRadius="10" Padding="16,12">
+                    <Border.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="20" Opacity="0.5" ShadowDepth="2"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <TextBlock x:Name="txtToast" Foreground="White" FontSize="13" TextWrapping="Wrap"/>
+                        <ProgressBar x:Name="barraToast" IsIndeterminate="True" Height="3" Margin="0,8,0,0" Visibility="Collapsed"
+                                     Background="#22FFFFFF" Foreground="#4facfe" BorderThickness="0"/>
+                    </StackPanel>
+                </Border>
 
             </Grid>
         </Border>

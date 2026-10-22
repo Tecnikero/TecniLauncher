@@ -49,7 +49,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error cargando skin TecniStudio: " + ex.Message);
+                LogService.Warn("Error cargando skin TecniStudio", ex);
                 return null;
             }
         }
@@ -110,8 +110,9 @@ namespace TecniLauncher
                         return texturas.textures.SKIN.url;
                     }
                 }
-                catch
+                catch (Exception exLog)
                 {
+                    LogService.Warn("No se pudo obtener la textura de la skin", exLog);
                 }
             }
 
@@ -121,6 +122,32 @@ namespace TecniLauncher
             }
 
             return "https://minotar.net/skin/steve";
+        }
+        public static async Task<(string? Skin, string? Capa)> ObtenerUrlsTexturas(string usuario, bool esPremium)
+        {
+            if (Core.EsTecniStudio && Core.SesionUsuario != null && AuthService.EsUuidValido(Core.SesionUsuario.UUID))
+            {
+                try
+                {
+                    string url = $"https://kfxffvjakkcjbwkpvxtr.supabase.co/functions/v1/yggdrasil/sessionserver/session/minecraft/profile/{Core.SesionUsuario.UUID}";
+                    string json = await _http.GetStringAsync(url);
+                    dynamic perfil = JsonConvert.DeserializeObject(json);
+
+                    if (perfil?.properties != null && perfil.properties.Count > 0)
+                    {
+                        string base64 = perfil.properties[0].value;
+                        string texturaJson = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64));
+                        dynamic texturas = JsonConvert.DeserializeObject(texturaJson);
+
+                        string? skin = texturas?.textures?.SKIN?.url;
+                        string? capa = texturas?.textures?.CAPE?.url;
+                        if (!string.IsNullOrEmpty(skin)) return (skin, capa);
+                    }
+                }
+                catch (Exception exLog) { LogService.Warn("Error al procesar la skin", exLog); }
+            }
+
+            return (await ObtenerUrlDirecta(usuario, esPremium), null);
         }
     }
 }

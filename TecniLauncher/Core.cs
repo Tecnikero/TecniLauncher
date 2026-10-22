@@ -15,6 +15,7 @@ namespace TecniLauncher
         public static string RutaGlobal { get; private set; }
         public static string RutaData { get; private set; }
         public static string RutaInstances { get; private set; }
+        public static string RutaLogs { get; private set; }
         public static MSession? SesionUsuario { get; set; }
         public static MinecraftLauncher? LauncherGlobal { get; set; }
         public static bool MostrarSnapshots { get; set; } = false;
@@ -28,6 +29,8 @@ namespace TecniLauncher
         public static bool EsSesionTecniStudio =>
             EsTecniStudio && SesionUsuario != null && SesionUsuario.UserType == "mojang";
         public static string IdiomaActual { get; set; } = "en-US";
+        public static bool DiscordRpcActivado { get; set; } = true;
+        public static bool ConsolaDepuracionActiva { get; set; } = false;
         public static string T(string clave, params object[] args)
         {
             string texto = System.Windows.Application.Current?.TryFindResource(clave) as string ?? clave;
@@ -44,6 +47,7 @@ namespace TecniLauncher
             RutaData = Path.Combine(raiz, "Data");
             RutaGlobal = Path.Combine(raiz, "Global");
             RutaInstances = Path.Combine(raiz, "Instances");
+            RutaLogs = Path.Combine(raiz, "Logs");
 
             if (!Directory.Exists(RutaData)) Directory.CreateDirectory(RutaData);
             if (!Directory.Exists(RutaGlobal)) Directory.CreateDirectory(RutaGlobal);
@@ -68,7 +72,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error inicializando secretos: " + ex.Message);
+                LogService.Warn("Error inicializando secretos", ex);
             }
         }
         private static readonly object _lockArchivos = new object();
@@ -107,12 +111,14 @@ namespace TecniLauncher
                     JuegoAlto,
                     PantallaCompleta,
                     EsTecniStudio,
-                    IdiomaActual
+                    IdiomaActual,
+                    DiscordRpcActivado,
+                    ConsolaDepuracionActiva
                 };
                 string json = JsonSerializer.Serialize(datos, new JsonSerializerOptions { WriteIndented = true });
                 EscribirAtomico(archivo, json);
             }
-            catch { }
+            catch (Exception exLog) { LogService.Error("No se pudo guardar la configuración", exLog); }
         }
 
         public static void CargarConfiguracion()
@@ -131,9 +137,11 @@ namespace TecniLauncher
                     if (doc.RootElement.TryGetProperty("PantallaCompleta", out var f)) PantallaCompleta = f.GetBoolean();
                     if (doc.RootElement.TryGetProperty("EsTecniStudio", out var ely)) EsTecniStudio = ely.GetBoolean();
                     if (doc.RootElement.TryGetProperty("IdiomaActual", out var lang)) IdiomaActual = lang.GetString() ?? "es-ES";
+                    if (doc.RootElement.TryGetProperty("DiscordRpcActivado", out var rpc)) DiscordRpcActivado = rpc.GetBoolean();
+                    if (doc.RootElement.TryGetProperty("ConsolaDepuracionActiva", out var cons)) ConsolaDepuracionActiva = cons.GetBoolean();
                 }
             }
-            catch { }
+            catch (Exception exLog) { LogService.Error("No se pudo cargar la configuración (se usan valores por defecto)", exLog); }
         }
 
         public static void GuardarPerfiles()
@@ -150,7 +158,7 @@ namespace TecniLauncher
 
                 EscribirAtomico(archivo, json);
             }
-            catch { }
+            catch (Exception exLog) { LogService.Error("No se pudieron guardar los perfiles", exLog); }
         }
 
         private static string SerializarPerfiles()
@@ -168,7 +176,7 @@ namespace TecniLauncher
                     if (listaCargada != null) Perfiles = listaCargada;
                 }
             }
-            catch { }
+            catch (Exception exLog) { LogService.Error("No se pudieron cargar los perfiles", exLog); }
         }
         public static void CambiarIdioma(string cultura)
         {
@@ -190,7 +198,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error cambiando idioma: " + ex.Message);
+                LogService.Warn("Error cambiando idioma", ex);
             }
         }
     }

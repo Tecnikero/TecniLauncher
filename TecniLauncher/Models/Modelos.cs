@@ -1,4 +1,4 @@
-namespace TecniLauncher.Models
+﻿namespace TecniLauncher.Models
 {
     public class Noticia
     {
@@ -16,5 +16,6 @@ namespace TecniLauncher.Models
         public bool   EsCritica          { get; set; }
         public string LinkDescarga       { get; set; } = "";
         public string Sha256 { get; set; }
+        public string Firma { get; set; }
     }
 }

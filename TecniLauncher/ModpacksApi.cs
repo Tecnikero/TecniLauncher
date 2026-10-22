@@ -41,7 +41,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error buscando modpacks: {ex.Message}");
+                LogService.Warn("Error buscando modpacks", ex);
                 return new();
             }
         }
@@ -108,8 +108,9 @@ namespace TecniLauncher
 
                 return destino.StartsWith(baseCompleta, StringComparison.OrdinalIgnoreCase) ? destino : null;
             }
-            catch
+            catch (Exception exLog)
             {
+                LogService.Warn("Ruta de destino inválida en el paquete", exLog);
                 return null;
             }
         }
@@ -142,7 +143,7 @@ namespace TecniLauncher
         {
             if (!EsUrlPermitida(urlDescarga))
             {
-                System.Diagnostics.Debug.WriteLine($"Modpack rechazado: host no permitido: {urlDescarga}");
+                LogService.Warn($"Modpack rechazado: host no permitido: {urlDescarga}");
                 return null;
             }
 
@@ -160,7 +161,7 @@ namespace TecniLauncher
             }
             catch (InvalidDataException ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Modpack rechazado al extraer: {ex.Message}");
+                LogService.Warn("Modpack rechazado al extraer", ex);
                 return null;
             }
 
@@ -174,13 +175,13 @@ namespace TecniLauncher
             {
                 if (ResolverRutaSegura(rutaCarpetaPerfil, mod.RutaDestino) == null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Modpack rechazado: ruta fuera del perfil: {mod.RutaDestino}");
+                    LogService.Warn($"Modpack rechazado: ruta fuera del perfil: {mod.RutaDestino}");
                     return null;
                 }
 
                 if (mod.UrlsDescarga == null || mod.UrlsDescarga.Count == 0 || !mod.UrlsDescarga.All(EsUrlPermitida))
                 {
-                    System.Diagnostics.Debug.WriteLine($"Modpack rechazado: URL de descarga no permitida en: {mod.RutaDestino}");
+                    LogService.Warn($"Modpack rechazado: URL de descarga no permitida en: {mod.RutaDestino}");
                     return null;
                 }
             }
@@ -253,7 +254,7 @@ namespace TecniLauncher
                 catch (Exception ex)
                 {
                     fallos.Add(Path.GetFileName(mod.RutaDestino));
-                    System.Diagnostics.Debug.WriteLine($"Error descargando {mod.RutaDestino}: {ex.Message}");
+                    LogService.Warn($"Error descargando {mod.RutaDestino}", ex);
                 }
                 finally
                 {

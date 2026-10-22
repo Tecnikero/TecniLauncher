@@ -46,7 +46,7 @@ namespace TecniLauncher.Services
             }
             catch
             {
-                try { if (File.Exists(parcial)) File.Delete(parcial); } catch { }
+                try { if (File.Exists(parcial)) File.Delete(parcial); } catch (Exception exLog) { LogService.Debug("No se pudo borrar archivo parcial de descarga", exLog); }
                 throw;
             }
         }

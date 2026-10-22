@@ -1,4 +1,5 @@
-﻿using System;
+﻿using TecniLauncher.Services;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
@@ -53,8 +54,9 @@ namespace TecniLauncher
                     return lista;
                 }
             }
-            catch
+            catch (Exception exLog)
             {
+                LogService.Warn("No se pudo obtener la lista de versiones de Fabric", exLog);
                 return new List<string>();
             }
         }

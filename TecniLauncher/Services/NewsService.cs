@@ -68,8 +68,9 @@ namespace TecniLauncher.Services
 
                 return resultado;
             }
-            catch
+            catch (Exception exLog)
             {
+                LogService.Warn("No se pudo descargar la imagen de la noticia", exLog);
                 return null;
             }
         }

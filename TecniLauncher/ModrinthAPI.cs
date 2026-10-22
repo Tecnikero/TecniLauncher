@@ -67,17 +67,71 @@ namespace TecniLauncher
         public override string ToString() => Texto;
     }
 
+    public enum TipoComplemento { Mod, Textura, Shader }
+
+    public static class TipoComplementoExtensiones
+    {
+        public static string ProjectType(this TipoComplemento t) => t switch
+        {
+            TipoComplemento.Textura => "resourcepack",
+            TipoComplemento.Shader => "shader",
+            _ => "mod"
+        };
+
+        public static string Carpeta(this TipoComplemento t) => t switch
+        {
+            TipoComplemento.Textura => "resourcepacks",
+            TipoComplemento.Shader => "shaderpacks",
+            _ => "mods"
+        };
+
+        public static string[] Extensiones(this TipoComplemento t) =>
+            t == TipoComplemento.Mod ? new[] { ".jar" } : new[] { ".zip" };
+
+        public static string Icono(this TipoComplemento t) => t switch
+        {
+            TipoComplemento.Textura => "🎨",
+            TipoComplemento.Shader => "✨",
+            _ => "🧩"
+        };
+
+        public static bool UsaLoader(this TipoComplemento t) => t == TipoComplemento.Mod;
+
+        public static string[] Categorias(this TipoComplemento t) => t switch
+        {
+            TipoComplemento.Textura => new[]
+            {
+                "vanilla-like", "realistic", "simplistic", "themed", "cursed", "decoration", "combat", "tweaks", "utility",
+                "16x", "32x", "64x", "128x", "256x", "512x+"
+            },
+            TipoComplemento.Shader => new[]
+            {
+                "vanilla-like", "realistic", "semi-realistic", "cartoon", "fantasy", "cursed",
+                "atmosphere", "bloom", "colored-lighting", "foliage", "path-tracing", "pbr", "reflections", "shadows"
+            },
+            _ => new[]
+            {
+                "adventure", "cursed", "decoration", "economy", "equipment", "food", "game-mechanics",
+                "library", "magic", "management", "minigame", "mobs", "optimization", "social",
+                "storage", "technology", "transportation", "utility", "worldgen"
+            }
+        };
+    }
+
     public class ModLocal : System.ComponentModel.INotifyPropertyChanged
     {
         private const string SufijoDeshabilitado = ".disabled";
+
+        public string Icono { get; }
 
         public string Directorio { get; }
         public string NombreArchivo { get; private set; }
         public long Bytes { get; }
         public bool Habilitado { get; private set; }
 
-        public ModLocal(System.IO.FileInfo f)
+        public ModLocal(System.IO.FileInfo f, string icono = "🧩")
         {
+            Icono = icono;
             Directorio = f.DirectoryName ?? "";
             NombreArchivo = f.Name;
             Bytes = f.Length;
@@ -92,7 +146,7 @@ namespace TecniLauncher
             {
                 string n = NombreArchivo;
                 if (n.EndsWith(SufijoDeshabilitado, StringComparison.OrdinalIgnoreCase)) n = n[..^SufijoDeshabilitado.Length];
-                if (n.EndsWith(".jar", StringComparison.OrdinalIgnoreCase)) n = n[..^4];
+                if (n.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) || n.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) n = n[..^4];
                 return n;
             }
         }
@@ -171,14 +225,19 @@ namespace TecniLauncher
         private static string? Str(JsonElement e, string nombre) =>
             e.TryGetProperty(nombre, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() : null;
 
-        public static async Task<List<ModInfo>> BuscarMods(string busqueda, string loader, string version, int offset = 0, int limite = 30, string? categoria = null)
+        public static async Task<List<ModInfo>> BuscarMods(string busqueda, string? loader, string version, int offset = 0, int limite = 30, string? categoria = null, string tipoProyecto = "mod")
         {
-            if (string.IsNullOrEmpty(loader) || string.IsNullOrEmpty(version)) return new List<ModInfo>();
+            bool usaLoader = tipoProyecto == "mod";
+            if (string.IsNullOrEmpty(version) || (usaLoader && string.IsNullOrEmpty(loader))) return new List<ModInfo>();
 
             try
             {
-                string facetCategoria = string.IsNullOrEmpty(categoria) ? "" : $",[\"categories:{categoria.ToLower()}\"]";
-                string facets = $"[[\"categories:{loader.ToLower()}\"],[\"versions:{version}\"],[\"project_type:mod\"]{facetCategoria}]";
+                var grupos = new List<string>();
+                if (usaLoader) grupos.Add($"[\"categories:{loader!.ToLower()}\"]");
+                grupos.Add($"[\"versions:{version}\"]");
+                grupos.Add($"[\"project_type:{tipoProyecto}\"]");
+                if (!string.IsNullOrEmpty(categoria)) grupos.Add($"[\"categories:{categoria.ToLower()}\"]");
+                string facets = "[" + string.Join(",", grupos) + "]";
 
                 string indexOpt = string.IsNullOrEmpty(busqueda) ? "downloads" : "relevance";
 
@@ -193,7 +252,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Error al buscar en Modrinth: " + ex.Message);
+                LogService.Warn("Error al buscar en Modrinth", ex);
                 return new List<ModInfo>();
             }
         }
@@ -212,7 +271,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Error obteniendo versiones de Minecraft: " + ex.Message);
+                LogService.Warn("Error obteniendo versiones de Minecraft", ex);
                 return new List<string>();
             }
         }
@@ -243,11 +302,11 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Error identificando mods por hash: " + ex.Message);
+                LogService.Warn("Error identificando mods por hash", ex);
                 return null;
             }
         }
-        private static ModVersion? ParsearVersion(JsonElement v)
+        public static ModVersion? ParsearVersion(JsonElement v)
         {
             try
             {
@@ -291,15 +350,16 @@ namespace TecniLauncher
             catch { return null; }
         }
 
-        public static async Task<List<ModVersion>> ObtenerListaVersiones(string projectId, string versionMC, string loader)
+        public static async Task<List<ModVersion>> ObtenerListaVersiones(string projectId, string versionMC, string? loader)
         {
             if (string.IsNullOrEmpty(projectId)) return new List<ModVersion>();
 
             try
             {
-                string loaders = Uri.EscapeDataString($"[\"{loader.ToLower()}\"]");
                 string versiones = Uri.EscapeDataString($"[\"{versionMC}\"]");
-                string url = $"{Base}/project/{Uri.EscapeDataString(projectId)}/version?loaders={loaders}&game_versions={versiones}";
+                string url = $"{Base}/project/{Uri.EscapeDataString(projectId)}/version?game_versions={versiones}";
+                if (!string.IsNullOrEmpty(loader))
+                    url += "&loaders=" + Uri.EscapeDataString($"[\"{loader.ToLower()}\"]");
                 string json = await client.GetStringAsync(url);
                 var listaResultados = new List<ModVersion>();
 
@@ -318,7 +378,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error obteniendo versiones: {ex.Message}");
+                LogService.Warn("Error obteniendo versiones", ex);
                 return new List<ModVersion>();
             }
         }
@@ -332,7 +392,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error obteniendo versión {versionId}: {ex.Message}");
+                LogService.Warn($"Error obteniendo versión {versionId}", ex);
                 return null;
             }
         }
@@ -361,7 +421,7 @@ namespace TecniLauncher
             {
                 if (resultado.Descargas.Count >= maxMods)
                 {
-                    Debug.WriteLine($"Límite de {maxMods} mods alcanzado al resolver dependencias.");
+                    LogService.Info($"Límite de {maxMods} mods alcanzado al resolver dependencias.");
                     break;
                 }
 

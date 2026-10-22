@@ -50,11 +50,10 @@ namespace TecniLauncher
         private bool modoOnline = true;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        private const string VERSION_ACTUAL = "1.4.4";
+        private const string VERSION_ACTUAL = "1.5.0";
         private CancellationTokenSource _ctsLoaderVersiones;
         private readonly Dictionary<string, string> _cacheProyectosLocales = new();
         private DispatcherTimer _timerNoticias;
-        public DiscordRpcClient client;
         private Rect _tamanoNormal;
         private bool _esFalsoMaximizado = false;
         private int _offsetMods = 0;
@@ -90,10 +89,37 @@ namespace TecniLauncher
         public MainWindow()
         {
             InitializeComponent();
+            AjustarTamanoAPantalla();
             InicializarLauncher();
             IniciarDiscordRPC();
             this.StateChanged += Window_StateChanged;
             this.Closing += Window_Closing;
+        }
+        private void AjustarTamanoAPantalla()
+        {
+            try
+            {
+                var area = SystemParameters.WorkArea;
+                const double margen = 20;
+                double maxW = area.Width - margen;
+                double maxH = area.Height - margen;
+
+                double escala = Math.Min(1.0, Math.Min(maxW / MinWidth, maxH / MinHeight));
+                if (escala < 1.0)
+                {
+                    MinWidth *= escala;
+                    MinHeight *= escala;
+                    RaizContenido.LayoutTransform = new System.Windows.Media.ScaleTransform(escala, escala);
+                    LogService.Info($"Pantalla pequeña ({area.Width:0}x{area.Height:0}): contenido escalado a {escala:P0}");
+                }
+
+                Width = Math.Min(Width * (escala < 1.0 ? escala : 1.0), maxW);
+                Height = Math.Min(Height * (escala < 1.0 ? escala : 1.0), maxH);
+            }
+            catch (Exception ex)
+            {
+                LogService.Warn("No se pudo ajustar el tamaño de la ventana a la pantalla", ex);
+            }
         }
 
         private void InicializarLauncher()
@@ -126,31 +152,17 @@ namespace TecniLauncher
             txtOfflineName.Text = Core.UltimoNombreOffline;
             txtUsuario.Text = Core.UltimoNombreOffline;
             chkSnapshots.IsChecked = Core.MostrarSnapshots;
+            InicializarConsola();
         }
         void IniciarDiscordRPC()
         {
-            client = new DiscordRpcClient("1495130192572580012");
-
-            client.Initialize();
-
-            client.SetPresence(new RichPresence()
-            {
-                Details = "En el Menú Principal",
-                State = $"V{VERSION_ACTUAL}",
-                Assets = new Assets()
-                {
-                    LargeImageKey = "tecnilogo",
-                    LargeImageText = "TecniLauncher"
-                },
-                Timestamps = Timestamps.Now
-            });
+            DiscordRpcService.Establecer("En el Menú Principal", $"v{VERSION_ACTUAL}");
+            DiscordRpcService.Aplicar(Core.DiscordRpcActivado);
         }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (client != null)
-            {
-                client.Dispose();
-            }
+            DiscordRpcService.Detener();
+            ConsolaJuegoService.Cerrar();
         }
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
@@ -170,6 +182,18 @@ namespace TecniLauncher
             else
             {
                 var sesionTS = AuthService.CargarSesionTecni();
+
+                if (sesionTS != null)
+                {
+                    Core.SesionUsuario = sesionTS;
+                    Core.EsTecniStudio = true;
+                    if (await AuthService.AsegurarTokenTecniAsync() == AuthService.EstadoToken.Expirado)
+                    {
+                        AuthService.CerrarSesionTecni();
+                        sesionTS = null;
+                        Aviso(Core.T("Msg_SesionTecniExpirada"));
+                    }
+                }
 
                 if (sesionTS != null)
                 {
@@ -222,7 +246,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                VentanaMensaje.Mostrar(Core.T("Msg_EnlaceError", ex.Message));
+                AvisoError(Core.T("Msg_EnlaceError", ex.Message));
             }
         }
         private void MoverVentana_MouseDown(object sender, MouseButtonEventArgs e)
@@ -314,6 +338,9 @@ namespace TecniLauncher
             chkFullscreen.IsChecked = Core.PantallaCompleta;
             txtResAncho.Text = Core.JuegoAncho.ToString();
             txtResAlto.Text = Core.JuegoAlto.ToString();
+            chkConsola.IsChecked = Core.ConsolaDepuracionActiva;
+            chkDiscordRpc.IsChecked = Core.DiscordRpcActivado;
+            _ = ActualizarTamanoCacheAsync();
             bool esPantallaCompleta = Core.PantallaCompleta;
             txtResAncho.IsEnabled = !esPantallaCompleta;
             txtResAlto.IsEnabled = !esPantallaCompleta;
@@ -338,7 +365,7 @@ namespace TecniLauncher
                 txtOfflineName.Text = "Jugador";
                 txtUsuario.Text = Core.T("Txt_SinSesion");
                 CargarSkinEnInterfaz(null);
-                VentanaMensaje.Mostrar(Core.T("Msg_SesionCerrada"));
+                Aviso(Core.T("Msg_SesionCerrada"));
             }
             else
             {
@@ -357,7 +384,7 @@ namespace TecniLauncher
                 }
                 catch (Exception ex)
                 {
-                    VentanaMensaje.Mostrar(Core.T("Msg_LoginFallido", ex.Message));
+                    AvisoError(Core.T("Msg_LoginFallido", ex.Message));
                     btnMicrosoft.Content = Core.T("Txt_IniciarMicrosoft");
                 }
                 finally { btnMicrosoft.IsEnabled = true; }
@@ -380,13 +407,25 @@ namespace TecniLauncher
                 txtOfflineName.Text = "Jugador";
                 txtUsuario.Text = Core.T("Txt_SinSesion");
                 CargarSkinEnInterfaz(null);
-                VentanaMensaje.Mostrar(Core.T("Msg_SesionTecniCerrada"));
+                Aviso(Core.T("Msg_SesionTecniCerrada"));
             }
             catch (Exception ex)
             {
-                VentanaMensaje.Mostrar(Core.T("Msg_CerrarSesionError", ex.Message));
+                AvisoError(Core.T("Msg_CerrarSesionError", ex.Message));
             }
             finally { btnCerrarSesionTecni.IsEnabled = true; }
+        }
+
+        private void ActualizarEstadoSesionTrasExpirar()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                esPremium = false;
+                btnCerrarSesionTecni.Visibility = Visibility.Collapsed;
+                txtOfflineName.IsEnabled = true;
+                txtUsuario.Text = Core.T("Txt_SinSesion");
+                CargarSkinEnInterfaz(null);
+            });
         }
 
         private void LoguearUsuarioPremium(MSession sesion)
@@ -496,7 +535,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("WebView2 no disponible: " + ex.Message);
+                LogService.Warn("WebView2 no disponible", ex);
                 return false;
             }
         }
@@ -509,7 +548,7 @@ namespace TecniLauncher
             {
                 Process.Start(new ProcessStartInfo { FileName = uri.AbsoluteUri, UseShellExecute = true });
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine("No se pudo abrir el enlace: " + ex.Message); }
+            catch (Exception ex) { LogService.Warn("No se pudo abrir el enlace", ex); }
         }
 
         private async void CargarSkinEnInterfaz(string usuario)
@@ -533,22 +572,25 @@ namespace TecniLauncher
                 {
                     if (!await AsegurarWebView2Async(VisorSkinWebView)) return;
 
-                    string urlDirectaSkin = await SkinUtils.ObtenerUrlDirecta(usuario, this.esPremium);
+                    var (urlSkin, urlCapa) = await SkinUtils.ObtenerUrlsTexturas(usuario, this.esPremium);
 
-                    if (!string.IsNullOrEmpty(urlDirectaSkin))
+                    if (!string.IsNullOrEmpty(urlSkin))
                     {
-                        string urlVisor = $"https://tecnistudio.online/embed-skin.html?url={urlDirectaSkin}";
+                        string urlVisor = $"https://tecnistudio.online/embed-skin.html?url={Uri.EscapeDataString(urlSkin)}";
+                        if (!string.IsNullOrEmpty(urlCapa))
+                            urlVisor += $"&cape={Uri.EscapeDataString(urlCapa)}";
+
                         VisorSkinWebView.CoreWebView2.Navigate(urlVisor);
                     }
                 }
                 catch (Exception exWebView)
                 {
-                    System.Diagnostics.Debug.WriteLine("Error al cargar el motor 3D: " + exWebView.Message);
+                    LogService.Warn("Error al cargar el motor 3D", exWebView);
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error visualizando skin: " + ex.Message);
+                LogService.Warn("Error visualizando skin", ex);
             }
         }
 
@@ -556,7 +598,7 @@ namespace TecniLauncher
         {
             string urlDestino = Core.EsTecniStudio
                 ? "https://tecnistudio.online/minecraft/skin/"
-                : "https://ely.by/";
+                : "https://www.minecraft.net/";
 
             try
             {
@@ -568,7 +610,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error al abrir el navegador: " + ex.Message);
+                LogService.Warn("Error al abrir el navegador", ex);
             }
         }
 
@@ -577,7 +619,7 @@ namespace TecniLauncher
             e.Handled = true;
             if (!string.IsNullOrEmpty(txtUsuario.Text) && txtUsuario.Text != Core.T("Txt_SinSesion"))
             {
-                VentanaMensaje.Mostrar(Core.T("Msg_RecargandoSkin"), Core.T("Txt_TituloActualizando"), MessageBoxButton.OK);
+                Aviso(Core.T("Msg_RecargandoSkin"));
                 CargarSkinEnInterfaz(txtUsuario.Text);
             }
         }
@@ -588,23 +630,10 @@ namespace TecniLauncher
             var perfil = comboPerfilRapido.SelectedItem as Perfil;
             if (perfil == null)
             {
-                VentanaMensaje.Mostrar(Core.T("Msg_SeleccionaPerfil"));
+                AvisoError(Core.T("Msg_SeleccionaPerfil"));
                 return;
             }
-            if (client != null && client.IsInitialized)
-            {
-                client.SetPresence(new RichPresence()
-                {
-                    Details = $"Jugando a {perfil.Nombre}",
-                    State = $"Versión {perfil.Version}",
-                    Assets = new Assets()
-                    {
-                        LargeImageKey = "tecnilogo",
-                        LargeImageText = "TecniLauncher"
-                    },
-                    Timestamps = Timestamps.Now
-                });
-            }
+            DiscordRpcService.Establecer($"Jugando a {perfil.Nombre}", $"Versión {perfil.Version}");
             bool esperandoCierreJuegoJugar = false;
             try
             {
@@ -619,7 +648,9 @@ namespace TecniLauncher
                     esperandoCierreJuegoJugar = true;
                     var cronometro = Stopwatch.StartNew();
 
-                    if (chkOcultarLauncher.IsChecked == true)
+                    if (Core.ConsolaDepuracionActiva)
+                        MostrarConsolaDeJuego();
+                    else if (chkOcultarLauncher.IsChecked == true)
                         this.Hide();
                     else
                         this.WindowState = WindowState.Minimized;
@@ -638,20 +669,7 @@ namespace TecniLauncher
                             this.Show();
                             this.WindowState = WindowState.Normal;
                             this.Activate();
-                            if (client != null && client.IsInitialized)
-                            {
-                                client.SetPresence(new RichPresence()
-                                {
-                                    Details = "En el Menú Principal",
-                                    State = $"V{VERSION_ACTUAL}",
-                                    Assets = new Assets()
-                                    {
-                                        LargeImageKey = "tecnilogo",
-                                        LargeImageText = "TecniLauncher"
-                                    },
-                                    Timestamps = Timestamps.Now
-                                });
-                            }
+                            DiscordRpcService.Establecer("En el Menú Principal", $"V{VERSION_ACTUAL}");
                         });
                     };
                 }
@@ -718,6 +736,12 @@ namespace TecniLauncher
                 if (Core.EsSesionTecniStudio)
                 {
                     Dispatcher.Invoke(() => txtEstadoCarga.Text = Core.T("Txt_ConectandoSkins"));
+                    if (await AuthService.AsegurarTokenTecniAsync() == AuthService.EstadoToken.Expirado)
+                    {
+                        AuthService.CerrarSesionTecni();
+                        ActualizarEstadoSesionTrasExpirar();
+                        throw new InvalidOperationException(Core.T("Msg_SesionTecniExpirada"));
+                    }
                     string rutaJar = await PrepararAuthlibInjector(Core.RutaGlobal);
 
                     if (!string.IsNullOrEmpty(rutaJar))
@@ -752,9 +776,21 @@ namespace TecniLauncher
 
                 var process = await launcher.CreateProcessAsync(idVersion, launchOption);
 
+                bool capturarConsola = Core.ConsolaDepuracionActiva;
                 process.StartInfo.UseShellExecute = false;
-                process.StartInfo.RedirectStandardError = false;
-                process.StartInfo.RedirectStandardOutput = false;
+                process.StartInfo.RedirectStandardError = capturarConsola;
+                process.StartInfo.RedirectStandardOutput = capturarConsola;
+
+                if (capturarConsola)
+                {
+                    process.StartInfo.CreateNoWindow = true;
+                    process.StartInfo.StandardOutputEncoding = System.Text.Encoding.UTF8;
+                    process.StartInfo.StandardErrorEncoding = System.Text.Encoding.UTF8;
+
+                    ConsolaJuegoService.IniciarSesion(perfil.Nombre);
+                    ConsolaJuegoService.Registrar(Core.T("Console_Header", perfil.Nombre, perfil.Version, perfil.TipoLoader, perfil.MemoriaRam), NivelLog.Sistema);
+                    ConsolaJuegoService.Registrar(Core.T("Console_JavaPath", process.StartInfo.FileName), NivelLog.Sistema);
+                }
 
                 StartProcess(process);
 
@@ -777,53 +813,57 @@ namespace TecniLauncher
 
                 string rutaInjector = System.IO.Path.Combine(carpetaBase, "authlib-injector.jar");
 
-                bool necesitaDescarga = !File.Exists(rutaInjector) || new FileInfo(rutaInjector).Length < 1000;
+                if (AuthlibEsValido(rutaInjector)) return rutaInjector;
 
-                if (necesitaDescarga)
+                if (File.Exists(rutaInjector))
                 {
-                    if (File.Exists(rutaInjector))
-                    {
-                        File.Delete(rutaInjector);
-                    }
-
-                    Dispatcher.Invoke(() => txtEstadoCarga.Text = Core.T("Txt_DescargandoAuthlib"));
-                    string url = "https://github.com/yushijinhun/authlib-injector/releases/download/v1.2.7/authlib-injector-1.2.7.jar";
-
-                    using (var client = new HttpClient())
-                    {
-                        client.DefaultRequestHeaders.Add("User-Agent", "TecniLauncher-App");
-                        var bytes = await client.GetByteArrayAsync(url);
-                        File.WriteAllBytes(rutaInjector, bytes);
-                    }
+                    LogService.Warn("authlib-injector.jar no coincide con el hash esperado, se vuelve a descargar");
+                    File.Delete(rutaInjector);
                 }
+
+                Dispatcher.Invoke(() => txtEstadoCarga.Text = Core.T("Txt_DescargandoAuthlib"));
+                string rutaTemp = rutaInjector + ".descarga";
+                await AppHttpClient.DescargarArchivoAsync(URL_AUTHLIB, rutaTemp, TimeSpan.FromMinutes(5));
+
+                if (!AuthlibEsValido(rutaTemp))
+                {
+                    File.Delete(rutaTemp);
+                    throw new System.Security.SecurityException("El authlib-injector descargado no coincide con el hash oficial. Descarga bloqueada.");
+                }
+
+                File.Move(rutaTemp, rutaInjector, overwrite: true);
                 return rutaInjector;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("ERROR FATAL AL DESCARGAR INYECTOR: " + ex.Message);
+                LogService.Error("ERROR FATAL AL DESCARGAR INYECTOR", ex);
                 return null;
             }
         }
-        private async void StartProcess(Process process)
+        private const string URL_AUTHLIB = "https://github.com/yushijinhun/authlib-injector/releases/download/v1.2.8/authlib-injector-1.2.8.jar";
+        private const string SHA256_AUTHLIB = "9c7f4343e6c82034958ffb48c14a2cb0c85928be7283103ce17da00c6d5a7b10";
+
+        private static bool AuthlibEsValido(string ruta) => HashCoincide(ruta, SHA256_AUTHLIB);
+
+        private static bool HashCoincide(string ruta, string? sha256Hex)
         {
+            if (!File.Exists(ruta) || string.IsNullOrWhiteSpace(sha256Hex)) return false;
+            byte[] esperado;
+            try { esperado = Convert.FromHexString(sha256Hex.Trim()); }
+            catch (FormatException) { return false; }
+            using var fs = File.OpenRead(ruta);
+            byte[] hash = System.Security.Cryptography.SHA256.HashData(fs);
+            return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(hash, esperado);
+        }
+
+        // Ocultar/restaurar la ventana lo gestiona quien llama a LanzarMinecraft
+        private static void StartProcess(Process process)
+        {
+            process.EnableRaisingEvents = true;
             process.Start();
 
-            await Task.Delay(3000);
-
-            if (chkOcultarLauncher.IsChecked == true)
-                this.Hide();
-            else
-
-                process.EnableRaisingEvents = true;
-            process.Exited += (s, e) =>
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    this.Show();
-                    this.WindowState = WindowState.Normal;
-                    this.Activate();
-                });
-            };
+            if (process.StartInfo.RedirectStandardOutput)
+                ConsolaJuegoService.Adjuntar(process);
         }
 
         private async Task<string> InstalarModLoader(Perfil perfil, MinecraftLauncher launcher)
@@ -1022,8 +1062,9 @@ namespace TecniLauncher
             catch (OperationCanceledException)
             {
             }
-            catch
+            catch (Exception exLog)
             {
+                LogService.Warn("No se pudieron cargar las versiones del loader", exLog);
                 if (token.IsCancellationRequested) return;
                 comboLoaderVersion.ItemsSource = new List<string> { TXT_LOADER_ERROR };
             }
@@ -1087,11 +1128,11 @@ namespace TecniLauncher
         private void BtnGuardarPerfil_Click(object sender, RoutedEventArgs e)
         {
             string nombre = txtNombrePerfil.Text.Trim();
-            if (string.IsNullOrEmpty(nombre)) { VentanaMensaje.Mostrar(Core.T("Msg_EscribeNombre")); return; }
+            if (string.IsNullOrEmpty(nombre)) { AvisoError(Core.T("Msg_EscribeNombre")); return; }
 
             if (nombre.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || nombre == "." || nombre == "..")
             {
-                VentanaMensaje.Mostrar(Core.T("Msg_NombreInvalido"));
+                AvisoError(Core.T("Msg_NombreInvalido"));
                 return;
             }
 
@@ -1106,8 +1147,8 @@ namespace TecniLauncher
             }
 
             Perfil duplicado = Core.Perfiles.Find(p => string.Equals(p.Nombre, nombre, StringComparison.OrdinalIgnoreCase));
-            if (perfilAEditar == null && duplicado != null) { VentanaMensaje.Mostrar(Core.T("Msg_NombreExiste")); return; }
-            if (perfilAEditar != null && duplicado != null && duplicado != perfilAEditar) { VentanaMensaje.Mostrar(Core.T("Msg_NombreOcupado")); return; }
+            if (perfilAEditar == null && duplicado != null) { AvisoError(Core.T("Msg_NombreExiste")); return; }
+            if (perfilAEditar != null && duplicado != null && duplicado != perfilAEditar) { AvisoError(Core.T("Msg_NombreOcupado")); return; }
 
             int ram = (int)sliderRam.Value * 1024;
             bool activarRendimiento = chkModoRendimiento?.IsChecked == true;
@@ -1141,7 +1182,7 @@ namespace TecniLauncher
                         if (Directory.Exists(oldPath)) Directory.Move(oldPath, newPath);
                         perfilAEditar.RutaCarpeta = newPath;
                     }
-                    catch { VentanaMensaje.Mostrar(Core.T("Msg_RenombrarError")); return; }
+                    catch { AvisoError(Core.T("Msg_RenombrarError")); return; }
                 }
                 perfilAEditar.Nombre = nombre;
                 perfilAEditar.MemoriaRam = ram;
@@ -1225,17 +1266,248 @@ namespace TecniLauncher
 
                 if (rutaSegura)
                 {
-                    if (Directory.Exists(rutaCompleta)) try { Directory.Delete(rutaCompleta, true); } catch { }
+                    if (Directory.Exists(rutaCompleta)) try { Directory.Delete(rutaCompleta, true); } catch (Exception exLog) { LogService.Debug("No se pudo borrar carpeta temporal", exLog); }
                 }
                 else
                 {
-                    VentanaMensaje.Mostrar(Core.T("Msg_CarpetaFueraInstances"));
+                    AvisoError(Core.T("Msg_CarpetaFueraInstances"));
                 }
                 Core.Perfiles.Remove(perfil);
                 Core.GuardarPerfiles();
                 ActualizarListaPerfiles();
             }
         }
+
+        #region CompartirImportar
+        private CancellationTokenSource? _ctsCompartir;
+        private CancellationTokenSource? _ctsImportar;
+        private bool _compartiendo = false;
+        private bool _importando = false;
+
+        private static string MensajeShare(ShareException ex) => ex.Tipo switch
+        {
+            ErrorCompartir.CodigoInvalido => Core.T("Share_ErrCodigoInvalido"),
+            ErrorCompartir.CodigoNoExiste => Core.T("Share_ErrNoExiste"),
+            ErrorCompartir.ManifestInvalido => Core.T("Share_ErrManifest"),
+            ErrorCompartir.Sesion => Core.T("Share_ErrConfig"),
+            ErrorCompartir.NadaQueCompartir => Core.T("Share_ErrNada"),
+            _ => Core.T("Share_ErrRed", ex.Message)
+        };
+
+        private Perfil? _perfilACompartir;
+
+        private void BtnCompartir_Click(object sender, RoutedEventArgs e)
+        {
+            if (_compartiendo) return;
+            _perfilACompartir = (Perfil)((System.Windows.Controls.Button)sender).Tag;
+
+            chkCompartirMods.IsChecked = true;
+            chkCompartirShaders.IsChecked = false;
+            chkCompartirTexturas.IsChecked = false;
+
+            PanelCompartirOpciones.Visibility = Visibility.Visible;
+            PanelCompartirCargando.Visibility = Visibility.Collapsed;
+            PanelCompartirResultado.Visibility = Visibility.Collapsed;
+            GridCompartir.Visibility = Visibility.Visible;
+        }
+        private async void BtnGenerarCodigo_Click(object sender, RoutedEventArgs e)
+        {
+            if (_compartiendo || _perfilACompartir == null) return;
+
+            var opciones = new OpcionesCompartir
+            {
+                Mods = chkCompartirMods.IsChecked == true,
+                Shaders = chkCompartirShaders.IsChecked == true,
+                Texturas = chkCompartirTexturas.IsChecked == true
+            };
+            if (!opciones.Mods && !opciones.Shaders && !opciones.Texturas)
+            {
+                AvisoError(Core.T("Share_ErrNada"));
+                return;
+            }
+
+            var perfil = _perfilACompartir;
+            _compartiendo = true;
+            _ctsCompartir = new CancellationTokenSource();
+            PanelCompartirOpciones.Visibility = Visibility.Collapsed;
+            PanelCompartirCargando.Visibility = Visibility.Visible;
+            PanelCompartirResultado.Visibility = Visibility.Collapsed;
+
+            try
+            {
+                var r = await ShareService.CompartirPerfilAsync(perfil, opciones, _ctsCompartir.Token);
+
+                txtCodigoCompartir.Text = r.Codigo;
+                txtResumenCompartir.Text = Core.T("Share_Resumen", r.ModsIncluidos, r.ShadersIncluidos, r.TexturasIncluidas, r.ArchivosOmitidos);
+                btnCopiarCodigo.Content = Core.T("Share_Copiar");
+                PanelCompartirCargando.Visibility = Visibility.Collapsed;
+                PanelCompartirResultado.Visibility = Visibility.Visible;
+            }
+            catch (OperationCanceledException)
+            {
+                GridCompartir.Visibility = Visibility.Collapsed;
+            }
+            catch (ShareException ex)
+            {
+                GridCompartir.Visibility = Visibility.Collapsed;
+                AvisoError(MensajeShare(ex));
+            }
+            catch (Exception ex)
+            {
+                GridCompartir.Visibility = Visibility.Collapsed;
+                AvisoError(Core.T("Share_ErrRed", ex.Message));
+            }
+            finally
+            {
+                _compartiendo = false;
+            }
+        }
+
+        private void BtnCopiarCodigo_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Windows.Clipboard.SetText(txtCodigoCompartir.Text);
+                btnCopiarCodigo.Content = Core.T("Share_Copiado");
+            }
+            catch (Exception exLog) { LogService.Debug("No se pudo copiar al portapapeles", exLog); }
+        }
+
+        private void BtnCerrarCompartir_Click(object sender, RoutedEventArgs e)
+        {
+            _ctsCompartir?.Cancel();
+            GridCompartir.Visibility = Visibility.Collapsed;
+        }
+
+        private void BtnImportarPerfil_Click(object sender, RoutedEventArgs e)
+        {
+            txtCodigoImportar.Text = "";
+            PanelProgresoImportar.Visibility = Visibility.Collapsed;
+            txtCodigoImportar.IsEnabled = true;
+            btnConfirmarImportar.IsEnabled = true;
+            GridImportar.Visibility = Visibility.Visible;
+            txtCodigoImportar.Focus();
+        }
+
+        private void TxtCodigoImportar_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter) BtnConfirmarImportar_Click(sender, e);
+        }
+
+        private void BtnCancelarImportar_Click(object sender, RoutedEventArgs e)
+        {
+            _ctsImportar?.Cancel();
+            if (!_importando) GridImportar.Visibility = Visibility.Collapsed;
+        }
+
+        private async void BtnConfirmarImportar_Click(object sender, RoutedEventArgs e)
+        {
+            if (_importando) return;
+
+            string codigo = txtCodigoImportar.Text.Trim();
+            if (!ShareService.CodigoTieneFormatoValido(codigo))
+            {
+                AvisoError(Core.T("Share_ErrCodigoInvalido"));
+                return;
+            }
+
+            _importando = true;
+            _ctsImportar = new CancellationTokenSource();
+            var ct = _ctsImportar.Token;
+            txtCodigoImportar.IsEnabled = false;
+            btnConfirmarImportar.IsEnabled = false;
+            PanelProgresoImportar.Visibility = Visibility.Visible;
+            barraImportar.IsIndeterminate = true;
+            txtEstadoImportar.Text = Core.T("Import_Obteniendo");
+
+            string? carpetaCreada = null;
+            bool completado = false;
+            try
+            {
+                var manifest = await ShareService.ObtenerManifestAsync(codigo, ct);
+
+                string nombreUnico = manifest.Nombre;
+                int copia = 1;
+                while (Directory.Exists(Path.Combine(Core.RutaInstances, nombreUnico))
+                       || Core.Perfiles.Any(p => string.Equals(p.Nombre, nombreUnico, StringComparison.OrdinalIgnoreCase)))
+                {
+                    nombreUnico = $"{manifest.Nombre} ({copia++})";
+                }
+
+                string rutaPerfil = Path.Combine(Core.RutaInstances, nombreUnico);
+                carpetaCreada = rutaPerfil;
+                Directory.CreateDirectory(rutaPerfil);
+
+                barraImportar.IsIndeterminate = false;
+                barraImportar.Maximum = Math.Max(1, manifest.Mods.Count);
+                barraImportar.Value = 0;
+
+                var progreso = new Progress<(int actual, int total, string nombre)>(p =>
+                {
+                    barraImportar.Value = p.actual;
+                    txtEstadoImportar.Text = Core.T("Import_Descargando", p.actual, p.total, p.nombre);
+                });
+
+                var fallos = await ShareService.DescargarModsAsync(manifest, rutaPerfil, progreso, ct);
+
+                Core.Perfiles.Add(new Perfil
+                {
+                    Nombre = nombreUnico,
+                    Version = manifest.VersionMinecraft,
+                    TipoLoader = manifest.Loader,
+                    VersionLoaderExacta = manifest.VersionLoader,
+                    RutaCarpeta = rutaPerfil,
+                    MemoriaRam = 4096
+                });
+                Core.GuardarPerfiles();
+                ActualizarListaPerfiles();
+                completado = true;
+
+                GridImportar.Visibility = Visibility.Collapsed;
+
+                if (fallos.Count == 0)
+                {
+                    Aviso(Core.T("Import_Ok", nombreUnico));
+                }
+                else
+                {
+                    string lista = string.Join("\n", fallos.Take(8)) + (fallos.Count > 8 ? $"\n... +{fallos.Count - 8}" : "");
+                    VentanaMensaje.Mostrar(Core.T("Import_Incompleta", nombreUnico, fallos.Count, lista), Core.T("Txt_TituloInstalacionIncompleta"));
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                GridImportar.Visibility = Visibility.Collapsed;
+            }
+            catch (ShareException ex)
+            {
+                AvisoError(MensajeShare(ex));
+            }
+            catch (Exception ex)
+            {
+                AvisoError(Core.T("Share_ErrRed", ex.Message));
+            }
+            finally
+            {
+                if (!completado && carpetaCreada != null)
+                {
+                    try
+                    {
+                        string baseInst = Path.GetFullPath(Core.RutaInstances).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                        string full = Path.GetFullPath(carpetaCreada);
+                        if (full.StartsWith(baseInst, StringComparison.OrdinalIgnoreCase) && Directory.Exists(full))
+                            Directory.Delete(full, true);
+                    }
+                    catch (Exception exLog) { LogService.Warn("No se pudo limpiar la instancia creada tras un fallo", exLog); }
+                }
+
+                _importando = false;
+                txtCodigoImportar.IsEnabled = true;
+                btnConfirmarImportar.IsEnabled = true;
+                PanelProgresoImportar.Visibility = Visibility.Collapsed;
+            }
+        }
+        #endregion
 
         private void BtnCarpeta_Click(object sender, RoutedEventArgs e)
         {
@@ -1261,12 +1533,6 @@ namespace TecniLauncher
         }
         #endregion
         #region Mods
-        private static readonly string[] _categoriasMods =
-        {
-            "adventure", "cursed", "decoration", "economy", "equipment", "food", "game-mechanics",
-            "library", "magic", "management", "minigame", "mobs", "optimization", "social",
-            "storage", "technology", "transportation", "utility", "worldgen"
-        };
         private static readonly (string Clave, string Texto)[] _loadersMods =
         {
             ("fabric", "Fabric"), ("forge", "Forge"), ("neoforge", "NeoForge"), ("quilt", "Quilt")
@@ -1277,6 +1543,7 @@ namespace TecniLauncher
         private List<FiltroItem>? _versionesMcFiltro;
         private int _busquedaId = 0;
         private List<ModLocal> _modsLocales = new();
+        private TipoComplemento _tipo = TipoComplemento.Mod;
 
         private readonly SemaphoreSlim _semInstalaciones = new SemaphoreSlim(2, 2);
         private int _instalacionesActivas = 0;
@@ -1289,6 +1556,66 @@ namespace TecniLauncher
             return char.ToUpper(s[0]) + s[1..];
         }
 
+        private void CargarCategoriasFiltro()
+        {
+            bool previo = _cargandoFiltros;
+            _cargandoFiltros = true;
+            try
+            {
+                var categorias = new List<FiltroItem> { new FiltroItem { Clave = "", Texto = Core.T("Mods_FiltroTodas") } };
+                categorias.AddRange(_tipo.Categorias().Select(c => new FiltroItem { Clave = c, Texto = NombreCategoria(c) }));
+                comboFiltroCategoria.ItemsSource = categorias;
+                comboFiltroCategoria.SelectedIndex = 0;
+            }
+            finally { _cargandoFiltros = previo; }
+        }
+
+        private void ActualizarVisibilidadPorTipo()
+        {
+            bool usaLoader = _tipo.UsaLoader();
+            panelFiltroLoader.Visibility = usaLoader ? Visibility.Visible : Visibility.Collapsed;
+            badgeLoader.Visibility = usaLoader ? Visibility.Visible : Visibility.Collapsed;
+
+            string aviso = _tipo switch
+            {
+                TipoComplemento.Textura => Core.T("Addons_AvisoTexturas"),
+                TipoComplemento.Shader => Core.T("Addons_AvisoShaders"),
+                _ => ""
+            };
+            txtAvisoTipo.Text = aviso;
+            txtAvisoTipo.Visibility = aviso.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private async void TipoComplemento_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.RadioButton rb || rb.Tag is not string tag) return;
+            if (comboFiltroCategoria == null || PanelOnline == null || txtAvisoTipo == null) return;
+
+            var nuevo = tag switch
+            {
+                "Textura" => TipoComplemento.Textura,
+                "Shader" => TipoComplemento.Shader,
+                _ => TipoComplemento.Mod
+            };
+            if (nuevo == _tipo) return;
+            _tipo = nuevo;
+
+            _busquedaId++;
+            _offsetMods = 0;
+            _hayMasResultados = true;
+            _listaModsActual.Clear();
+            MostrarEstadoMods(null);
+
+            InicializarFiltrosMods();
+            CargarCategoriasFiltro();
+            ActualizarVisibilidadPorTipo();
+
+            if (comboPerfilesMods.SelectedItem is not Perfil p) return;
+            await AplicarPerfilAFiltrosAsync(p);
+            CargarModsLocal(p);
+            if (modoOnline) await BuscarOnlineAsync();
+        }
+
         private void InicializarFiltrosMods()
         {
             if (_filtrosInicializados) return;
@@ -1296,10 +1623,7 @@ namespace TecniLauncher
             _cargandoFiltros = true;
             try
             {
-                var categorias = new List<FiltroItem> { new FiltroItem { Clave = "", Texto = Core.T("Mods_FiltroTodas") } };
-                categorias.AddRange(_categoriasMods.Select(c => new FiltroItem { Clave = c, Texto = NombreCategoria(c) }));
-                comboFiltroCategoria.ItemsSource = categorias;
-                comboFiltroCategoria.SelectedIndex = 0;
+                CargarCategoriasFiltro();
 
                 comboFiltroLoader.ItemsSource = _loadersMods.Select(l => new FiltroItem { Clave = l.Clave, Texto = l.Texto }).ToList();
             }
@@ -1334,7 +1658,7 @@ namespace TecniLauncher
 
         private (string Loader, string Version, string? Categoria) ObtenerFiltrosActuales(Perfil p)
         {
-            string loader = comboFiltroLoader.SelectedValue as string ?? "";
+            string loader = _tipo.UsaLoader() ? (comboFiltroLoader.SelectedValue as string ?? "") : "";
             string version = comboFiltroVersion.SelectedValue as string ?? p.Version;
             string? categoria = comboFiltroCategoria.SelectedValue as string;
             if (string.IsNullOrEmpty(categoria)) categoria = null;
@@ -1344,8 +1668,11 @@ namespace TecniLauncher
         private void ActualizarAvisoFiltros(Perfil p)
         {
             var f = ObtenerFiltrosActuales(p);
-            bool distinto = !string.Equals(f.Loader, p.TipoLoader, StringComparison.OrdinalIgnoreCase) || f.Version != p.Version;
-            txtAvisoFiltros.Text = distinto ? Core.T("Mods_AvisoFiltros", p.TipoLoader, p.Version) : "";
+            bool loaderDistinto = _tipo.UsaLoader() && !string.Equals(f.Loader, p.TipoLoader, StringComparison.OrdinalIgnoreCase);
+            bool distinto = loaderDistinto || f.Version != p.Version;
+            txtAvisoFiltros.Text = !distinto ? ""
+                : _tipo.UsaLoader() ? Core.T("Mods_AvisoFiltros", p.TipoLoader, p.Version)
+                : Core.T("Addons_AvisoVersion", p.Version);
             txtAvisoFiltros.Visibility = distinto ? Visibility.Visible : Visibility.Collapsed;
             btnResetFiltros.Visibility = distinto ? Visibility.Visible : Visibility.Collapsed;
         }
@@ -1450,9 +1777,10 @@ namespace TecniLauncher
                 int idBusqueda = _busquedaId;
                 string busqueda = txtBuscadorMods?.Text ?? "";
                 int limitePaginacion = 30;
+                var tipo = _tipo;
                 var (loader, version, categoria) = ObtenerFiltrosActuales(p);
 
-                if (string.IsNullOrEmpty(loader))
+                if (tipo.UsaLoader() && string.IsNullOrEmpty(loader))
                 {
                     MostrarEstadoMods(Core.T("Mods_SinLoader"));
                     _hayMasResultados = false;
@@ -1461,7 +1789,7 @@ namespace TecniLauncher
 
                 if (esPrimeraCarga) MostrarEstadoMods(Core.T("Mods_Cargando"));
 
-                var res = await ModrinthAPI.BuscarMods(busqueda, loader, version, _offsetMods, limitePaginacion, categoria);
+                var res = await ModrinthAPI.BuscarMods(busqueda, loader, version, _offsetMods, limitePaginacion, categoria, tipo.ProjectType());
 
                 if (idBusqueda != _busquedaId) return;
 
@@ -1472,8 +1800,8 @@ namespace TecniLauncher
                     return;
                 }
 
-                string carpetaMods = Path.Combine(p.RutaCarpeta, "mods");
-                var proyectosLocales = await ObtenerProjectIdsInstaladosAsync(carpetaMods);
+                string carpetaMods = Path.Combine(p.RutaCarpeta, tipo.Carpeta());
+                var proyectosLocales = await ObtenerProjectIdsInstaladosAsync(carpetaMods, tipo);
 
                 if (idBusqueda != _busquedaId || !ReferenceEquals(comboPerfilesMods.SelectedItem, p)) return;
 
@@ -1482,7 +1810,7 @@ namespace TecniLauncher
                     if (_listaModsActual.Any(x => x.project_id == m.project_id)) continue;
 
                     string titulo = (m.title ?? "").ToLower();
-                    m.esRecomendado = titulo.Contains("sodium") || titulo.Contains("iris") || titulo.Contains("lithium");
+                    m.esRecomendado = tipo == TipoComplemento.Mod && (titulo.Contains("sodium") || titulo.Contains("iris") || titulo.Contains("lithium"));
 
                     if (string.IsNullOrEmpty(m.icon_url))
                         m.icon_url = "https://cdn.modrinth.com/assets/icon.png";
@@ -1499,7 +1827,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error cargando mods: " + ex.Message);
+                LogService.Warn("Error cargando mods", ex);
             }
             finally
             {
@@ -1517,21 +1845,22 @@ namespace TecniLauncher
             catch { return null; }
         }
 
-        private static IEnumerable<FileInfo> ListarJarsDeCarpeta(string carpetaMods)
+        private static IEnumerable<FileInfo> ListarArchivosDeCarpeta(string carpeta, TipoComplemento tipo)
         {
-            return new DirectoryInfo(carpetaMods).EnumerateFiles()
-                .Where(f => f.Name.EndsWith(".jar", StringComparison.OrdinalIgnoreCase)
-                         || f.Name.EndsWith(".jar.disabled", StringComparison.OrdinalIgnoreCase));
+            var extensiones = tipo.Extensiones();
+            return new DirectoryInfo(carpeta).EnumerateFiles()
+                .Where(f => extensiones.Any(ext => f.Name.EndsWith(ext, StringComparison.OrdinalIgnoreCase)
+                                                || f.Name.EndsWith(ext + ".disabled", StringComparison.OrdinalIgnoreCase)));
         }
 
-        private async Task<HashSet<string>> ObtenerProjectIdsInstaladosAsync(string carpetaMods)
+        private async Task<HashSet<string>> ObtenerProjectIdsInstaladosAsync(string carpetaMods, TipoComplemento tipo)
         {
             var resultado = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (!Directory.Exists(carpetaMods)) return resultado;
 
             try
             {
-                var jars = ListarJarsDeCarpeta(carpetaMods).ToList();
+                var jars = ListarArchivosDeCarpeta(carpetaMods, tipo).ToList();
                 var claves = jars.Select(f => $"{f.FullName}|{f.Length}|{f.LastWriteTimeUtc.Ticks}").ToList();
 
                 var nuevos = jars.Zip(claves).Where(x => !_cacheProyectosLocales.ContainsKey(x.Second)).ToList();
@@ -1559,7 +1888,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error identificando mods instalados: " + ex.Message);
+                LogService.Warn("Error identificando mods instalados", ex);
             }
             return resultado;
         }
@@ -1568,8 +1897,9 @@ namespace TecniLauncher
         {
             if (_listaModsActual.Count == 0) return;
 
-            var ids = await ObtenerProjectIdsInstaladosAsync(Path.Combine(p.RutaCarpeta, "mods"));
-            if (!ReferenceEquals(comboPerfilesMods.SelectedItem, p)) return;
+            var tipo = _tipo;
+            var ids = await ObtenerProjectIdsInstaladosAsync(Path.Combine(p.RutaCarpeta, tipo.Carpeta()), tipo);
+            if (!ReferenceEquals(comboPerfilesMods.SelectedItem, p) || _tipo != tipo) return;
 
             foreach (var m in _listaModsActual.ToList())
             {
@@ -1591,25 +1921,36 @@ namespace TecniLauncher
             await FetchYAgregarMods(p);
         }
 
+        public void Aviso(string texto) => MostrarToast(texto);
+        public void AvisoError(string texto) => MostrarToast(texto, false, true);
+
         private async void MostrarToast(string texto, bool enProgreso = false, bool esError = false)
         {
+            if (!Dispatcher.CheckAccess())
+            {
+                await Dispatcher.InvokeAsync(() => MostrarToast(texto, enProgreso, esError));
+                return;
+            }
+
             _ctsToast?.Cancel();
             _ctsToast = new CancellationTokenSource();
             var ct = _ctsToast.Token;
 
-            txtToastMods.Text = texto;
-            barraToastMods.Visibility = enProgreso ? Visibility.Visible : Visibility.Collapsed;
-            ToastMods.BorderBrush = esError
+            txtToast.Text = texto;
+            barraToast.Visibility = enProgreso ? Visibility.Visible : Visibility.Collapsed;
+            ToastGlobal.BorderBrush = esError
                 ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xff, 0x4a, 0x4a))
                 : new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4f, 0xac, 0xfe));
-            ToastMods.Visibility = Visibility.Visible;
+            ToastGlobal.Visibility = Visibility.Visible;
 
             if (enProgreso) return;
 
+            int ms = (esError ? 7000 : 3500) + Math.Min(6000, Math.Max(0, texto.Length - 80) * 45);
+
             try
             {
-                await Task.Delay(esError ? 7000 : 3500, ct);
-                ToastMods.Visibility = Visibility.Collapsed;
+                await Task.Delay(ms, ct);
+                ToastGlobal.Visibility = Visibility.Collapsed;
             }
             catch (TaskCanceledException) { }
         }
@@ -1622,7 +1963,7 @@ namespace TecniLauncher
 
                 if (comboPerfilesMods.SelectedItem is not Perfil perfilActual)
                 {
-                    VentanaMensaje.Mostrar(Core.T("Msg_SeleccionaPerfil"));
+                    AvisoError(Core.T("Msg_SeleccionaPerfil"));
                     return;
                 }
 
@@ -1631,7 +1972,7 @@ namespace TecniLauncher
                 listaArchivosVersion.ItemsSource = null;
                 txtNombreModVersiones.Text = Core.T("Txt_BuscandoVersionesMod", mod.title);
 
-                var versiones = await ModrinthAPI.ObtenerListaVersiones(mod.project_id, perfilActual.Version, perfilActual.TipoLoader);
+                var versiones = await ModrinthAPI.ObtenerListaVersiones(mod.project_id, perfilActual.Version, _tipo.UsaLoader() ? perfilActual.TipoLoader : null);
 
                 if (versiones != null && versiones.Count > 0)
                 {
@@ -1645,7 +1986,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                VentanaMensaje.Mostrar(Core.T("Msg_ErrorVersionesMod", ex.Message));
+                AvisoError(Core.T("Msg_ErrorVersionesMod", ex.Message));
                 OverlayVersiones.Visibility = Visibility.Collapsed;
             }
         }
@@ -1678,13 +2019,15 @@ namespace TecniLauncher
 
         private async Task InstalarModEnSegundoPlanoAsync(Perfil p, ModInfo? tarjeta, ModVersion? version, string titulo, string projectId)
         {
+            var tipo = _tipo;
             string versionMC = p.Version;
-            string loader = p.TipoLoader;
-            string carpetaMods = Path.Combine(p.RutaCarpeta, "mods");
+            string? loader = tipo.UsaLoader() ? p.TipoLoader : null;
+            string carpetaDestino = Path.Combine(p.RutaCarpeta, tipo.Carpeta());
+            bool MismaVista() => ReferenceEquals(comboPerfilesMods.SelectedItem, p) && _tipo == tipo;
 
             if (tarjeta != null) tarjeta.instalando = true;
             _instalacionesActivas++;
-            MostrarToast(Core.T("Toast_Instalando", titulo), true);
+            MostrarToast(Core.T(tipo.UsaLoader() ? "Toast_Instalando" : "Toast_InstalandoSimple", titulo), true);
 
             try
             {
@@ -1698,22 +2041,24 @@ namespace TecniLauncher
 
                         if (version == null)
                         {
-                            MostrarToast(Core.T("Toast_SinVersion", titulo, versionMC, loader), false, true);
+                            MostrarToast(loader != null
+                                ? Core.T("Toast_SinVersion", titulo, versionMC, loader)
+                                : Core.T("Toast_SinVersionSimple", titulo, versionMC), false, true);
                             return;
                         }
                     }
 
-                    Directory.CreateDirectory(carpetaMods);
-                    var sinVersion = await DescargarModYDependencias(version, versionMC, loader, carpetaMods);
+                    Directory.CreateDirectory(carpetaDestino);
+                    var sinVersion = await DescargarModYDependencias(version, versionMC, loader, carpetaDestino, tipo);
 
-                    if (tarjeta != null && ReferenceEquals(comboPerfilesMods.SelectedItem, p)) tarjeta.estaInstalado = true;
+                    if (tarjeta != null && MismaVista()) tarjeta.estaInstalado = true;
 
                     if (sinVersion.Count == 0)
                         MostrarToast(Core.T("Toast_Instalado", titulo));
                     else
                         MostrarToast(Core.T("Toast_InstaladoSinDeps", titulo, string.Join(", ", sinVersion)), false, true);
 
-                    if (ReferenceEquals(comboPerfilesMods.SelectedItem, p))
+                    if (MismaVista())
                     {
                         CargarModsLocal(p);
                         _ = RefrescarInstaladosOnlineAsync(p, soloMarcar: true);
@@ -1735,10 +2080,12 @@ namespace TecniLauncher
             }
         }
 
-        private async Task<List<string>> DescargarModYDependencias(ModVersion versionBase, string versionMC, string loader, string carpetaMods)
+        private async Task<List<string>> DescargarModYDependencias(ModVersion versionBase, string versionMC, string? loader, string carpetaDestino, TipoComplemento tipo)
         {
-            var plan = await ModrinthAPI.ResolverDependenciasAsync(versionBase, versionMC, loader);
-            var yaInstalados = await ObtenerProjectIdsInstaladosAsync(carpetaMods);
+            var plan = tipo == TipoComplemento.Mod
+                ? await ModrinthAPI.ResolverDependenciasAsync(versionBase, versionMC, loader ?? "")
+                : new ResultadoDependencias { Descargas = { versionBase } };
+            var yaInstalados = await ObtenerProjectIdsInstaladosAsync(carpetaDestino, tipo);
 
             var pendientes = new List<(ModVersion Mod, string Destino)>();
             foreach (var mod in plan.Descargas)
@@ -1749,7 +2096,7 @@ namespace TecniLauncher
                 if (!ModpacksApi.EsUrlPermitida(mod.UrlDescarga))
                     throw new InvalidOperationException($"Host de descarga no permitido: {mod.UrlDescarga}");
 
-                string? destino = ModpacksApi.ResolverRutaSegura(carpetaMods, mod.NombreArchivo);
+                string? destino = ModpacksApi.ResolverRutaSegura(carpetaDestino, mod.NombreArchivo);
                 if (destino == null)
                     throw new InvalidOperationException($"Nombre de archivo inválido: {mod.NombreArchivo}");
 
@@ -1781,19 +2128,20 @@ namespace TecniLauncher
         {
             try
             {
-                string path = Path.Combine(p.RutaCarpeta, "mods");
+                var tipo = _tipo;
+                string path = Path.Combine(p.RutaCarpeta, tipo.Carpeta());
                 if (!Directory.Exists(path)) Directory.CreateDirectory(path);
 
-                _modsLocales = ListarJarsDeCarpeta(path)
+                _modsLocales = ListarArchivosDeCarpeta(path, tipo)
                     .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
-                    .Select(f => new ModLocal(f))
+                    .Select(f => new ModLocal(f, tipo.Icono()))
                     .ToList();
 
                 listaModsInstaladosGestor.ItemsSource = _modsLocales;
                 txtVacioInstalados.Visibility = _modsLocales.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
                 ActualizarContadorInstalados();
             }
-            catch { }
+            catch (Exception exLog) { LogService.Warn("No se pudo listar los mods instalados", exLog); }
         }
 
         private void ActualizarContadorInstalados()
@@ -1924,7 +2272,7 @@ namespace TecniLauncher
 
             if (_modpackInstalando)
             {
-                VentanaMensaje.Mostrar(Core.T("Msg_InstalacionEnCurso"));
+                Aviso(Core.T("Msg_InstalacionEnCurso"));
                 return;
             }
 
@@ -1948,7 +2296,7 @@ namespace TecniLauncher
                 else if (!_avisoWebViewMostrado)
                 {
                     _avisoWebViewMostrado = true;
-                    VentanaMensaje.Mostrar(Core.T("Msg_WebView2Falta"));
+                    Aviso(Core.T("Msg_WebView2Falta"));
                 }
 
                 try
@@ -2093,7 +2441,7 @@ namespace TecniLauncher
                 if (receta == null)
                 {
                     PanelProgresoDescarga.Visibility = System.Windows.Visibility.Collapsed;
-                    VentanaMensaje.Mostrar(Core.T("Msg_ErrorModpackLeer"), Core.T("Txt_TituloError"));
+                    AvisoError(Core.T("Msg_ErrorModpackLeer"));
                     return;
                 }
 
@@ -2148,7 +2496,7 @@ namespace TecniLauncher
 
                 if (fallos.Count == 0)
                 {
-                    VentanaMensaje.Mostrar(Core.T("Msg_ModpackOk", modpackSeleccionado.Titulo), Core.T("Txt_TituloExito"));
+                    Aviso(Core.T("Msg_ModpackOk", modpackSeleccionado.Titulo));
                 }
                 else
                 {
@@ -2159,7 +2507,7 @@ namespace TecniLauncher
             catch (Exception ex)
             {
                 PanelProgresoDescarga.Visibility = System.Windows.Visibility.Collapsed;
-                VentanaMensaje.Mostrar(Core.T("Msg_ErrorModpack", ex.Message), Core.T("Txt_TituloError"));
+                AvisoError(Core.T("Msg_ErrorModpack", ex.Message));
             }
             finally
             {
@@ -2309,6 +2657,238 @@ namespace TecniLauncher
             }
         }
         #endregion
+        #region AjustesAvanzados (Caché, Consola de depuración y Discord RPC)
+        private readonly System.Collections.ObjectModel.ObservableCollection<LineaLog> _lineasConsola = new();
+        private DispatcherTimer? _timerConsola;
+        private const int MaxLineasConsola = 5000;
+
+        private void InicializarConsola()
+        {
+            ListaConsola.ItemsSource = _lineasConsola;
+
+            _timerConsola = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
+            _timerConsola.Tick += (s, e) => VolcarLineasConsola();
+            _timerConsola.Start();
+
+            ConsolaJuegoService.SesionIniciada += () =>
+                Dispatcher.BeginInvoke(new Action(() => ActualizarEstadoConsola(true, null)));
+            ConsolaJuegoService.SesionFinalizada += codigo =>
+                Dispatcher.BeginInvoke(new Action(() => AlFinalizarSesionConsola(codigo)));
+
+            chkConsola.IsChecked = Core.ConsolaDepuracionActiva;
+            chkDiscordRpc.IsChecked = Core.DiscordRpcActivado;
+            AplicarVisibilidadConsola();
+        }
+
+        private void VolcarLineasConsola()
+        {
+            var lote = ConsolaJuegoService.Drenar();
+            if (lote.Count == 0) return;
+
+            foreach (var linea in lote) _lineasConsola.Add(linea);
+
+            if (_lineasConsola.Count > MaxLineasConsola + 500)
+                while (_lineasConsola.Count > MaxLineasConsola)
+                    _lineasConsola.RemoveAt(0);
+
+            if (chkAutoScrollConsola.IsChecked == true && PanelConsola.Visibility == Visibility.Visible)
+                ListaConsola.ScrollIntoView(_lineasConsola[^1]);
+        }
+
+        private void AplicarVisibilidadConsola()
+        {
+            bool activa = Core.ConsolaDepuracionActiva;
+            PanelPestanasJugar.Visibility = activa ? Visibility.Visible : Visibility.Collapsed;
+            if (!activa) MostrarPestanaJugar(false);
+        }
+
+        private void MostrarPestanaJugar(bool consola)
+        {
+            VisorNoticias.Visibility = consola ? Visibility.Collapsed : Visibility.Visible;
+            PanelConsola.Visibility = consola ? Visibility.Visible : Visibility.Collapsed;
+            TabConsolaBtn.IsChecked = consola;
+            TabNoticiasBtn.IsChecked = !consola;
+
+            if (consola && _lineasConsola.Count > 0)
+                ListaConsola.ScrollIntoView(_lineasConsola[^1]);
+        }
+
+        private void TabJugar_Click(object sender, RoutedEventArgs e)
+            => MostrarPestanaJugar(ReferenceEquals(sender, TabConsolaBtn));
+
+        private void MostrarConsolaDeJuego()
+        {
+            NavigationHelper.Navegar(VistaJugar, VistaJugar, VistaPerfiles, VistaAjustes, VistaMods, vistaTecniClients, VistaModpacks);
+            MenuJugarBtn.IsChecked = true;
+            MostrarPestanaJugar(true);
+        }
+
+        private void ActualizarEstadoConsola(bool jugando, int? codigo)
+        {
+            if (jugando)
+            {
+                TxtEstadoConsola.Text = Core.T("Console_Running");
+                TxtEstadoConsola.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x1d, 0xd1, 0x71));
+            }
+            else if (codigo == 0)
+            {
+                TxtEstadoConsola.Text = Core.T("Console_ExitedOk");
+                TxtEstadoConsola.Foreground = (System.Windows.Media.Brush)FindResource("TextSub");
+            }
+            else
+            {
+                TxtEstadoConsola.Text = Core.T("Console_ExitedCode", codigo?.ToString() ?? "?");
+                TxtEstadoConsola.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xff, 0x6b, 0x6b));
+            }
+        }
+
+        private void AlFinalizarSesionConsola(int? codigo)
+        {
+            ActualizarEstadoConsola(false, codigo);
+            VolcarLineasConsola();
+
+            if (codigo != 0)
+            {
+                AvisoError(Core.T("Console_CrashToast"));
+                MostrarConsolaDeJuego();
+            }
+        }
+
+        private void ChkConsola_Click(object sender, RoutedEventArgs e)
+        {
+            Core.ConsolaDepuracionActiva = chkConsola.IsChecked == true;
+            Core.GuardarConfiguracion();
+            AplicarVisibilidadConsola();
+
+            if (Core.ConsolaDepuracionActiva)
+                Aviso(Core.T("Msg_ConsolaActivada"));
+        }
+
+        private void ChkDiscordRpc_Click(object sender, RoutedEventArgs e)
+        {
+            Core.DiscordRpcActivado = chkDiscordRpc.IsChecked == true;
+            Core.GuardarConfiguracion();
+            DiscordRpcService.Aplicar(Core.DiscordRpcActivado);
+        }
+
+        private void CopiarConsola()
+        {
+            IEnumerable<LineaLog> lineas = _lineasConsola;
+            if (ListaConsola.SelectedItems.Count > 0)
+            {
+                var seleccion = new HashSet<LineaLog>(ListaConsola.SelectedItems.Cast<LineaLog>());
+                lineas = _lineasConsola.Where(l => seleccion.Contains(l));
+            }
+
+            string texto = string.Join(Environment.NewLine, lineas.Select(l => l.Texto));
+            if (texto.Length == 0) return;
+
+            try
+            {
+                Clipboard.SetText(texto);
+                Aviso(Core.T("Msg_ConsolaCopiada"));
+            }
+            catch (Exception ex)
+            {
+                AvisoError(Core.T("Msg_ErrorGenerico", ex.Message));
+            }
+        }
+
+        private void BtnCopiarConsola_Click(object sender, RoutedEventArgs e) => CopiarConsola();
+
+        private void ListaConsola_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.C && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                CopiarConsola();
+                e.Handled = true;
+            }
+        }
+
+        private void BtnLimpiarConsola_Click(object sender, RoutedEventArgs e) => _lineasConsola.Clear();
+
+        private void BtnAbrirLogs_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Directory.CreateDirectory(Core.RutaLogs);
+                string? actual = ConsolaJuegoService.RutaArchivoActual;
+                if (actual != null && File.Exists(actual))
+                    Process.Start("explorer.exe", $"/select,\"{actual}\"");
+                else
+                    Process.Start("explorer.exe", $"\"{Core.RutaLogs}\"");
+            }
+            catch (Exception ex)
+            {
+                AvisoError(Core.T("Msg_ErrorGenerico", ex.Message));
+            }
+        }
+
+        private async Task ActualizarTamanoCacheAsync()
+        {
+            TxtTamanoCache.Text = Core.T("Settings_CacheCalculating");
+            try
+            {
+                var plan = await Task.Run(() => CacheService.Analizar());
+                TxtTamanoCache.Text = plan.EstaVacio
+                    ? Core.T("Settings_CacheEmpty")
+                    : Core.T("Settings_CacheSize", CacheService.FormatearBytes(plan.Total));
+            }
+            catch (Exception exLog)
+            {
+                LogService.Debug("No se pudo calcular el tamaño de caché", exLog);
+                TxtTamanoCache.Text = "";
+            }
+        }
+
+        private async void BtnLimpiarCache_Click(object sender, RoutedEventArgs e)
+        {
+            if (!btnJugar.IsEnabled || _tecniClientOcupado || _modpackInstalando)
+            {
+                AvisoError(Core.T("Msg_CacheOcupado"));
+                return;
+            }
+
+            BtnLimpiarCache.IsEnabled = false;
+            try
+            {
+                TxtTamanoCache.Text = Core.T("Settings_CacheCalculating");
+                var plan = await Task.Run(() => CacheService.Analizar());
+
+                if (plan.EstaVacio)
+                {
+                    TxtTamanoCache.Text = Core.T("Settings_CacheEmpty");
+                    Aviso(Core.T("Msg_CacheNada"));
+                    return;
+                }
+
+                string mensaje = Core.T("Msg_CacheConfirmar",
+                    CacheService.FormatearBytes(plan.Total),
+                    CacheService.FormatearBytes(plan.BytesDe(CategoriaCache.Instaladores)),
+                    CacheService.FormatearBytes(plan.BytesDe(CategoriaCache.Logs)),
+                    CacheService.FormatearBytes(plan.BytesDe(CategoriaCache.Temporales)));
+
+                var respuesta = VentanaMensaje.Mostrar(mensaje, Core.T("Settings_ClearCache"), MessageBoxButton.YesNo);
+                if (respuesta != MessageBoxResult.Yes)
+                {
+                    await ActualizarTamanoCacheAsync();
+                    return;
+                }
+
+                long liberados = await Task.Run(() => CacheService.Limpiar(plan));
+                Aviso(Core.T("Msg_CacheListo", CacheService.FormatearBytes(liberados)));
+                await ActualizarTamanoCacheAsync();
+            }
+            catch (Exception ex)
+            {
+                AvisoError(Core.T("Msg_ErrorGenerico", ex.Message));
+            }
+            finally
+            {
+                BtnLimpiarCache.IsEnabled = true;
+            }
+        }
+        #endregion
         #region AutoUpdate
 
         private async void ComprobarActualizaciones()
@@ -2333,6 +2913,7 @@ namespace TecniLauncher
                         await UpdateService.InstalarDesdeZipAsync(
                             datos.LinkDescarga,
                             datos.Sha256,
+                            datos.Firma,
                             new Progress<string>(msg => txtEstadoCarga.Text = msg)
                         );
                     }
@@ -2355,7 +2936,7 @@ namespace TecniLauncher
                 }
                 else
                 {
-                    VentanaMensaje.Mostrar(Core.T("Msg_ErrorGenerico", ex.Message), Core.T("Txt_TituloError"), MessageBoxButton.OK);
+                    AvisoError(Core.T("Msg_ErrorGenerico", ex.Message));
                 }
             }
         }
@@ -2375,8 +2956,9 @@ namespace TecniLauncher
                 GenerarPuntos();
                 MostrarNoticia(0);
             }
-            catch
+            catch (Exception exLog)
             {
+                LogService.Warn("No se pudieron cargar las noticias", exLog);
 
             }
         }
@@ -2419,7 +3001,7 @@ namespace TecniLauncher
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error en ActualizarNoticiaConEfecto: " + ex.Message);
+                LogService.Warn("Error en ActualizarNoticiaConEfecto", ex);
             }
         }
 
@@ -2463,7 +3045,7 @@ namespace TecniLauncher
                     {
                         BtnNoticiaAccion.Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom(dato.BotonColor);
                     }
-                    catch { }
+                    catch (Exception exLog) { LogService.Debug("Color de botón de noticia inválido", exLog); }
                 }
             }
             else
@@ -2487,7 +3069,7 @@ namespace TecniLauncher
                     }
                 }
             }
-            catch { }
+            catch (Exception exLog) { LogService.Warn("No se pudo mostrar la imagen de la noticia", exLog); }
 
             ActualizarPuntos();
         }
@@ -2508,7 +3090,7 @@ namespace TecniLauncher
                         UseShellExecute = true
                     });
                 }
-                catch { }
+                catch (Exception exLog) { LogService.Warn("No se pudo abrir el enlace externo", exLog); }
             }
         }
 
@@ -2596,13 +3178,14 @@ namespace TecniLauncher
                 _ramClientes[c.Id] = c.SelectedRam;
                 System.IO.File.WriteAllText(RutaRamClientes, JsonSerializer.Serialize(_ramClientes));
             }
-            catch { }
+            catch (Exception exLog) { LogService.Warn("No se pudo guardar la RAM del cliente", exLog); }
         }
 
         private static string LeerVersionInstalada(string id)
         {
             try
             {
+                if (!TecniClientModel.EsIdValido(id)) return "";
                 string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 string f = System.IO.Path.Combine(appData, ".TecniLauncher", "Instances", id, "version.txt");
                 return System.IO.File.Exists(f) ? System.IO.File.ReadAllText(f).Trim() : "";
@@ -2637,6 +3220,8 @@ namespace TecniLauncher
 
                     var opciones = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                     var nuevos = JsonSerializer.Deserialize<List<TecniClientModel>>(json, opciones) ?? new();
+                    int descartados = nuevos.RemoveAll(c => c == null || !TecniClientModel.EsIdValido(c.Id));
+                    if (descartados > 0) LogService.Warn($"Se descartaron {descartados} TecniClients con Id inválido");
 
                     CargarRamClientes();
                     for (int i = 0; i < nuevos.Count; i++)
@@ -2671,7 +3256,7 @@ namespace TecniLauncher
             catch (Exception ex)
             {
                 if (_clientesCache != null) { RefrescarEstadoClientes(); return; }
-                VentanaMensaje.Mostrar(Core.T("Msg_ErrorClientes", ex.Message), Core.T("Txt_TituloError"), MessageBoxButton.OK);
+                AvisoError(Core.T("Msg_ErrorClientes", ex.Message));
             }
         }
 
@@ -2679,10 +3264,11 @@ namespace TecniLauncher
         {
             var btn = (System.Windows.Controls.Button)sender;
             if (btn.DataContext is not TecniClientModel clienteSeleccionado) return;
+            if (!TecniClientModel.EsIdValido(clienteSeleccionado.Id)) return;
 
             if (_tecniClientOcupado)
             {
-                VentanaMensaje.Mostrar(Core.T("Msg_InstalacionEnCurso"));
+                Aviso(Core.T("Msg_InstalacionEnCurso"));
                 return;
             }
 
@@ -2709,6 +3295,8 @@ namespace TecniLauncher
                 {
                     if (!ModpacksApi.EsUrlTecniClientPermitida(clienteSeleccionado.ModpackUrl))
                         throw new InvalidOperationException($"Host de descarga no permitido: {clienteSeleccionado.ModpackUrl}");
+                    if (string.IsNullOrWhiteSpace(clienteSeleccionado.Sha256))
+                        throw new System.Security.SecurityException("El cliente no tiene hash de verificación publicado. Instalación bloqueada.");
 
                     clienteSeleccionado.TextoOcupado = Core.T("Txt_DescargandoMods");
                     PanelCarga.Visibility = Visibility.Visible;
@@ -2717,6 +3305,8 @@ namespace TecniLauncher
 
                     if (System.IO.Directory.Exists(carpetaModsNuevos)) System.IO.Directory.Delete(carpetaModsNuevos, true);
                     await AppHttpClient.DescargarArchivoAsync(clienteSeleccionado.ModpackUrl, archivoZipTemp, TimeSpan.FromMinutes(15));
+                    if (!await Task.Run(() => HashCoincide(archivoZipTemp, clienteSeleccionado.Sha256)))
+                        throw new System.Security.SecurityException("El paquete descargado no coincide con el hash publicado. Instalación bloqueada.");
                     await Task.Run(() => System.IO.Compression.ZipFile.ExtractToDirectory(archivoZipTemp, carpetaModsNuevos, true));
                     System.IO.File.Delete(archivoZipTemp);
 
@@ -2732,7 +3322,7 @@ namespace TecniLauncher
                             System.IO.Directory.Move(carpetaModsViejos, carpetaMods);
                         throw;
                     }
-                    try { if (System.IO.Directory.Exists(carpetaModsViejos)) System.IO.Directory.Delete(carpetaModsViejos, true); } catch { }
+                    try { if (System.IO.Directory.Exists(carpetaModsViejos)) System.IO.Directory.Delete(carpetaModsViejos, true); } catch (Exception exLog) { LogService.Debug("No se pudo borrar carpeta de mods antigua", exLog); }
 
                     System.IO.File.WriteAllText(archivoVersion, clienteSeleccionado.Version);
                     clienteSeleccionado.VersionInstalada = clienteSeleccionado.Version;
@@ -2742,16 +3332,7 @@ namespace TecniLauncher
                 PanelCarga.Visibility = Visibility.Visible;
                 barraCarga.IsIndeterminate = false;
 
-                if (client != null && client.IsInitialized)
-                {
-                    client.SetPresence(new DiscordRPC.RichPresence()
-                    {
-                        Details = $"Jugando a {clienteSeleccionado.Name}",
-                        State = "TecniClient Oficial",
-                        Assets = new DiscordRPC.Assets() { LargeImageKey = "tecnilogo", LargeImageText = "TecniLauncher" },
-                        Timestamps = DiscordRPC.Timestamps.Now
-                    });
-                }
+                DiscordRpcService.Establecer($"Jugando a {clienteSeleccionado.Name}", "TecniClient Oficial");
 
                 Perfil perfilCliente = new Perfil()
                 {
@@ -2773,7 +3354,9 @@ namespace TecniLauncher
                     esperandoCierreJuego = true;
                     clienteSeleccionado.TextoOcupado = Core.T("Txt_Jugando");
 
-                    if (chkOcultarLauncher.IsChecked == true)
+                    if (Core.ConsolaDepuracionActiva)
+                        MostrarConsolaDeJuego();
+                    else if (chkOcultarLauncher.IsChecked == true)
                         this.Hide();
                     else
                         this.WindowState = WindowState.Minimized;
@@ -2790,26 +3373,17 @@ namespace TecniLauncher
                             clienteSeleccionado.Ocupado = false;
                             _tecniClientOcupado = false;
 
-                            if (client != null && client.IsInitialized)
-                            {
-                                client.SetPresence(new DiscordRPC.RichPresence()
-                                {
-                                    Details = "En el Menú Principal",
-                                    State = $"V{VERSION_ACTUAL}",
-                                    Assets = new DiscordRPC.Assets() { LargeImageKey = "tecnilogo", LargeImageText = "TecniLauncher" },
-                                    Timestamps = DiscordRPC.Timestamps.Now
-                                });
-                            }
+                            DiscordRpcService.Establecer("En el Menú Principal", $"V{VERSION_ACTUAL}");
                         });
                     };
                 }
             }
             catch (Exception ex)
             {
-                try { if (System.IO.File.Exists(archivoZipTemp)) System.IO.File.Delete(archivoZipTemp); } catch { }
-                try { if (System.IO.Directory.Exists(carpetaModsNuevos)) System.IO.Directory.Delete(carpetaModsNuevos, true); } catch { }
+                try { if (System.IO.File.Exists(archivoZipTemp)) System.IO.File.Delete(archivoZipTemp); } catch (Exception exLog) { LogService.Debug("No se pudo borrar ZIP temporal", exLog); }
+                try { if (System.IO.Directory.Exists(carpetaModsNuevos)) System.IO.Directory.Delete(carpetaModsNuevos, true); } catch (Exception exLog) { LogService.Debug("No se pudo borrar carpeta temporal de mods", exLog); }
                 PanelCarga.Visibility = Visibility.Collapsed;
-                VentanaMensaje.Mostrar(Core.T("Msg_ErrorGenerico", ex.Message), Core.T("Txt_TituloError"), MessageBoxButton.OK);
+                AvisoError(Core.T("Msg_ErrorGenerico", ex.Message));
             }
             finally
             {

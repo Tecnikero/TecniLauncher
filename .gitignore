@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Paquete de codigo fuente generado localmente (no versionar)
+TecniLauncher/TecniLauncher.zip
+
+# Claves de firma: nunca en el repo
+*.pem

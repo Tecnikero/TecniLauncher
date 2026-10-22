@@ -17,6 +17,13 @@ public class TecniClientModel : INotifyPropertyChanged
     public List<string> Mods { get; set; } = new List<string>();
 
     public string ModpackUrl { get; set; }
+    public string Sha256 { get; set; }
+
+    private static readonly System.Text.RegularExpressions.Regex RxId =
+        new(@"^[A-Za-z0-9][A-Za-z0-9_-]{0,47}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    // El Id se usa como nombre de carpeta: sin puntos ni separadores para evitar salir de Instances
+    public static bool EsIdValido(string? id) => id != null && RxId.IsMatch(id);
 
     private double _selectedRam = 4;
     [JsonIgnore]

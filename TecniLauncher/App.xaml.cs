@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Threading;
+using TecniLauncher.Services;
 
 namespace TecniLauncher
 {
@@ -10,8 +11,16 @@ namespace TecniLauncher
             base.OnStartup(e);
 
             DispatcherUnhandledException += App_DispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += (_, ev) =>
+                LogService.Fatal("Excepción no controlada (la app puede cerrarse)", ev.ExceptionObject as Exception);
+            TaskScheduler.UnobservedTaskException += (_, ev) =>
+            {
+                LogService.Error("Excepción de tarea no observada", ev.Exception);
+                ev.SetObserved();
+            };
 
             Core.Inicializar();
+            LogService.Iniciar();
             Core.CargarConfiguracion();
 
             if (e.Args.Length > 0 && e.Args[0] == "--init-secrets")
@@ -26,7 +35,7 @@ namespace TecniLauncher
 
         private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine($"[UnhandledException] {e.Exception}");
+            LogService.Error("Excepción no controlada en la interfaz (la app sigue abierta)", e.Exception);
             e.Handled = true;
         }
     }
