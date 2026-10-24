@@ -3233,6 +3233,7 @@ namespace TecniLauncher
                             previo.Version = n.Version;
                             previo.Description = n.Description;
                             previo.ModpackUrl = n.ModpackUrl;
+                            previo.Sha256 = n.Sha256;
                             previo.MinecraftVersion = n.MinecraftVersion;
                             previo.Loader = n.Loader;
                             previo.LoaderVersion = n.LoaderVersion;
