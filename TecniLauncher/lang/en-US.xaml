@@ -28,7 +28,7 @@
     <sys:String x:Key="Mods_SearchPlaceholder">Search (e.g. Sodium)...</sys:String>
     <sys:String x:Key="Mods_BtnSearch">🔍 SEARCH</sys:String>
     <sys:String x:Key="Mods_TabInstalled">📂 Installed</sys:String>
-    <sys:String x:Key="Mods_TabOnline">☁️ Modrinth API</sys:String>
+    <sys:String x:Key="Mods_TabOnline">☁️ Browse</sys:String>
     <sys:String x:Key="Mods_Delete">ELIMINATE</sys:String>
     <sys:String x:Key="Mods_DesDes">Select a compatible version to install</sys:String>
     <sys:String x:Key="Mods_Install">📥 Install</sys:String>
@@ -37,7 +37,7 @@
     <sys:String x:Key="Mods_Recommended">⭐ Recommended</sys:String>
 
     <sys:String x:Key="ModPack_Title">EXPLORE MODPACKS</sys:String>
-    <sys:String x:Key="ModPack_SubTitle">Search and install complete mod packs from Modrinth</sys:String>
+    <sys:String x:Key="ModPack_SubTitle">Search and install complete mod packs from Modrinth or CurseForge</sys:String>
     <sys:String x:Key="ModPack_botonBus">SEARCH</sys:String>
 
     <sys:String x:Key="Settings_Title">SETTINGS</sys:String>
@@ -311,4 +311,8 @@
     <sys:String x:Key="Share_Generar">GENERATE CODE</sys:String>
     <sys:String x:Key="Share_ErrNada">Nothing to share: enable at least one option or make sure Modrinth files exist in those folders.</sys:String>
     <sys:String x:Key="Share_Resumen">{0} mods  •  {1} shaders  •  {2} resource packs  •  {3} skipped</sys:String>
+    <sys:String x:Key="CF_NoConfigurado">CurseForge is not configured in this install (missing API key). Use Modrinth for now.</sys:String>
+    <sys:String x:Key="CF_BloqueadoAutor">The author of {0} does not allow downloads from launchers. Opening its CurseForge page so you can download it manually…</sys:String>
+    <sys:String x:Key="CF_DescargaManual">{0} (manual download on CurseForge)</sys:String>
+    <sys:String x:Key="CF_BusquedaRechazada">CurseForge rejected the search (403). Your API key works for everything else but is not allowed to search: check its status at console.curseforge.com or contact CurseForge.</sys:String>
 </ResourceDictionary>

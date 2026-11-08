@@ -69,6 +69,14 @@ namespace TecniLauncher
                         File.Delete(rutaSeed);
                     }
                 }
+
+                string rutaSeedCf = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "curseforge.key");
+                if (File.Exists(rutaSeedCf))
+                {
+                    string claveCf = File.ReadAllText(rutaSeedCf).Trim();
+                    if (claveCf.Length > 0) SecretsManager.GuardarSecreto(CurseForgeAPI.ClaveSecreto, claveCf);
+                    File.Delete(rutaSeedCf);
+                }
             }
             catch (Exception ex)
             {

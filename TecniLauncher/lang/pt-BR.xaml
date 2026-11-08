@@ -28,7 +28,7 @@
     <sys:String x:Key="Mods_SearchPlaceholder">Buscar (ex: Sodium)...</sys:String>
     <sys:String x:Key="Mods_BtnSearch">🔍 BUSCAR</sys:String>
     <sys:String x:Key="Mods_TabInstalled">📂 Instalados</sys:String>
-    <sys:String x:Key="Mods_TabOnline">☁️ Modrinth API</sys:String>
+    <sys:String x:Key="Mods_TabOnline">☁️ Explorar</sys:String>
     <sys:String x:Key="Mods_Delete">EXCLUIR</sys:String>
     <sys:String x:Key="Mods_DesDes">Selecione uma versão compatível para instalar</sys:String>
     <sys:String x:Key="Mods_Install">📥 Instalar</sys:String>
@@ -37,7 +37,7 @@
     <sys:String x:Key="Mods_Recommended">⭐ Recomendado</sys:String>
 
     <sys:String x:Key="ModPack_Title">EXPLORE MODPACKS</sys:String>
-    <sys:String x:Key="ModPack_SubTitle">Pesquise e instale pacotes de mods completos do Modrinth</sys:String>
+    <sys:String x:Key="ModPack_SubTitle">Pesquise e instale pacotes de mods completos do Modrinth ou do CurseForge</sys:String>
     <sys:String x:Key="ModPack_botonBus">BUSCAR</sys:String>
 
     <sys:String x:Key="Settings_Title">CONFIGURAÇÕES</sys:String>
@@ -311,4 +311,8 @@
     <sys:String x:Key="Share_Generar">GERAR CÓDIGO</sys:String>
     <sys:String x:Key="Share_ErrNada">Nada para compartilhar: ative ao menos uma opção ou verifique se há arquivos do Modrinth nessas pastas.</sys:String>
     <sys:String x:Key="Share_Resumen">{0} mods  •  {1} shaders  •  {2} texturas  •  {3} ignorados</sys:String>
+    <sys:String x:Key="CF_NoConfigurado">O CurseForge não está configurado nesta instalação (falta a API key). Use o Modrinth por enquanto.</sys:String>
+    <sys:String x:Key="CF_BloqueadoAutor">O autor de {0} não permite downloads por launchers. Abrindo a página do CurseForge para baixar manualmente…</sys:String>
+    <sys:String x:Key="CF_DescargaManual">{0} (download manual no CurseForge)</sys:String>
+    <sys:String x:Key="CF_BusquedaRechazada">O CurseForge recusou a pesquisa (403). Sua API key funciona para o resto, mas não tem permissão de pesquisa: verifique o status em console.curseforge.com ou contate o CurseForge.</sys:String>
 </ResourceDictionary>

@@ -28,7 +28,7 @@
     <sys:String x:Key="Mods_SearchPlaceholder">Buscar (ej: Sodium)...</sys:String>
     <sys:String x:Key="Mods_BtnSearch">🔍 BUSCAR</sys:String>
     <sys:String x:Key="Mods_TabInstalled">📂 Instalados</sys:String>
-    <sys:String x:Key="Mods_TabOnline">☁️ Modrinth API</sys:String>
+    <sys:String x:Key="Mods_TabOnline">☁️ Explorar</sys:String>
     <sys:String x:Key="Mods_Delete">ELIMINAR</sys:String>
     <sys:String x:Key="Mods_DesDes">Selecciona una versión compatible para instalar</sys:String>
     <sys:String x:Key="Mods_Install">📥 Instalar</sys:String>
@@ -37,7 +37,7 @@
     <sys:String x:Key="Mods_Recommended">⭐ Recomendado</sys:String>
 
     <sys:String x:Key="ModPack_Title">EXPLORAR MODPACKS</sys:String>
-    <sys:String x:Key="ModPack_SubTitle">Busca e instala paquetes de mods completos desde Modrinth</sys:String>
+    <sys:String x:Key="ModPack_SubTitle">Busca e instala paquetes de mods completos desde Modrinth o CurseForge</sys:String>
     <sys:String x:Key="ModPack_botonBus">BUSCAR</sys:String>
 
     <sys:String x:Key="Settings_Title">CONFIGURACIÓN</sys:String>
@@ -312,4 +312,8 @@
     <sys:String x:Key="Share_Generar">GENERAR CÓDIGO</sys:String>
     <sys:String x:Key="Share_ErrNada">No hay nada para compartir: activa al menos una opción o revisa que existan archivos de Modrinth en esas carpetas.</sys:String>
     <sys:String x:Key="Share_Resumen">{0} mods  •  {1} shaders  •  {2} texturas  •  {3} omitidos</sys:String>
+    <sys:String x:Key="CF_NoConfigurado">CurseForge no está configurado en esta instalación (falta la API key). Usa Modrinth mientras tanto.</sys:String>
+    <sys:String x:Key="CF_BloqueadoAutor">El autor de {0} no permite descargarlo desde launchers. Abriendo su página de CurseForge para descargarlo a mano…</sys:String>
+    <sys:String x:Key="CF_DescargaManual">{0} (descarga manual en CurseForge)</sys:String>
+    <sys:String x:Key="CF_BusquedaRechazada">CurseForge rechazó la búsqueda (403). Tu API key funciona para lo demás, pero no tiene permiso de búsqueda: revisa su estado en console.curseforge.com o contacta a CurseForge.</sys:String>
 </ResourceDictionary>

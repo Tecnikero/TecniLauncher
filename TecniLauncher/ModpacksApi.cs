@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
@@ -19,6 +19,7 @@ namespace TecniLauncher
         [JsonProperty("description")] public string Descripcion { get; set; } = "";
         [JsonProperty("author")] public string Autor { get; set; } = "";
         [JsonProperty("icon_url")] public string IconoUrl { get; set; } = "";
+        [JsonIgnore] public FuenteContenido Fuente { get; set; } = FuenteContenido.Modrinth;
     }
 
     public static class ModpacksApi
@@ -27,8 +28,10 @@ namespace TecniLauncher
 
 
         public static async Task<List<ModpackProject>> BuscarModpacksAsync(
-    string busqueda, int offset = 0, int limite = 20)
+    string busqueda, int offset = 0, int limite = 20, FuenteContenido fuente = FuenteContenido.Modrinth)
         {
+            if (fuente == FuenteContenido.CurseForge)
+                return await CurseForgeAPI.BuscarModpacksAsync(busqueda, offset, limite);
             try
             {
                 string orden = string.IsNullOrWhiteSpace(busqueda) ? "downloads" : "relevance";
@@ -71,6 +74,8 @@ namespace TecniLauncher
         private static readonly HashSet<string> HostsPermitidos = new(StringComparer.OrdinalIgnoreCase)
         {
             "cdn.modrinth.com",
+            "edge.forgecdn.net",
+            "mediafilez.forgecdn.net",
             "github.com",
             "raw.githubusercontent.com",
             "gitlab.com"
@@ -115,7 +120,7 @@ namespace TecniLauncher
             }
         }
 
-        private static void ExtraerZipSeguro(string rutaZip, string directorioDestino)
+        internal static void ExtraerZipSeguro(string rutaZip, string directorioDestino)
         {
             using var zip = ZipFile.OpenRead(rutaZip);
 
@@ -199,7 +204,7 @@ namespace TecniLauncher
 
             return index;
         }
-        private static void LimpiarModsAnteriores(string rutaCarpetaPerfil)
+        internal static void LimpiarModsAnteriores(string rutaCarpetaPerfil)
         {
             string? rutaMods = ResolverRutaSegura(rutaCarpetaPerfil, "mods");
             if (rutaMods == null || !Directory.Exists(rutaMods)) return;
@@ -268,7 +273,7 @@ namespace TecniLauncher
             return fallos.ToList();
         }
 
-        private static void CopiarDirectorio(string origen, string destino)
+        internal static void CopiarDirectorio(string origen, string destino)
         {
             Directory.CreateDirectory(destino);
             foreach (string archivo in Directory.GetFiles(origen))

@@ -50,9 +50,12 @@ namespace TecniLauncher
         private bool modoOnline = true;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        private const string VERSION_ACTUAL = "1.5.1";
+        private const string VERSION_ACTUAL = "1.5.2";
         private CancellationTokenSource _ctsLoaderVersiones;
         private readonly Dictionary<string, string> _cacheProyectosLocales = new();
+        private readonly Dictionary<string, string> _cacheProyectosLocalesCf = new();
+        private FuenteContenido _fuenteMods = FuenteContenido.Modrinth;
+        private FuenteContenido _fuenteModpacks = FuenteContenido.Modrinth;
         private DispatcherTimer _timerNoticias;
         private Rect _tamanoNormal;
         private bool _esFalsoMaximizado = false;
@@ -1556,14 +1559,21 @@ namespace TecniLauncher
             return char.ToUpper(s[0]) + s[1..];
         }
 
-        private void CargarCategoriasFiltro()
+        private async Task CargarCategoriasFiltroAsync()
         {
+            var fuente = _fuenteMods;
+            var tipo = _tipo;
+            List<FiltroItem> origen = fuente == FuenteContenido.CurseForge
+                ? await CurseForgeAPI.ObtenerCategoriasAsync(CurseForgeAPI.ClaseDe(tipo))
+                : tipo.Categorias().Select(c => new FiltroItem { Clave = c, Texto = NombreCategoria(c) }).ToList();
+            if (fuente != _fuenteMods || tipo != _tipo) return;
+
             bool previo = _cargandoFiltros;
             _cargandoFiltros = true;
             try
             {
                 var categorias = new List<FiltroItem> { new FiltroItem { Clave = "", Texto = Core.T("Mods_FiltroTodas") } };
-                categorias.AddRange(_tipo.Categorias().Select(c => new FiltroItem { Clave = c, Texto = NombreCategoria(c) }));
+                categorias.AddRange(origen);
                 comboFiltroCategoria.ItemsSource = categorias;
                 comboFiltroCategoria.SelectedIndex = 0;
             }
@@ -1607,12 +1617,34 @@ namespace TecniLauncher
             MostrarEstadoMods(null);
 
             InicializarFiltrosMods();
-            CargarCategoriasFiltro();
+            await CargarCategoriasFiltroAsync();
             ActualizarVisibilidadPorTipo();
 
             if (comboPerfilesMods.SelectedItem is not Perfil p) return;
             await AplicarPerfilAFiltrosAsync(p);
             CargarModsLocal(p);
+            if (modoOnline) await BuscarOnlineAsync();
+        }
+
+        private async void FuenteMods_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.RadioButton rb || rb.Tag is not string tag) return;
+            if (comboFiltroCategoria == null || PanelOnline == null) return;
+
+            var nueva = tag == "CurseForge" ? FuenteContenido.CurseForge : FuenteContenido.Modrinth;
+            if (nueva == _fuenteMods) return;
+            _fuenteMods = nueva;
+
+            _busquedaId++;
+            _offsetMods = 0;
+            _hayMasResultados = true;
+            _listaModsActual.Clear();
+            MostrarEstadoMods(null);
+
+            InicializarFiltrosMods();
+            await CargarCategoriasFiltroAsync();
+
+            if (comboPerfilesMods.SelectedItem is not Perfil) return;
             if (modoOnline) await BuscarOnlineAsync();
         }
 
@@ -1623,7 +1655,7 @@ namespace TecniLauncher
             _cargandoFiltros = true;
             try
             {
-                CargarCategoriasFiltro();
+                _ = CargarCategoriasFiltroAsync();
 
                 comboFiltroLoader.ItemsSource = _loadersMods.Select(l => new FiltroItem { Clave = l.Clave, Texto = l.Texto }).ToList();
             }
@@ -1787,21 +1819,33 @@ namespace TecniLauncher
                     return;
                 }
 
+                var fuente = _fuenteMods;
+                if (fuente == FuenteContenido.CurseForge && !CurseForgeAPI.Disponible)
+                {
+                    MostrarEstadoMods(Core.T("CF_NoConfigurado"));
+                    _hayMasResultados = false;
+                    return;
+                }
+
                 if (esPrimeraCarga) MostrarEstadoMods(Core.T("Mods_Cargando"));
 
-                var res = await ModrinthAPI.BuscarMods(busqueda, loader, version, _offsetMods, limitePaginacion, categoria, tipo.ProjectType());
+                var res = fuente == FuenteContenido.CurseForge
+                    ? await CurseForgeAPI.BuscarMods(busqueda, loader, version, _offsetMods, limitePaginacion, categoria, tipo)
+                    : await ModrinthAPI.BuscarMods(busqueda, loader, version, _offsetMods, limitePaginacion, categoria, tipo.ProjectType());
 
                 if (idBusqueda != _busquedaId) return;
 
                 if (res == null || res.Count == 0)
                 {
                     _hayMasResultados = false;
-                    MostrarEstadoMods(_listaModsActual.Count == 0 ? Core.T("Mods_SinResultados") : null);
+                    string vacio = fuente == FuenteContenido.CurseForge && CurseForgeAPI.BusquedaRechazada
+                        ? Core.T("CF_BusquedaRechazada") : Core.T("Mods_SinResultados");
+                    MostrarEstadoMods(_listaModsActual.Count == 0 ? vacio : null);
                     return;
                 }
 
                 string carpetaMods = Path.Combine(p.RutaCarpeta, tipo.Carpeta());
-                var proyectosLocales = await ObtenerProjectIdsInstaladosAsync(carpetaMods, tipo);
+                var proyectosLocales = await ObtenerProjectIdsInstaladosAsync(carpetaMods, tipo, fuente);
 
                 if (idBusqueda != _busquedaId || !ReferenceEquals(comboPerfilesMods.SelectedItem, p)) return;
 
@@ -1853,8 +1897,10 @@ namespace TecniLauncher
                                                 || f.Name.EndsWith(ext + ".disabled", StringComparison.OrdinalIgnoreCase)));
         }
 
-        private async Task<HashSet<string>> ObtenerProjectIdsInstaladosAsync(string carpetaMods, TipoComplemento tipo)
+        private async Task<HashSet<string>> ObtenerProjectIdsInstaladosAsync(string carpetaMods, TipoComplemento tipo, FuenteContenido fuente = FuenteContenido.Modrinth)
         {
+            if (fuente == FuenteContenido.CurseForge) return await ObtenerModIdsCurseForgeInstaladosAsync(carpetaMods, tipo);
+
             var resultado = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (!Directory.Exists(carpetaMods)) return resultado;
 
@@ -1893,13 +1939,57 @@ namespace TecniLauncher
             return resultado;
         }
 
+        private async Task<HashSet<string>> ObtenerModIdsCurseForgeInstaladosAsync(string carpeta, TipoComplemento tipo)
+        {
+            var resultado = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (!Directory.Exists(carpeta) || !CurseForgeAPI.Disponible) return resultado;
+
+            try
+            {
+                var archivos = ListarArchivosDeCarpeta(carpeta, tipo).ToList();
+                var claves = archivos.Select(f => $"{f.FullName}|{f.Length}|{f.LastWriteTimeUtc.Ticks}").ToList();
+
+                var nuevos = archivos.Zip(claves).Where(x => !_cacheProyectosLocalesCf.ContainsKey(x.Second)).ToList();
+                if (nuevos.Count > 0)
+                {
+                    var huellas = await Task.Run(() => nuevos
+                        .Select(x =>
+                        {
+                            try { return (Clave: x.Second, Huella: (uint?)CurseForgeAPI.CalcularFingerprint(x.First.FullName)); }
+                            catch { return (Clave: x.Second, Huella: (uint?)null); }
+                        })
+                        .Where(x => x.Huella != null)
+                        .ToList());
+
+                    var ids = await CurseForgeAPI.ObtenerModIdsPorFingerprintAsync(huellas.Select(h => h.Huella!.Value).Distinct().ToList());
+                    if (ids != null)
+                    {
+                        foreach (var h in huellas)
+                            _cacheProyectosLocalesCf[h.Clave] = ids.TryGetValue(h.Huella!.Value, out var id) ? id : "";
+                    }
+                }
+
+                foreach (var clave in claves)
+                {
+                    if (_cacheProyectosLocalesCf.TryGetValue(clave, out var id) && id.Length > 0)
+                        resultado.Add(id);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.Warn("Error identificando archivos instalados en CurseForge", ex);
+            }
+            return resultado;
+        }
+
         private async Task RefrescarInstaladosOnlineAsync(Perfil p, bool soloMarcar)
         {
             if (_listaModsActual.Count == 0) return;
 
             var tipo = _tipo;
-            var ids = await ObtenerProjectIdsInstaladosAsync(Path.Combine(p.RutaCarpeta, tipo.Carpeta()), tipo);
-            if (!ReferenceEquals(comboPerfilesMods.SelectedItem, p) || _tipo != tipo) return;
+            var fuente = _fuenteMods;
+            var ids = await ObtenerProjectIdsInstaladosAsync(Path.Combine(p.RutaCarpeta, tipo.Carpeta()), tipo, fuente);
+            if (!ReferenceEquals(comboPerfilesMods.SelectedItem, p) || _tipo != tipo || _fuenteMods != fuente) return;
 
             foreach (var m in _listaModsActual.ToList())
             {
@@ -1972,7 +2062,10 @@ namespace TecniLauncher
                 listaArchivosVersion.ItemsSource = null;
                 txtNombreModVersiones.Text = Core.T("Txt_BuscandoVersionesMod", mod.title);
 
-                var versiones = await ModrinthAPI.ObtenerListaVersiones(mod.project_id, perfilActual.Version, _tipo.UsaLoader() ? perfilActual.TipoLoader : null);
+                string? loaderVer = _tipo.UsaLoader() ? perfilActual.TipoLoader : null;
+                var versiones = mod.Fuente == FuenteContenido.CurseForge
+                    ? await CurseForgeAPI.ObtenerListaVersiones(mod.project_id, perfilActual.Version, loaderVer)
+                    : await ModrinthAPI.ObtenerListaVersiones(mod.project_id, perfilActual.Version, loaderVer);
 
                 if (versiones != null && versiones.Count > 0)
                 {
@@ -2002,7 +2095,7 @@ namespace TecniLauncher
                 return;
             }
 
-            _ = InstalarModEnSegundoPlanoAsync(p, mod, null, mod.title, mod.project_id);
+            _ = InstalarModEnSegundoPlanoAsync(p, mod, null, mod.title, mod.project_id, mod.Fuente);
         }
 
         private void BtnInstalarVersion_Click(object sender, RoutedEventArgs e)
@@ -2012,12 +2105,12 @@ namespace TecniLauncher
 
             OverlayVersiones.Visibility = Visibility.Collapsed;
 
-            var tarjeta = _listaModsActual.FirstOrDefault(m => m.project_id == version.ProjectId);
+            var tarjeta = _listaModsActual.FirstOrDefault(m => m.project_id == version.ProjectId && m.Fuente == version.Fuente);
             string titulo = tarjeta?.title ?? version.NombreVersion;
-            _ = InstalarModEnSegundoPlanoAsync(p, tarjeta, version, titulo, version.ProjectId);
+            _ = InstalarModEnSegundoPlanoAsync(p, tarjeta, version, titulo, version.ProjectId, version.Fuente);
         }
 
-        private async Task InstalarModEnSegundoPlanoAsync(Perfil p, ModInfo? tarjeta, ModVersion? version, string titulo, string projectId)
+        private async Task InstalarModEnSegundoPlanoAsync(Perfil p, ModInfo? tarjeta, ModVersion? version, string titulo, string projectId, FuenteContenido fuente = FuenteContenido.Modrinth)
         {
             var tipo = _tipo;
             string versionMC = p.Version;
@@ -2036,8 +2129,19 @@ namespace TecniLauncher
                 {
                     if (version == null)
                     {
-                        var lista = await ModrinthAPI.ObtenerListaVersiones(projectId, versionMC, loader);
+                        var lista = fuente == FuenteContenido.CurseForge
+                            ? await CurseForgeAPI.ObtenerListaVersiones(projectId, versionMC, loader)
+                            : await ModrinthAPI.ObtenerListaVersiones(projectId, versionMC, loader);
                         version = lista.FirstOrDefault(v => v.Tipo == "release") ?? lista.FirstOrDefault();
+
+                        if (version == null && fuente == FuenteContenido.CurseForge
+                            && await CurseForgeAPI.TieneSoloDescargasBloqueadasAsync(projectId, versionMC, loader))
+                        {
+                            MostrarToast(Core.T("CF_BloqueadoAutor", titulo), false, true);
+                            if (tarjeta != null && !string.IsNullOrEmpty(tarjeta.slug))
+                                AbrirEnlaceExterno(CurseForgeAPI.UrlProyecto(tarjeta.slug, tipo));
+                            return;
+                        }
 
                         if (version == null)
                         {
@@ -2082,10 +2186,12 @@ namespace TecniLauncher
 
         private async Task<List<string>> DescargarModYDependencias(ModVersion versionBase, string versionMC, string? loader, string carpetaDestino, TipoComplemento tipo)
         {
-            var plan = tipo == TipoComplemento.Mod
-                ? await ModrinthAPI.ResolverDependenciasAsync(versionBase, versionMC, loader ?? "")
-                : new ResultadoDependencias { Descargas = { versionBase } };
-            var yaInstalados = await ObtenerProjectIdsInstaladosAsync(carpetaDestino, tipo);
+            var plan = tipo != TipoComplemento.Mod
+                ? new ResultadoDependencias { Descargas = { versionBase } }
+                : versionBase.Fuente == FuenteContenido.CurseForge
+                    ? await CurseForgeAPI.ResolverDependenciasAsync(versionBase, versionMC, loader ?? "")
+                    : await ModrinthAPI.ResolverDependenciasAsync(versionBase, versionMC, loader ?? "");
+            var yaInstalados = await ObtenerProjectIdsInstaladosAsync(carpetaDestino, tipo, versionBase.Fuente);
 
             var pendientes = new List<(ModVersion Mod, string Destino)>();
             foreach (var mod in plan.Descargas)
@@ -2220,7 +2326,15 @@ namespace TecniLauncher
                 }
 
                 int limitePaginacion = 20;
-                var resultados = await ModpacksApi.BuscarModpacksAsync(busqueda, _offsetModpacks, limitePaginacion);
+                if (_fuenteModpacks == FuenteContenido.CurseForge && !CurseForgeAPI.Disponible)
+                {
+                    _hayMasModpacks = false;
+                    AvisoError(Core.T("CF_NoConfigurado"));
+                    return;
+                }
+                var resultados = await ModpacksApi.BuscarModpacksAsync(busqueda, _offsetModpacks, limitePaginacion, _fuenteModpacks);
+                if (_fuenteModpacks == FuenteContenido.CurseForge && CurseForgeAPI.BusquedaRechazada)
+                    AvisoError(Core.T("CF_BusquedaRechazada"));
 
                 if (resultados == null || resultados.Count == 0)
                 {
@@ -2247,6 +2361,19 @@ namespace TecniLauncher
                 btnBuscarModpacks.IsEnabled = true;
                 _semModpacks.Release();
             }
+        }
+
+        private async void FuenteModpacks_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.RadioButton rb || rb.Tag is not string tag) return;
+            if (txtBuscadorModpacks == null || btnBuscarModpacks == null || ScrollModpacks == null) return;
+
+            var nueva = tag == "CurseForge" ? FuenteContenido.CurseForge : FuenteContenido.Modrinth;
+            if (nueva == _fuenteModpacks) return;
+            _fuenteModpacks = nueva;
+            _hayMasModpacks = true;
+            ScrollModpacks.ScrollToTop();
+            await FetchYAgregarModpacks(txtBuscadorModpacks.Text.Trim(), esPrimeraCarga: true);
         }
 
         private async void BtnBuscarModpacks_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -2311,10 +2438,21 @@ namespace TecniLauncher
                 PanelBusquedaModpacks.Visibility = System.Windows.Visibility.Collapsed;
                 PanelDetalleModpack.Visibility = System.Windows.Visibility.Visible;
 
-                string descripcionGigante = await ModpacksApi.ObtenerDescripcionCompletaAsync(modpackSeleccionado.Id);
-                if (token != _detalleModpackToken) return;
-                var pipeline = new Markdig.MarkdownPipelineBuilder().UseAdvancedExtensions().DisableHtml().Build();
-                string htmlCuerpo = Markdig.Markdown.ToHtml(descripcionGigante ?? "", pipeline);
+                bool esCf = modpackSeleccionado.Fuente == FuenteContenido.CurseForge;
+                string htmlCuerpo;
+                if (esCf)
+                {
+                    // CurseForge entrega HTML; el WebView tiene scripts deshabilitados y una CSP sin scripts.
+                    htmlCuerpo = await CurseForgeAPI.ObtenerDescripcionHtmlAsync(modpackSeleccionado.Id);
+                    if (token != _detalleModpackToken) return;
+                }
+                else
+                {
+                    string descripcionGigante = await ModpacksApi.ObtenerDescripcionCompletaAsync(modpackSeleccionado.Id);
+                    if (token != _detalleModpackToken) return;
+                    var pipeline = new Markdig.MarkdownPipelineBuilder().UseAdvancedExtensions().DisableHtml().Build();
+                    htmlCuerpo = Markdig.Markdown.ToHtml(descripcionGigante ?? "", pipeline);
+                }
 
                 string htmlCompleto = $@"
 <!DOCTYPE html>
@@ -2349,7 +2487,9 @@ namespace TecniLauncher
 
                 if (webViewListo) wvDetalleDescripcion.NavigateToString(htmlCompleto);
 
-                var versiones = await ModpacksApi.ObtenerVersionesAsync(modpackSeleccionado.Id);
+                var versiones = esCf
+                    ? await CurseForgeAPI.ObtenerVersionesModpackAsync(modpackSeleccionado.Id)
+                    : await ModpacksApi.ObtenerVersionesAsync(modpackSeleccionado.Id);
                 if (token != _detalleModpackToken) return;
 
                 btnInstalarModpack.Tag = modpackSeleccionado;
@@ -2437,7 +2577,9 @@ namespace TecniLauncher
                 }
                 string rutaBaseMinecraft = System.IO.Path.Combine(carpetaInstances, nombreUnico);
 
-                var receta = await ModpacksApi.PrepararInstalacionModpackAsync(archivoZip.UrlDescarga, rutaBaseMinecraft);
+                var receta = modpackSeleccionado.Fuente == FuenteContenido.CurseForge
+                    ? await CurseForgeAPI.PrepararInstalacionModpackAsync(archivoZip.UrlDescarga, rutaBaseMinecraft)
+                    : await ModpacksApi.PrepararInstalacionModpackAsync(archivoZip.UrlDescarga, rutaBaseMinecraft);
                 if (receta == null)
                 {
                     PanelProgresoDescarga.Visibility = System.Windows.Visibility.Collapsed;

@@ -21,6 +21,9 @@ namespace TecniLauncher
         public long downloads { get; set; }
         public bool esRecomendado { get; set; } = false;
 
+        [System.Text.Json.Serialization.JsonIgnore]
+        public FuenteContenido Fuente { get; set; } = FuenteContenido.Modrinth;
+
         private bool _estaInstalado;
         public bool estaInstalado
         {
@@ -206,6 +209,7 @@ namespace TecniLauncher
         public string NombreArchivo { get; set; }
         public string UrlDescarga { get; set; }
         public string ColorTipo => Tipo == "release" ? "#2ecc71" : (Tipo == "beta" ? "#f1c40f" : "#e74c3c");
+        public FuenteContenido Fuente { get; set; } = FuenteContenido.Modrinth;
         public List<DependenciaMod> Requeridas { get; set; } = new List<DependenciaMod>();
         public List<string> DependenciasRequeridas => Requeridas
             .Where(d => !string.IsNullOrEmpty(d.ProjectId)).Select(d => d.ProjectId!).ToList();

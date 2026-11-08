@@ -366,3 +366,7 @@ TecniLauncher/TecniLauncher.zip
 
 # Claves de firma: nunca en el repo
 *.pem
+
+# Claves locales (nunca subir)
+seed.key
+curseforge.key
