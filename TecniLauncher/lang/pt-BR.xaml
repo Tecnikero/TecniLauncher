@@ -2,12 +2,12 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <sys:String x:Key="Menu_Events">🎈   Eventos</sys:String>
-    <sys:String x:Key="Menu_Play">🎮   Jogar</sys:String>
-    <sys:String x:Key="Menu_Profiles">📂   Perfis</sys:String>
-    <sys:String x:Key="Menu_Mods">🧩   Complementos</sys:String>
-    <sys:String x:Key="Menu_Settings">⚙️   Configurações</sys:String>
-    <sys:String x:Key="Menu_ModPacks">🧭​   ModPacks</sys:String>
+    <sys:String x:Key="Menu_Events">Eventos</sys:String>
+    <sys:String x:Key="Menu_Play">Jogar</sys:String>
+    <sys:String x:Key="Menu_Profiles">Perfis</sys:String>
+    <sys:String x:Key="Menu_Mods">Complementos</sys:String>
+    <sys:String x:Key="Menu_Settings">Configurações</sys:String>
+    <sys:String x:Key="Menu_ModPacks">ModPacks</sys:String>
 
     <sys:String x:Key="client_des">Perfis de jogos hiperotimizados, prontos para instalar com um clique.</sys:String>
     <sys:String x:Key="client_event_1">Otimizado para combate PvP. FPS máximo, latência mínima.</sys:String>
