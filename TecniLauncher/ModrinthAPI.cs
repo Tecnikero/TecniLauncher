@@ -229,6 +229,13 @@ namespace TecniLauncher
         private static string? Str(JsonElement e, string nombre) =>
             e.TryGetProperty(nombre, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() : null;
 
+        /// <summary>Quilt carga también los mods de Fabric, así que se buscan ambos.</summary>
+        private static string[] LoadersCompatibles(string loader)
+        {
+            string l = loader.ToLowerInvariant();
+            return l == "quilt" ? new[] { "quilt", "fabric" } : new[] { l };
+        }
+
         public static async Task<List<ModInfo>> BuscarMods(string busqueda, string? loader, string version, int offset = 0, int limite = 30, string? categoria = null, string tipoProyecto = "mod")
         {
             bool usaLoader = tipoProyecto == "mod";
@@ -237,7 +244,7 @@ namespace TecniLauncher
             try
             {
                 var grupos = new List<string>();
-                if (usaLoader) grupos.Add($"[\"categories:{loader!.ToLower()}\"]");
+                if (usaLoader) grupos.Add("[" + string.Join(",", LoadersCompatibles(loader!).Select(l => $"\"categories:{l}\"")) + "]");
                 grupos.Add($"[\"versions:{version}\"]");
                 grupos.Add($"[\"project_type:{tipoProyecto}\"]");
                 if (!string.IsNullOrEmpty(categoria)) grupos.Add($"[\"categories:{categoria.ToLower()}\"]");
@@ -363,7 +370,7 @@ namespace TecniLauncher
                 string versiones = Uri.EscapeDataString($"[\"{versionMC}\"]");
                 string url = $"{Base}/project/{Uri.EscapeDataString(projectId)}/version?game_versions={versiones}";
                 if (!string.IsNullOrEmpty(loader))
-                    url += "&loaders=" + Uri.EscapeDataString($"[\"{loader.ToLower()}\"]");
+                    url += "&loaders=" + Uri.EscapeDataString("[" + string.Join(",", LoadersCompatibles(loader).Select(l => $"\"{l}\"")) + "]");
                 string json = await client.GetStringAsync(url);
                 var listaResultados = new List<ModVersion>();
 

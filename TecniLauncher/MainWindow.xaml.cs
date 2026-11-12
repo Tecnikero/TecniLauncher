@@ -50,7 +50,7 @@ namespace TecniLauncher
         private bool modoOnline = true;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        private const string VERSION_ACTUAL = "1.5.3";
+        private const string VERSION_ACTUAL = "1.5.4";
         private CancellationTokenSource _ctsLoaderVersiones;
         private readonly Dictionary<string, string> _cacheProyectosLocales = new();
         private readonly Dictionary<string, string> _cacheProyectosLocalesCf = new();
@@ -754,7 +754,7 @@ namespace TecniLauncher
                     }
                 }
 
-                if (perfil.TipoLoader == "Vanilla" && perfil.ModoRendimientoActivado)
+                if (perfil.ModoRendimientoActivado)
                 {
                     string[] banderasAikar = new string[]
                     {"-XX:+UseG1GC","-XX:+ParallelRefProcEnabled","-XX:MaxGCPauseMillis=200","-XX:+UnlockExperimentalVMOptions","-XX:+DisableExplicitGC","-XX:G1NewSizePercent=30","-XX:G1MaxNewSizePercent=40","-XX:G1HeapRegionSize=8M","-XX:G1ReservePercent=20","-XX:G1HeapWastePercent=5","-XX:G1MixedGCCountTarget=4","-XX:InitiatingHeapOccupancyPercent=15","-XX:G1MixedGCLiveThresholdPercent=90","-XX:G1RSetUpdatingPauseTimePercent=5","-XX:SurvivorRatio=32","-XX:+PerfDisableSharedMem","-XX:MaxTenuringThreshold=1"};
@@ -901,6 +901,12 @@ namespace TecniLauncher
                     else
                         verInstalada = await installer.Install(perfil.Version);
                 }
+                // === QUILT ===
+                else if (perfil.TipoLoader == "Quilt")
+                {
+                    var installer = new TecniLauncher.QuiltInstaller(launcher);
+                    verInstalada = await installer.InstallAsync(perfil.Version, versionExacta);
+                }
                 // === NEOFORGE ===
                 else if (perfil.TipoLoader == "NeoForge")
                 {
@@ -912,6 +918,8 @@ namespace TecniLauncher
                 }
 
                 Dispatcher.Invoke(() => barraCarga.IsIndeterminate = false);
+                if (string.IsNullOrEmpty(verInstalada))
+                    throw new Exception($"Loader no soportado: {perfil.TipoLoader}");
                 return verInstalada;
             }
             catch (Exception ex)
@@ -962,6 +970,8 @@ namespace TecniLauncher
             catch { comboVersiones.Items.Add("Error"); }
             finally { comboVersiones.IsEnabled = true; }
         }
+        // true cuando comboVersiones solo contiene la versión del perfil que se estaba editando
+        private bool _versionesDeEdicion = false;
         private const string TXT_LOADER_BUSCANDO = "Buscando...";
         private const string TXT_LOADER_NO_DISPONIBLE = "No disponible";
         private const string TXT_LOADER_ERROR = "Error al buscar";
@@ -981,6 +991,7 @@ namespace TecniLauncher
 
             if (comboLoader == null || comboLoader.SelectedItem == null) return;
             if (comboVersiones == null || comboVersiones.SelectedItem == null) return;
+            if (perfilAEditar != null) return;
 
             var itemLoader = (ComboBoxItem)comboLoader.SelectedItem;
             string tipoLoader = itemLoader.Content.ToString();
@@ -992,19 +1003,6 @@ namespace TecniLauncher
                 comboLoaderVersion.Visibility = Visibility.Collapsed;
                 return;
             }
-            if (chkModoRendimiento != null)
-            {
-                if (tipoLoader == "Vanilla")
-                {
-                    chkModoRendimiento.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    chkModoRendimiento.Visibility = Visibility.Collapsed;
-                    chkModoRendimiento.IsChecked = false;
-                }
-            }
-
             lblLoaderVersion.Visibility = Visibility.Visible;
             comboLoaderVersion.Visibility = Visibility.Visible;
             comboLoaderVersion.IsEnabled = false;
@@ -1022,6 +1020,11 @@ namespace TecniLauncher
 
                     var listaFabric = await instaladorPropio.ObtenerVersiones(versionMinecraft, token);
                     versionesEncontradas.AddRange(listaFabric);
+                }
+                else if (tipoLoader == "Quilt")
+                {
+                    var instaladorQuilt = new TecniLauncher.QuiltInstaller(Core.LauncherGlobal);
+                    versionesEncontradas.AddRange(await instaladorQuilt.ObtenerVersiones(versionMinecraft, token));
                 }
                 // === LÓGICA FORGE ===
                 else if (tipoLoader == "Forge")
@@ -1207,15 +1210,7 @@ namespace TecniLauncher
             if (chkModoRendimiento != null)
             {
                 chkModoRendimiento.IsChecked = perfilAEditar.ModoRendimientoActivado;
-
-                if (perfilAEditar.TipoLoader == "Vanilla")
-                {
-                    chkModoRendimiento.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    chkModoRendimiento.Visibility = Visibility.Collapsed;
-                }
+                chkModoRendimiento.Visibility = Visibility.Visible;
             }
             comboVersiones.IsEnabled = false;
             comboLoader.IsEnabled = false;
@@ -1223,6 +1218,19 @@ namespace TecniLauncher
             comboVersiones.Items.Clear();
             comboVersiones.Items.Add(perfilAEditar.Version);
             comboVersiones.SelectedIndex = 0;
+            _versionesDeEdicion = true;
+
+            foreach (ComboBoxItem itemLoader in comboLoader.Items)
+            {
+                if (string.Equals(itemLoader.Content?.ToString(), perfilAEditar.TipoLoader, StringComparison.OrdinalIgnoreCase))
+                {
+                    comboLoader.SelectedItem = itemLoader;
+                    break;
+                }
+            }
+            bool editaConLoader = !string.Equals(perfilAEditar.TipoLoader, "Vanilla", StringComparison.OrdinalIgnoreCase);
+            lblLoaderVersion.Visibility = editaConLoader ? Visibility.Visible : Visibility.Collapsed;
+            comboLoaderVersion.Visibility = editaConLoader ? Visibility.Visible : Visibility.Collapsed;
 
             string loaderGuardado = LoaderVersionValida(perfilAEditar.VersionLoaderExacta);
             if (loaderGuardado.Length > 0)
@@ -1531,8 +1539,14 @@ namespace TecniLauncher
             comboVersiones.IsEnabled = true;
             comboLoader.IsEnabled = true;
             comboLoader.SelectedIndex = 0;
+            lblLoaderVersion.Visibility = Visibility.Collapsed;
+            comboLoaderVersion.Visibility = Visibility.Collapsed;
             GridCrearPerfil.Visibility = Visibility.Visible;
-            if (comboVersiones.Items.Count == 0 || comboVersiones.Items[0].ToString() == "Cargando...") _ = CargarVersionesVanilla();
+            if (_versionesDeEdicion || comboVersiones.Items.Count == 0 || comboVersiones.Items[0].ToString() == "Cargando...")
+            {
+                _versionesDeEdicion = false;
+                _ = CargarVersionesVanilla();
+            }
         }
         #endregion
         #region Mods

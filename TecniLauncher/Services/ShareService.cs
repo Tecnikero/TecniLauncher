@@ -61,7 +61,7 @@ namespace TecniLauncher.Services
         private static readonly Regex RxCodigo = new(@"^\d{6}$", RegexOptions.Compiled);
         private static readonly Regex RxIdModrinth = new(@"^[A-Za-z0-9]{8}$", RegexOptions.Compiled);
         private static readonly Regex RxVersion = new(@"^[A-Za-z0-9._\-+]{1,48}$", RegexOptions.Compiled);
-        private static readonly string[] LoadersValidos = { "Vanilla", "Fabric", "Forge", "NeoForge" };
+        private static readonly string[] LoadersValidos = { "Vanilla", "Fabric", "Forge", "NeoForge", "Quilt" };
         private const int MaxMods = 500;
         private const int MaxOtros = 200;
 

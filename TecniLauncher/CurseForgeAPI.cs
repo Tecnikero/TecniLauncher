@@ -541,7 +541,7 @@ namespace TecniLauncher
                         case "forge": index.Dependencias["forge"] = version; break;
                         case "neoforge": index.Dependencias["neoforge"] = version; break;
                         case "fabric": index.Dependencias["fabric-loader"] = version; break;
-                        case "quilt": throw new NotSupportedException("Este modpack requiere Quilt, que el launcher todavía no soporta.");
+                        case "quilt": index.Dependencias["quilt-loader"] = version; break;
                     }
                 }
             }

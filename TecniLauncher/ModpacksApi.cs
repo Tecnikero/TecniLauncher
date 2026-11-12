@@ -191,9 +191,6 @@ namespace TecniLauncher
                 }
             }
 
-            if (index.Dependencias != null && index.Dependencias.ContainsKey("quilt-loader"))
-                throw new NotSupportedException("Este modpack requiere Quilt, que el launcher todavía no soporta.");
-
             LimpiarModsAnteriores(rutaCarpetaPerfil);
             foreach (string carpeta in new[] { "overrides", "client-overrides" })
             {
@@ -218,6 +215,7 @@ namespace TecniLauncher
         {
             if (dependencias != null)
             {
+                if (dependencias.TryGetValue("quilt-loader", out var q)) return ("Quilt", q);
                 if (dependencias.TryGetValue("fabric-loader", out var f)) return ("Fabric", f);
                 if (dependencias.TryGetValue("neoforge", out var n)) return ("NeoForge", n);
                 if (dependencias.TryGetValue("forge", out var fg)) return ("Forge", fg);

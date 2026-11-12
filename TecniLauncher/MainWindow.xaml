@@ -1395,6 +1395,10 @@
                                                 <Setter TargetName="BadgeLoader" Property="Background" Value="#26F0A030"/>
                                                 <Setter TargetName="TxtLoader" Property="Foreground" Value="#F5B655"/>
                                             </DataTrigger>
+                                            <DataTrigger Binding="{Binding TipoLoader}" Value="Quilt">
+                                                <Setter TargetName="BadgeLoader" Property="Background" Value="#26A07CFF"/>
+                                                <Setter TargetName="TxtLoader" Property="Foreground" Value="#B79BFF"/>
+                                            </DataTrigger>
                                             <DataTrigger Binding="{Binding TipoLoader}" Value="Vanilla">
                                                 <Setter TargetName="BadgeLoader" Property="Background" Value="#2622C55E"/>
                                                 <Setter TargetName="TxtLoader" Property="Foreground" Value="#4ADE80"/>
@@ -2214,6 +2218,7 @@
                                         <ComboBoxItem Content="Forge"/>
                                         <ComboBoxItem Content="Fabric"/>
                                         <ComboBoxItem Content="NeoForge"/>
+                                        <ComboBoxItem Content="Quilt"/>
                                     </ComboBox>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
