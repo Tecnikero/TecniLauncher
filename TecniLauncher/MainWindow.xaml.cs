@@ -50,7 +50,7 @@ namespace TecniLauncher
         private bool modoOnline = true;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        private const string VERSION_ACTUAL = "1.5.4";
+        private const string VERSION_ACTUAL = "1.5.5";
         private CancellationTokenSource _ctsLoaderVersiones;
         private readonly Dictionary<string, string> _cacheProyectosLocales = new();
         private readonly Dictionary<string, string> _cacheProyectosLocalesCf = new();
@@ -3407,7 +3407,7 @@ namespace TecniLauncher
 
                     _clientesCache = nuevos;
                     _clientesUltimaCarga = DateTime.Now;
-                    ListTecniClients.ItemsSource = _clientesCache;
+                    AplicarClientesUI();
                 }
             }
             catch (Exception ex)
@@ -3415,6 +3415,54 @@ namespace TecniLauncher
                 if (_clientesCache != null) { RefrescarEstadoClientes(); return; }
                 AvisoError(Core.T("Msg_ErrorClientes", ex.Message));
             }
+        }
+
+        private string RutaSeleccionPvp => System.IO.Path.Combine(Core.RutaData, "tecniclient_pvp.txt");
+        private bool _aplicandoClientes = false;
+
+        /// <summary>Reparte los clientes: PvP en el desplegable y eventos en tarjetas.</summary>
+        private void AplicarClientesUI()
+        {
+            if (_clientesCache == null) return;
+
+            var pvp = _clientesCache.Where(c => !c.EsEvento).ToList();
+            var eventos = _clientesCache.Where(c => c.EsEvento).ToList();
+
+            string? idElegido = (comboTecniPvp.SelectedItem as TecniClientModel)?.Id;
+            if (string.IsNullOrEmpty(idElegido))
+            {
+                try { if (System.IO.File.Exists(RutaSeleccionPvp)) idElegido = System.IO.File.ReadAllText(RutaSeleccionPvp).Trim(); }
+                catch { idElegido = null; }
+            }
+
+            _aplicandoClientes = true;
+            try
+            {
+                comboTecniPvp.ItemsSource = pvp;
+                comboTecniPvp.SelectedItem = pvp.Find(c => c.Id == idElegido) ?? pvp.FirstOrDefault();
+            }
+            finally { _aplicandoClientes = false; }
+
+            TarjetaPvp.Visibility = pvp.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            txtSinPvp.Visibility = pvp.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+
+            ListTecniClients.ItemsSource = eventos;
+            txtSinEventos.Visibility = eventos.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void ComboTecniPvp_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_aplicandoClientes || comboTecniPvp.SelectedItem is not TecniClientModel c) return;
+            try { System.IO.File.WriteAllText(RutaSeleccionPvp, c.Id ?? ""); }
+            catch (Exception exLog) { LogService.Debug("No se pudo guardar la versión PvP elegida", exLog); }
+        }
+
+        private void TabTecniClient_Checked(object sender, RoutedEventArgs e)
+        {
+            if (PanelClientPvp == null || PanelClientEventos == null) return;
+            bool eventos = ReferenceEquals(sender, TabClientEventosBtn);
+            PanelClientPvp.Visibility = eventos ? Visibility.Collapsed : Visibility.Visible;
+            PanelClientEventos.Visibility = eventos ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private async void BtnInstalarTecniClient_Click(object sender, RoutedEventArgs e)

@@ -16,6 +16,14 @@ public class TecniClientModel : INotifyPropertyChanged
     public string Icon { get; set; } = "⚡";
     public List<string> Mods { get; set; } = new List<string>();
 
+    /// <summary>"pvp" (por defecto) o "evento". Los eventos se muestran como tarjetas en la pestaña Eventos.</summary>
+    public string Categoria { get; set; } = "pvp";
+
+    [JsonIgnore]
+    public bool EsEvento =>
+        string.Equals(Categoria?.Trim(), "evento", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(Categoria?.Trim(), "eventos", StringComparison.OrdinalIgnoreCase);
+
     public string ModpackUrl { get; set; }
     public string Sha256 { get; set; }
 

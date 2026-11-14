@@ -10,6 +10,10 @@
     <sys:String x:Key="Menu_ModPacks">ModPacks</sys:String>
 
     <sys:String x:Key="client_des">Hyper-optimized game profiles, ready to install with one click.</sys:String>
+    <sys:String x:Key="client_tab_pvp">PvP</sys:String>
+    <sys:String x:Key="client_version">Version</sys:String>
+    <sys:String x:Key="client_sin_eventos">No events right now. Check back soon!</sys:String>
+    <sys:String x:Key="client_sin_pvp">No TecniPvP versions available.</sys:String>
     <sys:String x:Key="client_event_1">Optimized for PvP combat. Maximum FPS, minimum latency.</sys:String>
     <sys:String x:Key="client_descarga">INSTALL</sys:String>
     <sys:String x:Key="Events_GB">GB</sys:String>

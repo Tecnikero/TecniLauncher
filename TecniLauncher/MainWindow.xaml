@@ -1005,10 +1005,11 @@
                     <Grid x:Name="vistaTecniClients" Grid.Row="1" Visibility="Collapsed" Margin="32,4,32,24">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Row="0" Margin="0,0,0,22" Orientation="Horizontal">
+                        <StackPanel Grid.Row="0" Margin="0,0,0,18" Orientation="Horizontal">
                             <ContentControl Style="{StaticResource PageIcon}" Background="{StaticResource ColClient}" Tag="{StaticResource IcoBolt}"/>
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="TecniClient" Style="{StaticResource TxtPageTitle}"/>
@@ -1016,73 +1017,188 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                            <ItemsControl x:Name="ListTecniClients">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel Orientation="Horizontal"/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border x:Name="TarjetaClient" Width="250" Margin="0,0,14,14" Background="{StaticResource BgCard}" CornerRadius="14" BorderBrush="{StaticResource BorderSoft}" BorderThickness="1">
-                                            <StackPanel Margin="16">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <Border Width="48" Height="48" CornerRadius="12" Background="{StaticResource ColClientDim}">
-                                                        <TextBlock Text="{Binding Icon}" FontSize="24" Foreground="{StaticResource ColClient}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <!-- Pestañas PvP / Eventos -->
+                        <Border Grid.Row="1" Style="{StaticResource Segmented}" Margin="0,0,0,16">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton x:Name="TabClientPvpBtn" GroupName="TabsTecniClient" IsChecked="True" Content="{DynamicResource client_tab_pvp}"
+                                             Background="{StaticResource ColClient}" Style="{StaticResource SegColor}" Checked="TabTecniClient_Checked"/>
+                                <RadioButton x:Name="TabClientEventosBtn" GroupName="TabsTecniClient" Content="{DynamicResource Menu_Events}"
+                                             Background="{StaticResource ColProfiles}" Style="{StaticResource SegColor}" Checked="TabTecniClient_Checked"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── PvP: un panel + desplegable de versión ── -->
+                        <Grid x:Name="PanelClientPvp" Grid.Row="2">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <Border x:Name="TarjetaPvp" Style="{StaticResource Card}" CornerRadius="16" Padding="24" VerticalAlignment="Top" MaxWidth="760" HorizontalAlignment="Left"
+                                        DataContext="{Binding SelectedItem, ElementName=comboTecniPvp}">
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="64" Height="64" CornerRadius="16" Background="{StaticResource ColClientDim}">
+                                                <TextBlock Text="{Binding Icon}" FontSize="32" Foreground="{StaticResource ColClient}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextMain}" FontSize="22" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                                    <Border Background="{StaticResource ColClientDim}" CornerRadius="5" Padding="7,2" Margin="0,0,6,0">
+                                                        <TextBlock Text="{Binding Version}" Foreground="{StaticResource ColClient}" FontSize="11" FontWeight="Bold"/>
                                                     </Border>
-                                                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextMain}" FontSize="15" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
-                                                        <Border Background="{StaticResource ColClientDim}" CornerRadius="5" Padding="6,1" Margin="0,4,0,0" HorizontalAlignment="Left">
-                                                            <TextBlock Text="{Binding Version}" Foreground="{StaticResource ColClient}" FontSize="10" FontWeight="Bold"/>
-                                                        </Border>
-                                                    </StackPanel>
+                                                    <Border Background="{StaticResource BgCardAlt}" CornerRadius="5" Padding="7,2" Margin="0,0,6,0">
+                                                        <TextBlock Text="{Binding Loader}" Foreground="{StaticResource TextSub}" FontSize="11" FontWeight="Bold"/>
+                                                    </Border>
+                                                    <Border Background="#2622C55E" CornerRadius="5" Padding="7,2"
+                                                            Visibility="{Binding EstadoVisible, Converter={StaticResource BoolToVis}}">
+                                                        <TextBlock Text="{Binding TextoEstado}" Foreground="#4ADE80" FontSize="11" FontWeight="Bold"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <TextBlock Text="{Binding Description}" Foreground="{StaticResource TextSub}" FontSize="13" TextWrapping="Wrap" Margin="0,16,0,0"/>
+
+                                        <ItemsControl Margin="0,12,0,0" ItemsSource="{Binding Mods}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel Orientation="Horizontal"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{StaticResource BgCardAlt}" CornerRadius="5" Padding="8,3" Margin="0,0,6,6">
+                                                        <TextBlock Text="{Binding}" Foreground="{StaticResource TextSub}" FontSize="11" FontWeight="SemiBold"/>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <Border Margin="0,10,0,0" Background="{StaticResource BgSidebar}" CornerRadius="10" Padding="14,10" MaxWidth="360" HorizontalAlignment="Left" Width="360">
+                                            <StackPanel>
+                                                <Grid Margin="0,0,0,4">
+                                                    <TextBlock Text="RAM" Foreground="{StaticResource TextSub}" FontSize="11" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding SelectedRam, StringFormat=\{0\} GB}" Foreground="{StaticResource TextMain}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Right"/>
                                                 </Grid>
-
-                                                <TextBlock Text="{Binding Description}" Foreground="{StaticResource TextSub}" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0"/>
-
-                                                <ItemsControl Margin="0,10,0,0" ItemsSource="{Binding Mods}">
-                                                    <ItemsControl.ItemsPanel>
-                                                        <ItemsPanelTemplate>
-                                                            <WrapPanel Orientation="Horizontal"/>
-                                                        </ItemsPanelTemplate>
-                                                    </ItemsControl.ItemsPanel>
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Border Background="{StaticResource BgCardAlt}" CornerRadius="5" Padding="7,2" Margin="0,0,5,5">
-                                                                <TextBlock Text="{Binding}" Foreground="{StaticResource TextSub}" FontSize="10" FontWeight="SemiBold"/>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-
-                                                <Border Margin="0,8,0,0" Background="{StaticResource BgSidebar}" CornerRadius="9" Padding="12,9">
-                                                    <StackPanel>
-                                                        <Grid Margin="0,0,0,4">
-                                                            <TextBlock Text="RAM" Foreground="{StaticResource TextSub}" FontSize="11" FontWeight="SemiBold"/>
-                                                            <TextBlock Text="{Binding SelectedRam, StringFormat=\{0\} GB}" Foreground="{StaticResource TextMain}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Right"/>
-                                                        </Grid>
-                                                        <Slider Minimum="1" Maximum="16" Value="{Binding SelectedRam, Mode=TwoWay}" TickFrequency="1" IsSnapToTickEnabled="True"/>
-                                                    </StackPanel>
-                                                </Border>
-
-                                                <Button Content="{Binding TextoBoton}" IsEnabled="{Binding BotonHabilitado}" Style="{StaticResource BtnTinted}" Background="{StaticResource ColClient}" Foreground="#2A0A1C"
-                                                        Margin="0,12,0,0" Height="38" FontWeight="Bold" FontSize="12" Click="BtnInstalarTecniClient_Click"/>
+                                                <Slider Minimum="1" Maximum="16" Value="{Binding SelectedRam, Mode=TwoWay}" TickFrequency="1" IsSnapToTickEnabled="True"/>
                                             </StackPanel>
                                         </Border>
-                                        <DataTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="TarjetaClient" Property="BorderBrush" Value="#80F472B6"/>
-                                            </Trigger>
-                                        </DataTemplate.Triggers>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
+
+                                        <!-- Jugar + versión -->
+                                        <Grid Margin="0,22,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button x:Name="btnJugarTecniPvp" Grid.Column="0" Content="{Binding TextoBoton}" IsEnabled="{Binding BotonHabilitado}"
+                                                    Style="{StaticResource BtnTinted}" Background="{StaticResource ColClient}" Foreground="#2A0A1C"
+                                                    Height="52" MinWidth="230" Padding="26,0" FontSize="16" FontWeight="Bold" VerticalAlignment="Bottom"
+                                                    Click="BtnInstalarTecniClient_Click">
+                                                <Button.Effect>
+                                                    <DropShadowEffect Color="#F472B6" BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
+                                                </Button.Effect>
+                                            </Button>
+                                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Bottom">
+                                                <TextBlock Text="{DynamicResource client_version}" Style="{StaticResource TxtField}"/>
+                                                <ComboBox x:Name="comboTecniPvp" Height="52" MinWidth="190" SelectionChanged="ComboTecniPvp_SelectionChanged">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="{Binding MinecraftVersion}" Foreground="{StaticResource TextMain}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                                <TextBlock Text="{Binding Loader}" Foreground="{StaticResource TextSub}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </ScrollViewer>
+
+                            <TextBlock x:Name="txtSinPvp" Text="{DynamicResource client_sin_pvp}" Foreground="{StaticResource TextSub}" FontSize="14"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" IsHitTestVisible="False"/>
+                        </Grid>
+
+                        <!-- ── Eventos: tarjetas ── -->
+                        <Grid x:Name="PanelClientEventos" Grid.Row="2" Visibility="Collapsed">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="ListTecniClients">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border x:Name="TarjetaClient" Width="250" Margin="0,0,14,14" Background="{StaticResource BgCard}" CornerRadius="14" BorderBrush="{StaticResource BorderSoft}" BorderThickness="1">
+                                                <StackPanel Margin="16">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Width="48" Height="48" CornerRadius="12" Background="{StaticResource ColProfilesDim}">
+                                                            <TextBlock Text="{Binding Icon}" FontSize="24" Foreground="{StaticResource ColProfiles}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextMain}" FontSize="15" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                                <Border Background="{StaticResource ColProfilesDim}" CornerRadius="5" Padding="6,1" Margin="0,0,5,0">
+                                                                    <TextBlock Text="{Binding Version}" Foreground="{StaticResource ColProfiles}" FontSize="10" FontWeight="Bold"/>
+                                                                </Border>
+                                                                <Border Background="{StaticResource BgCardAlt}" CornerRadius="5" Padding="6,1">
+                                                                    <TextBlock Text="{Binding MinecraftVersion}" Foreground="{StaticResource TextSub}" FontSize="10" FontWeight="Bold"/>
+                                                                </Border>
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                    </Grid>
+
+                                                    <TextBlock Text="{Binding Description}" Foreground="{StaticResource TextSub}" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0"/>
+
+                                                    <ItemsControl Margin="0,10,0,0" ItemsSource="{Binding Mods}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <WrapPanel Orientation="Horizontal"/>
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Background="{StaticResource BgCardAlt}" CornerRadius="5" Padding="7,2" Margin="0,0,5,5">
+                                                                    <TextBlock Text="{Binding}" Foreground="{StaticResource TextSub}" FontSize="10" FontWeight="SemiBold"/>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+
+                                                    <Border Margin="0,8,0,0" Background="{StaticResource BgSidebar}" CornerRadius="9" Padding="12,9">
+                                                        <StackPanel>
+                                                            <Grid Margin="0,0,0,4">
+                                                                <TextBlock Text="RAM" Foreground="{StaticResource TextSub}" FontSize="11" FontWeight="SemiBold"/>
+                                                                <TextBlock Text="{Binding SelectedRam, StringFormat=\{0\} GB}" Foreground="{StaticResource TextMain}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                                            </Grid>
+                                                            <Slider Minimum="1" Maximum="16" Value="{Binding SelectedRam, Mode=TwoWay}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <Button Content="{Binding TextoBoton}" IsEnabled="{Binding BotonHabilitado}" Style="{StaticResource BtnTinted}" Background="{StaticResource ColProfiles}" Foreground="#1F1404"
+                                                            Margin="0,12,0,0" Height="38" FontWeight="Bold" FontSize="12" Click="BtnInstalarTecniClient_Click"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="TarjetaClient" Property="BorderBrush" Value="#80F5A524"/>
+                                                </Trigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <TextBlock x:Name="txtSinEventos" Text="{DynamicResource client_sin_eventos}" Foreground="{StaticResource TextSub}" FontSize="14"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Visibility="Collapsed" IsHitTestVisible="False"/>
+                        </Grid>
                     </Grid>
 
                     <!-- ─────────────── JUGAR ─────────────── -->
