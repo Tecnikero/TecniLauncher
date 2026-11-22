@@ -330,7 +330,7 @@
     <sys:String x:Key="Settings_AnalyticsOff">Disabled. Nothing is sent.</sys:String>
     <sys:String x:Key="Settings_AnalyticsSoon">Coming soon.</sys:String>
     <sys:String x:Key="Settings_AnalyticsWhatTitle">What is collected</sys:String>
-    <sys:String x:Key="Settings_AnalyticsWhat">Only if you turn it on: a random ID for this installation (not linked to your account), the launcher version, that you use Windows, the Minecraft version and loader when you press Play, whether the game started or the type of error, and how long the launcher session lasted. Your account, email, username, UUID, profile names, file paths, hardware and IP are never sent. Data is deleted after 30 days, and turning this off requests its deletion.</sys:String>
+    <sys:String x:Key="Settings_AnalyticsWhat">Only if you turn it on: a random ID for this installation (not linked to your account), the launcher version, that you use Windows, the Minecraft version and loader when you press Play, whether the game started or the type of error, and how long the launcher session lasted. Your account, email, username, UUID, profile names, file paths and hardware are never sent. Your IP is not stored: only a temporary hash is used to limit abuse. Data is deleted after 30 days, and turning this off requests its deletion.</sys:String>
     <sys:String x:Key="Settings_PrivacyPolicy">Privacy policy</sys:String>
     <sys:String x:Key="Msg_AnalyticsEnabled">Statistics enabled. Thank you!</sys:String>
     <sys:String x:Key="Msg_AnalyticsDisabled">Statistics disabled. Your data has been deleted from the server.</sys:String>
@@ -340,7 +340,7 @@
     <sys:String x:Key="Consent_SentTitle">What is sent</sys:String>
     <sys:String x:Key="Consent_Sent">A random ID for this installation (pseudonymous, not linked to your account), the launcher version, the operating system (Windows), the Minecraft version and loader when you press Play, whether the game started or the type of error, and the length of the launcher session.</sys:String>
     <sys:String x:Key="Consent_NeverTitle">What is never sent</sys:String>
-    <sys:String x:Key="Consent_Never">Your Microsoft or TecniStudio account, tokens, email, username, UUID, profile names, file paths, hardware, logs, or your IP as data.</sys:String>
+    <sys:String x:Key="Consent_Never">Your Microsoft or TecniStudio account, tokens, email, username, UUID, profile names, file paths, hardware, or logs. Your IP is not stored: only a temporary hash is used to limit abuse.</sys:String>
     <sys:String x:Key="Consent_Control">Data is kept for at most 30 days. You can change your mind at any time in Settings › Privacy and statistics; turning it off requests deletion of your data.</sys:String>
     <sys:String x:Key="Consent_Accept">Accept statistics</sys:String>
     <sys:String x:Key="Consent_Decline">Don't participate</sys:String>
