@@ -24,6 +24,26 @@ public class TecniClientModel : INotifyPropertyChanged
         string.Equals(Categoria?.Trim(), "evento", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(Categoria?.Trim(), "eventos", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Nicknames que pueden ver este cliente (sin distinguir mayúsculas). Vacío o ausente = todo el mundo.
+    /// Solo cuentan las cuentas verificadas (Microsoft premium o TecniStudio), salvo que PermitirOffline sea true.
+    /// </summary>
+    public List<string> Permitidos { get; set; }
+
+    /// <summary>Si es true, también cuenta el nickname de las cuentas offline (cualquiera puede escribirlo).</summary>
+    public bool PermitirOffline { get; set; }
+
+    [JsonIgnore] public bool EsRestringido => Permitidos != null && Permitidos.Exists(n => !string.IsNullOrWhiteSpace(n));
+
+    /// <summary>¿Puede verlo este jugador? nickname = el de la sesión actual; verificado = premium o TecniStudio.</summary>
+    public bool PuedeVer(string nickname, bool verificado)
+    {
+        if (!EsRestringido) return true;
+        if (string.IsNullOrWhiteSpace(nickname) || (!verificado && !PermitirOffline)) return false;
+        string n = nickname.Trim();
+        return Permitidos.Exists(p => string.Equals(p?.Trim(), n, StringComparison.OrdinalIgnoreCase));
+    }
+
     public string ModpackUrl { get; set; }
     public string Sha256 { get; set; }
 

@@ -19,6 +19,16 @@ namespace TecniLauncher.Services
             File.WriteAllBytes(RutaSecretos, cifrado);
         }
 
+        public static void EliminarSecreto(string clave)
+        {
+            var secretos = CargarTodos();
+            if (!secretos.Remove(clave)) return;
+
+            byte[] datos = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(secretos));
+            byte[] cifrado = ProtectedData.Protect(datos, null, DataProtectionScope.CurrentUser);
+            File.WriteAllBytes(RutaSecretos, cifrado);
+        }
+
         public static string ObtenerSecreto(string clave)
         {
             try

@@ -2170,6 +2170,26 @@
                                     </CheckBox>
                                 </Border>
 
+                                <!-- Privacidad y estadísticas -->
+                                <StackPanel Orientation="Horizontal" Margin="4,0,0,8"><Ellipse Width="7" Height="7" Fill="#F59E0B" VerticalAlignment="Center" Margin="0,0,8,0"/><TextBlock Text="{DynamicResource Settings_Privacy}" Style="{StaticResource TxtSection}" Foreground="#F59E0B" Margin="0"/></StackPanel>
+                                <Border Style="{StaticResource Card}" Margin="0,0,0,22">
+                                    <StackPanel>
+                                        <CheckBox x:Name="chkEstadisticas" Style="{StaticResource SettingSwitch}" Click="ChkEstadisticas_Click">
+                                            <StackPanel>
+                                                <TextBlock Text="{DynamicResource Settings_Analytics}" Style="{StaticResource TxtRowTitle}"/>
+                                                <TextBlock x:Name="TxtEstadoEstadisticas" Style="{StaticResource TxtRowDesc}" Foreground="{StaticResource ColorAccent}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </CheckBox>
+                                        <TextBlock Text="{DynamicResource Settings_AnalyticsWhatTitle}" Style="{StaticResource TxtRowTitle}" FontSize="12.5" Margin="0,14,0,0"/>
+                                        <TextBlock Text="{DynamicResource Settings_AnalyticsWhat}" Style="{StaticResource TxtRowDesc}" TextWrapping="Wrap"/>
+                                        <TextBlock Margin="0,8,0,0" FontSize="12">
+                                            <Hyperlink NavigateUri="https://tecnistudio.online/privacidad.html" RequestNavigate="LinkPrivacidad_RequestNavigate" Foreground="{StaticResource ColorAccent}">
+                                                <Run Text="{DynamicResource Settings_PrivacyPolicy}"/>
+                                            </Hyperlink>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+
                                 <!-- Personalización -->
                                 <StackPanel Orientation="Horizontal" Margin="4,0,0,8"><Ellipse Width="7" Height="7" Fill="#F472B6" VerticalAlignment="Center" Margin="0,0,8,0"/><TextBlock Text="{DynamicResource Settings_Customization}" Style="{StaticResource TxtSection}" Foreground="#F472B6" Margin="0"/></StackPanel>
                                 <Border Style="{StaticResource Card}" Margin="0,0,0,26">

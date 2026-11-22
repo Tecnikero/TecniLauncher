@@ -50,7 +50,7 @@ namespace TecniLauncher
         private bool modoOnline = true;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        private const string VERSION_ACTUAL = "1.5.5";
+        internal const string VERSION_ACTUAL = "1.5.6";
         private CancellationTokenSource _ctsLoaderVersiones;
         private readonly Dictionary<string, string> _cacheProyectosLocales = new();
         private readonly Dictionary<string, string> _cacheProyectosLocalesCf = new();
@@ -166,6 +166,7 @@ namespace TecniLauncher
         {
             DiscordRpcService.Detener();
             ConsolaJuegoService.Cerrar();
+            AnalyticsHost.SesionTerminada();
         }
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
@@ -225,6 +226,8 @@ namespace TecniLauncher
             this.StateChanged += (s, e_state) => {
                 btnMaximizar.Content = (this.WindowState == WindowState.Maximized) ? "❐" : "☐";
             };
+
+            if (AnalyticsHost.NecesitaConsentimiento) { VentanaConsentimiento.Preguntar(this); ActualizarPrivacidad(); }
         }
         #region Navegacion
         private void BtnDiscord_Click(object sender, RoutedEventArgs e)
@@ -343,6 +346,7 @@ namespace TecniLauncher
             txtResAlto.Text = Core.JuegoAlto.ToString();
             chkConsola.IsChecked = Core.ConsolaDepuracionActiva;
             chkDiscordRpc.IsChecked = Core.DiscordRpcActivado;
+            ActualizarPrivacidad();
             _ = ActualizarTamanoCacheAsync();
             bool esPantallaCompleta = Core.PantallaCompleta;
             txtResAncho.IsEnabled = !esPantallaCompleta;
@@ -637,6 +641,7 @@ namespace TecniLauncher
                 return;
             }
             DiscordRpcService.Establecer($"Jugando a {perfil.Nombre}", $"Versión {perfil.Version}");
+            AnalyticsHost.JuegoSolicitado(perfil.Version, perfil.TipoLoader);
             bool esperandoCierreJuegoJugar = false;
             try
             {
@@ -743,7 +748,7 @@ namespace TecniLauncher
                     {
                         AuthService.CerrarSesionTecni();
                         ActualizarEstadoSesionTrasExpirar();
-                        throw new InvalidOperationException(Core.T("Msg_SesionTecniExpirada"));
+                        throw new InvalidOperationException(Core.T("Msg_SesionTecniExpirada")) { Data = { ["analytics_category"] = "authentication" } };
                     }
                     string rutaJar = await PrepararAuthlibInjector(Core.RutaGlobal);
 
@@ -796,11 +801,13 @@ namespace TecniLauncher
                 }
 
                 StartProcess(process);
+                AnalyticsHost.ProcesoJuegoIniciado();
 
                 return process;
             }
             catch (Exception ex)
             {
+                AnalyticsHost.FalloLanzamiento(ex);
                 VentanaMensaje.Mostrar(Core.T("Msg_ErrorCriticoLanzar", ex.Message));
                 return null;
             }
@@ -2611,6 +2618,7 @@ namespace TecniLauncher
                 }
 
                 int totalArchivos = receta.ArchivosMod?.Count ?? 0;
+                barraDescarga.Value = 0;
                 barraDescarga.Maximum = Math.Max(1, totalArchivos);
                 btnInstalarModpack.Content = Core.T("Txt_Descargando");
 
@@ -2618,7 +2626,6 @@ namespace TecniLauncher
                 {
                     barraDescarga.Value = p.actual;
                     txtEstadoDescarga.Text = Core.T("Txt_DescargandoProgreso", p.actual, p.total, p.nombre);
-                barraDescarga.Value = 0;
                 });
                 var fallos = await Task.Run(() => ModpacksApi.DescargarArchivosModpackAsync(receta, rutaBaseMinecraft, progreso));
 
@@ -2655,6 +2662,8 @@ namespace TecniLauncher
                 ActualizarListaPerfiles();
                 instalado = true;
 
+                if (fallos.Count > 0) fallos = await CompletarDescargasManualesAsync(receta, rutaBaseMinecraft, fallos);
+
                 barraDescarga.Value = barraDescarga.Maximum;
                 txtEstadoDescarga.Text = Core.T(fallos.Count == 0 ? "Txt_InstalacionCompletada" : "Txt_InstalacionConErrores");
                 btnInstalarModpack.Content = Core.T("Txt_Instalado");
@@ -2662,8 +2671,6 @@ namespace TecniLauncher
 
                 if (fallos.Count == 0)
                 {
-                if (fallos.Count > 0) fallos = await CompletarDescargasManualesAsync(receta, rutaBaseMinecraft, fallos);
-
                     Aviso(Core.T("Msg_ModpackOk", modpackSeleccionado.Titulo));
                 }
                 else
@@ -2937,6 +2944,54 @@ namespace TecniLauncher
             Core.DiscordRpcActivado = chkDiscordRpc.IsChecked == true;
             Core.GuardarConfiguracion();
             DiscordRpcService.Aplicar(Core.DiscordRpcActivado);
+        }
+
+        private void ActualizarPrivacidad()
+        {
+            try
+            {
+                bool disponible = AnalyticsHost.Disponible;
+                bool activada = disponible && AnalyticsHost.Activada;
+                chkEstadisticas.IsEnabled = disponible;
+                chkEstadisticas.IsChecked = activada;
+                TxtEstadoEstadisticas.Text = Core.T(!disponible ? "Settings_AnalyticsSoon" : activada ? "Settings_AnalyticsOn" : "Settings_AnalyticsOff");
+            }
+            catch (Exception ex) { LogService.Debug($"Analytics: no se pudo actualizar Ajustes ({ex.GetType().Name})"); }
+        }
+
+        private async void ChkEstadisticas_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!AnalyticsHost.Disponible) { ActualizarPrivacidad(); return; }
+
+                if (chkEstadisticas.IsChecked == true)
+                {
+                    AnalyticsHost.Aceptar();
+                    ActualizarPrivacidad();
+                    Aviso(Core.T("Msg_AnalyticsEnabled"));
+                    return;
+                }
+
+                // Desactivar surte efecto en el acto; después se espera (máx. 10 s) la confirmación del borrado.
+                Task<bool> borrado = AnalyticsHost.Desactivar();
+                ActualizarPrivacidad();
+                chkEstadisticas.IsEnabled = false;
+                bool confirmado = await borrado;
+                ActualizarPrivacidad();
+                Aviso(Core.T(confirmado ? "Msg_AnalyticsDisabled" : "Msg_AnalyticsDisabledPending"));
+            }
+            catch (Exception ex)
+            {
+                LogService.Debug($"Analytics: fallo en el interruptor ({ex.GetType().Name})");
+                ActualizarPrivacidad();
+            }
+        }
+
+        private void LinkPrivacidad_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        {
+            AbrirLink(e.Uri.AbsoluteUri);
+            e.Handled = true;
         }
 
         private void CopiarConsola()
@@ -3375,6 +3430,7 @@ namespace TecniLauncher
         {
             if (_clientesCache != null && (DateTime.Now - _clientesUltimaCarga).TotalMinutes < 10)
             {
+                AplicarClientesUI(); // la cuenta puede haber cambiado: recalcular qué eventos se ven
                 RefrescarEstadoClientes();
                 return;
             }
@@ -3437,8 +3493,10 @@ namespace TecniLauncher
         {
             if (_clientesCache == null) return;
 
-            var pvp = _clientesCache.Where(c => !c.EsEvento).ToList();
-            var eventos = _clientesCache.Where(c => c.EsEvento).ToList();
+            var (nick, verificado) = CuentaParaEventos();
+            var visibles = _clientesCache.Where(c => c.PuedeVer(nick, verificado)).ToList();
+            var pvp = visibles.Where(c => !c.EsEvento).ToList();
+            var eventos = visibles.Where(c => c.EsEvento).ToList();
 
             string? idElegido = (comboTecniPvp.SelectedItem as TecniClientModel)?.Id;
             if (string.IsNullOrEmpty(idElegido))
@@ -3460,6 +3518,17 @@ namespace TecniLauncher
 
             ListTecniClients.ItemsSource = eventos;
             txtSinEventos.Visibility = eventos.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Nickname de la sesión actual y si está verificado. Premium (Microsoft) y TecniStudio son cuentas
+        /// con contraseña; el nombre offline lo puede escribir cualquiera.
+        /// </summary>
+        private (string Nick, bool Verificado) CuentaParaEventos()
+        {
+            if (esPremium && Core.SesionUsuario != null) return (Core.SesionUsuario.Username ?? "", true);
+            if (Core.EsSesionTecniStudio) return (Core.SesionUsuario?.Username ?? "", true);
+            return (Core.UltimoNombreOffline ?? "", false);
         }
 
         private void ComboTecniPvp_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -3562,6 +3631,7 @@ namespace TecniLauncher
                     ModoRendimientoActivado = true
                 };
 
+                AnalyticsHost.JuegoSolicitado(perfilCliente.Version, perfilCliente.TipoLoader);
                 System.Diagnostics.Process? procesoMinecraft = await LanzarMinecraft(perfilCliente);
 
                 PanelCarga.Visibility = Visibility.Collapsed;

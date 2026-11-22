@@ -29,6 +29,8 @@ namespace TecniLauncher
                 return;
             }
 
+            AnalyticsHost.Inicializar(TecniLauncher.MainWindow.VERSION_ACTUAL); AnalyticsHost.Start();
+
             var ventana = new MainWindow();
             ventana.Show();
         }

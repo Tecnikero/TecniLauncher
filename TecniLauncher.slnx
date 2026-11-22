@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="TecniLauncher.Analytics/TecniLauncher.Analytics.csproj" />
+  <Project Path="TecniLauncher.Analytics.Tests/TecniLauncher.Analytics.Tests.csproj" />
   <Project Path="TecniLauncher/TecniLauncher.csproj" />
 </Solution>

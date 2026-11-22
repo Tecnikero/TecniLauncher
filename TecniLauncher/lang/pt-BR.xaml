@@ -322,4 +322,26 @@
     <sys:String x:Key="CF_BloqueadoAutor">O autor de {0} não permite downloads por launchers. Abrindo a página do CurseForge para baixar manualmente…</sys:String>
     <sys:String x:Key="CF_DescargaManual">{0} (download manual no CurseForge)</sys:String>
     <sys:String x:Key="CF_BusquedaRechazada">O CurseForge recusou a pesquisa (403). Sua API key funciona para o resto, mas não tem permissão de pesquisa: verifique o status em console.curseforge.com ou contate o CurseForge.</sys:String>
+
+    <!-- Privacidad y estadísticas -->
+    <sys:String x:Key="Settings_Privacy">Privacidade e estatísticas</sys:String>
+    <sys:String x:Key="Settings_Analytics">Estatísticas de uso voluntárias</sys:String>
+    <sys:String x:Key="Settings_AnalyticsOn">Ativadas. Obrigado por ajudar a melhorar o TecniLauncher.</sys:String>
+    <sys:String x:Key="Settings_AnalyticsOff">Desativadas. Nada é enviado.</sys:String>
+    <sys:String x:Key="Settings_AnalyticsSoon">Disponível em breve.</sys:String>
+    <sys:String x:Key="Settings_AnalyticsWhatTitle">O que é coletado</sys:String>
+    <sys:String x:Key="Settings_AnalyticsWhat">Só se você ativar: um identificador aleatório desta instalação (não ligado à sua conta), a versão do launcher, que você usa Windows, a versão do Minecraft e o loader ao clicar em Jogar, se o jogo iniciou ou o tipo de erro, e quanto durou a sessão do launcher. Sua conta, e-mail, nome de usuário, UUID, nomes de perfis, caminhos, hardware e IP nunca são enviados. Os dados são apagados após 30 dias e, ao desativar, é solicitada a exclusão.</sys:String>
+    <sys:String x:Key="Settings_PrivacyPolicy">Política de privacidade</sys:String>
+    <sys:String x:Key="Msg_AnalyticsEnabled">Estatísticas ativadas. Obrigado!</sys:String>
+    <sys:String x:Key="Msg_AnalyticsDisabled">Estatísticas desativadas. Seus dados foram apagados do servidor.</sys:String>
+    <sys:String x:Key="Msg_AnalyticsDisabledPending">Estatísticas desativadas. A exclusão dos seus dados será solicitada quando houver conexão.</sys:String>
+    <sys:String x:Key="Consent_Title">Quer ajudar a melhorar o TecniLauncher?</sys:String>
+    <sys:String x:Key="Consent_Intro">Você pode enviar estatísticas de uso voluntárias para sabermos quantas instalações estão ativas, quais versões do Minecraft e loaders são usados e se as inicializações funcionam. Fica desativado a menos que você aceite.</sys:String>
+    <sys:String x:Key="Consent_SentTitle">O que é enviado</sys:String>
+    <sys:String x:Key="Consent_Sent">Um identificador aleatório desta instalação (pseudônimo, não ligado à sua conta), a versão do launcher, o sistema (Windows), a versão do Minecraft e o loader ao clicar em Jogar, se o jogo iniciou ou o tipo de erro, e a duração da sessão do launcher.</sys:String>
+    <sys:String x:Key="Consent_NeverTitle">O que nunca é enviado</sys:String>
+    <sys:String x:Key="Consent_Never">Sua conta Microsoft ou TecniStudio, tokens, e-mail, nome de usuário, UUID, nomes de perfis, caminhos de arquivos, hardware, logs nem seu IP como dado.</sys:String>
+    <sys:String x:Key="Consent_Control">Os dados são guardados por no máximo 30 dias. Você pode mudar de ideia quando quiser em Configurações › Privacidade e estatísticas; ao desativar, é solicitada a exclusão dos seus dados.</sys:String>
+    <sys:String x:Key="Consent_Accept">Aceitar estatísticas</sys:String>
+    <sys:String x:Key="Consent_Decline">Não participar</sys:String>
 </ResourceDictionary>

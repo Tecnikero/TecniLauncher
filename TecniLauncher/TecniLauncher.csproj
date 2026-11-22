@@ -29,6 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\TecniLauncher.Analytics\TecniLauncher.Analytics.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CmlLib.Core" Version="4.0.6" />
     <PackageReference Include="CmlLib.Core.Auth.Microsoft" Version="3.3.1" />
     <PackageReference Include="CmlLib.Core.Installer.Forge" Version="1.1.1" />
