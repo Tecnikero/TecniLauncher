@@ -93,6 +93,8 @@ namespace TecniLauncher
             return uri.Scheme == Uri.UriSchemeHttps && HostsTecniClient.Contains(uri.Host);
         }
 
+        private const int DescargasSimultaneas = 8;
+
         public static bool EsUrlPermitida(string? url)
         {
             if (string.IsNullOrWhiteSpace(url)) return false;
@@ -144,7 +146,8 @@ namespace TecniLauncher
         public static async Task<MrPackIndex?> PrepararInstalacionModpackAsync(
             string urlDescarga,
             string rutaCarpetaPerfil,
-            IProgress<(int actual, int total, string nombre)>? progreso = null)
+            IProgress<(int actual, int total, string nombre)>? progreso = null,
+            IProgress<int>? progresoZip = null)
         {
             if (!EsUrlPermitida(urlDescarga))
             {
@@ -158,7 +161,7 @@ namespace TecniLauncher
             Directory.CreateDirectory(rutaTemp);
 
             string rutaMrPack = Path.Combine(rutaTemp, "paquete.zip");
-            await AppHttpClient.DescargarArchivoAsync(urlDescarga, rutaMrPack, TimeSpan.FromMinutes(30));
+            await AppHttpClient.DescargarArchivoAsync(urlDescarga, rutaMrPack, TimeSpan.FromMinutes(30), default, progresoZip);
 
             try
             {
@@ -233,7 +236,7 @@ namespace TecniLauncher
             int procesados = 0;
             var fallos = new System.Collections.Concurrent.ConcurrentBag<string>();
 
-            using var semaforo = new SemaphoreSlim(4, 4);
+            using var semaforo = new SemaphoreSlim(DescargasSimultaneas, DescargasSimultaneas);
 
             var tareas = archivos.Select(async mod =>
             {
@@ -314,6 +317,10 @@ namespace TecniLauncher
         {
             [JsonProperty("path")] public string RutaDestino { get; set; } = "";
             [JsonProperty("downloads")] public List<string> UrlsDescarga { get; set; } = new();
+            [JsonProperty("hashes")] public Dictionary<string, string> Hashes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+            /// <summary>Página de CurseForge para descargarlo a mano cuando el autor bloquea las descargas de launchers.</summary>
+            [JsonIgnore] public string? PaginaDescargaManual { get; set; }
         }
     }
 }

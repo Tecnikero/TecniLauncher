@@ -480,6 +480,18 @@ namespace TecniLauncher
             }
         }
 
+        /// <summary>SHA-1 del archivo según la API (FileHash.algo 1 = Sha1).</summary>
+        private static string? Sha1DeArchivo(JsonElement f)
+        {
+            if (!f.TryGetProperty("hashes", out var hs) || hs.ValueKind != JsonValueKind.Array) return null;
+            foreach (var h in hs.EnumerateArray())
+            {
+                string? valor = Str(h, "value");
+                if (Num(h, "algo") == 1 && !string.IsNullOrEmpty(valor) && valor.Length == 40) return valor.ToLowerInvariant();
+            }
+            return null;
+        }
+
         private static string CarpetaPorClase(long claseId) => claseId switch
         {
             ClaseTexturas => "resourcepacks",
@@ -493,7 +505,7 @@ namespace TecniLauncher
         /// que usan los .mrpack, para reutilizar la descarga y la creación de perfil.
         /// Los archivos cuyo autor bloquea descargas de terceros quedan sin URL y se reportan como fallos.
         /// </summary>
-        public static async Task<MrPackIndex?> PrepararInstalacionModpackAsync(string urlDescarga, string rutaCarpetaPerfil)
+        public static async Task<MrPackIndex?> PrepararInstalacionModpackAsync(string urlDescarga, string rutaCarpetaPerfil, IProgress<int>? progresoZip = null)
         {
             if (!EsUrlPermitida(urlDescarga))
             {
@@ -506,7 +518,7 @@ namespace TecniLauncher
             Directory.CreateDirectory(rutaTemp);
 
             string rutaZip = Path.Combine(rutaTemp, "paquete.zip");
-            await AppHttpClient.DescargarArchivoAsync(urlDescarga, rutaZip, TimeSpan.FromMinutes(30));
+            await AppHttpClient.DescargarArchivoAsync(urlDescarga, rutaZip, TimeSpan.FromMinutes(30), default, progresoZip);
 
             try { ExtraerZipSeguro(rutaZip, rutaTemp); }
             catch (InvalidDataException ex)
@@ -560,6 +572,7 @@ namespace TecniLauncher
             // Resolver metadatos de archivos y clase (mod / textura / shader) por lotes.
             var archivos = new Dictionary<long, JsonElement>();
             var clases = new Dictionary<long, long>();
+            var webs = new Dictionary<long, string>();
             var docs = new List<JsonDocument>();
             try
             {
@@ -571,7 +584,15 @@ namespace TecniLauncher
 
                     var d2 = await PostAsync("/mods", new { modIds = lote.Select(r => r.ProjectId).Distinct().ToArray() });
                     docs.Add(d2);
-                    foreach (var m in Data(d2).EnumerateArray()) clases[Num(m, "id")] = Num(m, "classId");
+                    foreach (var m in Data(d2).EnumerateArray())
+                    {
+                        clases[Num(m, "id")] = Num(m, "classId");
+                        if (m.TryGetProperty("links", out var links) && links.ValueKind == JsonValueKind.Object)
+                        {
+                            string? web = Str(links, "websiteUrl");
+                            if (!string.IsNullOrEmpty(web)) webs[Num(m, "id")] = web.TrimEnd('/');
+                        }
+                    }
                 }
 
                 foreach (var (pid, fid) in referencias)
@@ -594,6 +615,8 @@ namespace TecniLauncher
 
                     string? url = Str(f, "downloadUrl");
                     var item = new MrPackFile { RutaDestino = ruta };
+                    string? sha1 = Sha1DeArchivo(f);
+                    if (sha1 != null) item.Hashes["sha1"] = sha1;
                     if (!string.IsNullOrEmpty(url))
                     {
                         if (!EsUrlPermitida(url))
@@ -603,12 +626,35 @@ namespace TecniLauncher
                         }
                         item.UrlsDescarga.Add(url);
                     }
+                    else if (webs.TryGetValue(pid, out var web) && Uri.TryCreate(web, UriKind.Absolute, out var uriWeb)
+                             && uriWeb.Scheme == Uri.UriSchemeHttps && uriWeb.Host.EndsWith("curseforge.com", StringComparison.OrdinalIgnoreCase))
+                    {
+                        item.PaginaDescargaManual = $"{web}/download/{fid}";
+                    }
                     index.ArchivosMod.Add(item);
                 }
             }
             finally
             {
                 foreach (var d in docs) d.Dispose();
+            }
+
+            // El autor de algunos mods desactiva la descarga desde launchers (downloadUrl = null).
+            // Si el mismo archivo exacto (mismo SHA-1) está publicado en Modrinth, se descarga de allí.
+            var bloqueados = index.ArchivosMod.Where(a => a.UrlsDescarga.Count == 0 && a.Hashes.ContainsKey("sha1")).ToList();
+            if (bloqueados.Count > 0)
+            {
+                var enModrinth = await ModrinthAPI.ObtenerUrlsPorHashAsync(bloqueados.Select(a => a.Hashes["sha1"]));
+                int recuperados = 0;
+                foreach (var a in bloqueados)
+                {
+                    if (enModrinth.TryGetValue(a.Hashes["sha1"], out var urlMr) && EsUrlPermitida(urlMr))
+                    {
+                        a.UrlsDescarga.Add(urlMr);
+                        recuperados++;
+                    }
+                }
+                LogService.Info($"Modpack CurseForge: {bloqueados.Count} archivo(s) sin descarga directa; {recuperados} encontrados en Modrinth.");
             }
 
             LimpiarModsAnteriores(rutaCarpetaPerfil);

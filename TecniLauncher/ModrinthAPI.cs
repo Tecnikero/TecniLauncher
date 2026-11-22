@@ -317,6 +317,48 @@ namespace TecniLauncher
                 return null;
             }
         }
+        /// <summary>
+        /// Busca en Modrinth archivos idénticos (mismo SHA-1) y devuelve hash → URL de cdn.modrinth.com.
+        /// Sirve para conseguir mods de CurseForge cuyo autor bloquea las descargas desde launchers
+        /// pero que también publica el mismo archivo en Modrinth. Devuelve vacío si falla.
+        /// </summary>
+        public static async Task<Dictionary<string, string>> ObtenerUrlsPorHashAsync(IEnumerable<string> hashesSha1)
+        {
+            var resultado = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var lista = hashesSha1.Where(h => !string.IsNullOrWhiteSpace(h)).Select(h => h.ToLowerInvariant()).Distinct().ToList();
+            if (lista.Count == 0) return resultado;
+
+            try
+            {
+                foreach (var lote in lista.Chunk(200))
+                {
+                    string cuerpo = JsonSerializer.Serialize(new { hashes = lote, algorithm = "sha1" });
+                    using var contenido = new StringContent(cuerpo, Encoding.UTF8, "application/json");
+                    using var respuesta = await client.PostAsync($"{Base}/version_files", contenido);
+                    if (!respuesta.IsSuccessStatusCode) continue;
+
+                    using JsonDocument doc = JsonDocument.Parse(await respuesta.Content.ReadAsStringAsync());
+                    if (doc.RootElement.ValueKind != JsonValueKind.Object) continue;
+
+                    foreach (var entrada in doc.RootElement.EnumerateObject())
+                    {
+                        if (!entrada.Value.TryGetProperty("files", out var archivos) || archivos.ValueKind != JsonValueKind.Array) continue;
+                        foreach (var a in archivos.EnumerateArray())
+                        {
+                            if (!a.TryGetProperty("hashes", out var hs) || !string.Equals(Str(hs, "sha1"), entrada.Name, StringComparison.OrdinalIgnoreCase)) continue;
+                            string? url = Str(a, "url");
+                            if (!string.IsNullOrEmpty(url)) { resultado[entrada.Name] = url; break; }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.Warn("Error buscando archivos en Modrinth por hash", ex);
+            }
+            return resultado;
+        }
+
         public static ModVersion? ParsearVersion(JsonElement v)
         {
             try

@@ -138,6 +138,8 @@
     <sys:String x:Key="Msg_ErrorModpackLeer">Hubo un error al leer o descomprimir el modpack.</sys:String>
     <sys:String x:Key="Msg_ModpackOk">¡El modpack '{0}' se ha instalado correctamente!&#10;Ya puedes seleccionarlo en la pestaña Jugar.</sys:String>
     <sys:String x:Key="Msg_ModpackIncompleto">'{0}' se instaló, pero {1} archivo(s) no se pudieron descargar:&#10;{2}&#10;&#10;Vuelve a instalar el modpack para reintentar.</sys:String>
+    <sys:String x:Key="Msg_ModsBloqueados">{0} archivo(s) no se pueden descargar automáticamente porque su autor solo permite descargarlos desde la web de CurseForge (tampoco están en Modrinth):&#10;{1}&#10;&#10;¿Abrir sus páginas en el navegador? La descarga empieza sola en unos segundos.</sys:String>
+    <sys:String x:Key="Msg_ModsBloqueadosEsperando">Cuando terminen de descargarse, pulsa SÍ y TecniLauncher los copiará al modpack desde:&#10;{1}&#10;&#10;Faltan {0}:&#10;{2}&#10;&#10;Pulsa NO para dejarlo así.</sys:String>
     <sys:String x:Key="Msg_ErrorModpack">Error instalando el modpack: {0}</sys:String>
     <sys:String x:Key="Msg_NuevaVersion">¡Nueva versión {0} disponible!</sys:String>
     <sys:String x:Key="Msg_ErrorGenerico">Error: {0}</sys:String>
@@ -162,6 +164,7 @@
     <sys:String x:Key="Txt_PorAutor">Por {0}</sys:String>
     <sys:String x:Key="Txt_Preparando">PREPARANDO...</sys:String>
     <sys:String x:Key="Txt_ExtrayendoConfig">Extrayendo configuraciones del Modpack...</sys:String>
+    <sys:String x:Key="Txt_DescargandoModpackZip">Descargando modpack... {0}%</sys:String>
     <sys:String x:Key="Txt_Descargando">DESCARGANDO...</sys:String>
     <sys:String x:Key="Txt_DescargandoProgreso">Descargando ({0}/{1}): {2}</sys:String>
     <sys:String x:Key="Txt_Instalado">INSTALADO</sys:String>

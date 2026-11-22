@@ -895,7 +895,7 @@ namespace TecniLauncher
                 // === FORGE ===
                 else if (perfil.TipoLoader == "Forge")
                 {
-                    var installer = new ForgeInstaller(launcher);
+                    var installer = new TecniLauncher.ForgeInstallerSinAnuncio(launcher);
                     if (!string.IsNullOrEmpty(versionExacta))
                         verInstalada = await installer.Install(perfil.Version, versionExacta);
                     else
@@ -2591,9 +2591,18 @@ namespace TecniLauncher
                 }
                 string rutaBaseMinecraft = System.IO.Path.Combine(carpetaInstances, nombreUnico);
 
-                var receta = modpackSeleccionado.Fuente == FuenteContenido.CurseForge
-                    ? await CurseForgeAPI.PrepararInstalacionModpackAsync(archivoZip.UrlDescarga, rutaBaseMinecraft)
-                    : await ModpacksApi.PrepararInstalacionModpackAsync(archivoZip.UrlDescarga, rutaBaseMinecraft);
+                // Descargar, extraer y copiar overrides fuera del hilo de la interfaz (si no, la ventana se congela).
+                var progresoZip = new Progress<int>(pct =>
+                {
+                    barraDescarga.Maximum = 100;
+                    barraDescarga.Value = pct;
+                    txtEstadoDescarga.Text = pct < 100 ? Core.T("Txt_DescargandoModpackZip", pct) : Core.T("Txt_ExtrayendoConfig");
+                });
+                bool esCurseForge = modpackSeleccionado.Fuente == FuenteContenido.CurseForge;
+                string urlZip = archivoZip.UrlDescarga;
+                var receta = await Task.Run(() => esCurseForge
+                    ? CurseForgeAPI.PrepararInstalacionModpackAsync(urlZip, rutaBaseMinecraft, progresoZip)
+                    : ModpacksApi.PrepararInstalacionModpackAsync(urlZip, rutaBaseMinecraft, progresoZip: progresoZip));
                 if (receta == null)
                 {
                     PanelProgresoDescarga.Visibility = System.Windows.Visibility.Collapsed;
@@ -2609,8 +2618,9 @@ namespace TecniLauncher
                 {
                     barraDescarga.Value = p.actual;
                     txtEstadoDescarga.Text = Core.T("Txt_DescargandoProgreso", p.actual, p.total, p.nombre);
+                barraDescarga.Value = 0;
                 });
-                var fallos = await ModpacksApi.DescargarArchivosModpackAsync(receta, rutaBaseMinecraft, progreso);
+                var fallos = await Task.Run(() => ModpacksApi.DescargarArchivosModpackAsync(receta, rutaBaseMinecraft, progreso));
 
                 var (loaderUsado, versionDelLoader) = ModpacksApi.DetectarLoader(receta.Dependencias);
 
@@ -2652,6 +2662,8 @@ namespace TecniLauncher
 
                 if (fallos.Count == 0)
                 {
+                if (fallos.Count > 0) fallos = await CompletarDescargasManualesAsync(receta, rutaBaseMinecraft, fallos);
+
                     Aviso(Core.T("Msg_ModpackOk", modpackSeleccionado.Titulo));
                 }
                 else
