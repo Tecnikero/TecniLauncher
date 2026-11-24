@@ -47,7 +47,7 @@ Integra herramientas para gestionar mods mediante Modrinth y CurseForge, configu
 
 ### Ecosistema TecniStudio
 
-* **TecniClient:** TecniPvP con selector de versión y una pestaña de eventos, que pueden limitarse a ciertos jugadores.
+* **KeroClient (antes TecniClient):** TecniPvP con selector de versión y una pestaña de eventos, que pueden limitarse a ciertos jugadores.
 * **Actualizaciones de clientes:** administra las instalaciones y actualizaciones disponibles desde su sección correspondiente.
 * **Integración con skins:** utiliza las funciones de personalización de personaje compatibles con los servicios integrados.
 * **Noticias y contenido:** accede a la información disponible desde el launcher.
@@ -107,9 +107,9 @@ Al informar de un problema, incluye la versión del launcher, los pasos para rep
 
 ## Historia del nombre
 
-El proyecto nació como **TecniLauncher**, por TecniStudio. Con el tiempo, el nombre se confundía con otros launchers conocidos (Google llegaba a corregir "TecniLauncher" por otro nombre), así que en la 1.6.0 pasó a llamarse **KeroLauncher**, por el nick de su creador, Tecnikero.
+El proyecto nació como **TecniLauncher**, por TecniStudio. Con el tiempo, el nombre se confundía con otros launchers conocidos (Google llegaba a corregir "TecniLauncher" por otro nombre), así que en la 1.6.0 pasó a llamarse **KeroLauncher**, por el nick de su creador, Tecnikero. Su sección de clientes, TecniClient, pasó a llamarse **KeroClient**.
 
-Por compatibilidad, algunos nombres internos siguen siendo los de siempre: el repositorio, el ejecutable `TecniLauncher.exe` y la carpeta de datos `.TecniLauncher`. Así ninguna instalación existente pierde sus perfiles ni sus actualizaciones.
+Por compatibilidad, algunos nombres internos siguen siendo los de siempre: el repositorio, el ejecutable `TecniLauncher.exe`, la carpeta de datos `.TecniLauncher` y el catálogo `tecniclients.json` de KeroClient. Así ninguna instalación existente pierde sus perfiles ni sus actualizaciones.
 
 ## Tecnologías e implementación
 
