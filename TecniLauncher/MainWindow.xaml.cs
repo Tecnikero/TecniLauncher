@@ -50,7 +50,7 @@ namespace TecniLauncher
         private bool modoOnline = true;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        internal const string VERSION_ACTUAL = "1.5.6";
+        internal const string VERSION_ACTUAL = "1.6.0";
         private CancellationTokenSource _ctsLoaderVersiones;
         private readonly Dictionary<string, string> _cacheProyectosLocales = new();
         private readonly Dictionary<string, string> _cacheProyectosLocalesCf = new();
@@ -227,6 +227,7 @@ namespace TecniLauncher
                 btnMaximizar.Content = (this.WindowState == WindowState.Maximized) ? "❐" : "☐";
             };
 
+            VentanaBienvenida.MostrarSiToca(this);
             if (AnalyticsHost.NecesitaConsentimiento) { VentanaConsentimiento.Preguntar(this); ActualizarPrivacidad(); }
         }
         #region Navegacion
@@ -237,7 +238,7 @@ namespace TecniLauncher
 
         private void BtnGithub_Click(object sender, RoutedEventArgs e)
         {
-            AbrirLink("https://github.com/johan12390785/TecniLauncher-Data");
+            AbrirLink("https://github.com/Tecnikero/TecniLauncher-Data");
         }
 
         private void AbrirLink(string url)
@@ -3618,7 +3619,7 @@ namespace TecniLauncher
                 PanelCarga.Visibility = Visibility.Visible;
                 barraCarga.IsIndeterminate = false;
 
-                DiscordRpcService.Establecer($"Jugando a {clienteSeleccionado.Name}", "TecniClient Oficial");
+                DiscordRpcService.Establecer($"Jugando a {clienteSeleccionado.Name}", "KeroClient Oficial");
 
                 Perfil perfilCliente = new Perfil()
                 {

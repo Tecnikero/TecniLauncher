@@ -9,7 +9,7 @@ namespace TecniLauncher.Services
     public static class NewsService
     {
         private const string URL_NOTICIAS =
-            "https://raw.githubusercontent.com/johan12390785/TecniLauncher-Data/refs/heads/main/Web/noticias.json";
+            "https://raw.githubusercontent.com/Tecnikero/TecniLauncher-Data/refs/heads/main/Web/noticias.json";
 
         private const int MAX_NOTICIAS = 5;
 

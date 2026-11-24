@@ -26,6 +26,8 @@ namespace TecniLauncher
         public static int JuegoAlto { get; set; } = 480;
         public static bool PantallaCompleta { get; set; } = false;
         public static bool EsTecniStudio { get; set; } = false;
+        /// <summary>Versión cuyas novedades ya vio el usuario (VentanaBienvenida).</summary>
+        public static string UltimasNovedadesVistas { get; set; } = "";
         public static bool EsSesionTecniStudio =>
             EsTecniStudio && SesionUsuario != null && SesionUsuario.UserType == "mojang";
         public static string IdiomaActual { get; set; } = "en-US";
@@ -121,7 +123,8 @@ namespace TecniLauncher
                     EsTecniStudio,
                     IdiomaActual,
                     DiscordRpcActivado,
-                    ConsolaDepuracionActiva
+                    ConsolaDepuracionActiva,
+                    UltimasNovedadesVistas
                 };
                 string json = JsonSerializer.Serialize(datos, new JsonSerializerOptions { WriteIndented = true });
                 EscribirAtomico(archivo, json);
@@ -147,6 +150,7 @@ namespace TecniLauncher
                     if (doc.RootElement.TryGetProperty("IdiomaActual", out var lang)) IdiomaActual = lang.GetString() ?? "es-ES";
                     if (doc.RootElement.TryGetProperty("DiscordRpcActivado", out var rpc)) DiscordRpcActivado = rpc.GetBoolean();
                     if (doc.RootElement.TryGetProperty("ConsolaDepuracionActiva", out var cons)) ConsolaDepuracionActiva = cons.GetBoolean();
+                    if (doc.RootElement.TryGetProperty("UltimasNovedadesVistas", out var nov)) UltimasNovedadesVistas = nov.GetString() ?? "";
                 }
             }
             catch (Exception exLog) { LogService.Error("No se pudo cargar la configuración (se usan valores por defecto)", exLog); }

@@ -359,6 +359,65 @@ namespace TecniLauncher
             return resultado;
         }
 
+        public record ActualizacionArchivo(string Url, string NombreArchivo, string Sha1, string Version);
+
+        /// <summary>
+        /// Para cada SHA-1 instalado, la versión más nueva compatible (POST /version_files/update).
+        /// Solo devuelve los que tienen un archivo distinto al actual. Vacío si falla.
+        /// </summary>
+        public static async Task<Dictionary<string, ActualizacionArchivo>> BuscarActualizacionesAsync(
+            IEnumerable<string> hashesSha1, string versionMC, TipoComplemento tipo, string? loader)
+        {
+            var resultado = new Dictionary<string, ActualizacionArchivo>(StringComparer.OrdinalIgnoreCase);
+            var lista = hashesSha1.Where(h => !string.IsNullOrWhiteSpace(h)).Select(h => h.ToLowerInvariant()).Distinct().ToList();
+            if (lista.Count == 0 || string.IsNullOrEmpty(versionMC)) return resultado;
+
+            string[] loaders = tipo switch
+            {
+                TipoComplemento.Mod => LoadersCompatibles(loader ?? ""),
+                TipoComplemento.Textura => new[] { "minecraft" },
+                _ => new[] { "iris", "optifine", "canvas", "vanilla" }
+            };
+
+            try
+            {
+                foreach (var lote in lista.Chunk(200))
+                {
+                    string cuerpo = JsonSerializer.Serialize(new { hashes = lote, algorithm = "sha1", loaders, game_versions = new[] { versionMC } });
+                    using var contenido = new StringContent(cuerpo, Encoding.UTF8, "application/json");
+                    using var respuesta = await client.PostAsync($"{Base}/version_files/update", contenido);
+                    if (!respuesta.IsSuccessStatusCode) continue;
+
+                    using JsonDocument doc = JsonDocument.Parse(await respuesta.Content.ReadAsStringAsync());
+                    if (doc.RootElement.ValueKind != JsonValueKind.Object) continue;
+
+                    foreach (var entrada in doc.RootElement.EnumerateObject())
+                    {
+                        if (!entrada.Value.TryGetProperty("files", out var archivos) || archivos.ValueKind != JsonValueKind.Array) continue;
+                        JsonElement? elegido = null;
+                        foreach (var a in archivos.EnumerateArray())
+                        {
+                            if (elegido == null) elegido = a;
+                            if (a.TryGetProperty("primary", out var p) && p.ValueKind == JsonValueKind.True) { elegido = a; break; }
+                        }
+                        if (elegido is not JsonElement f) continue;
+
+                        string? url = Str(f, "url"), nombre = Str(f, "filename");
+                        string? sha1 = f.TryGetProperty("hashes", out var hs) ? Str(hs, "sha1") : null;
+                        if (string.IsNullOrEmpty(url) || string.IsNullOrEmpty(nombre) || string.IsNullOrEmpty(sha1)) continue;
+                        if (string.Equals(sha1, entrada.Name, StringComparison.OrdinalIgnoreCase)) continue; // ya es la última
+
+                        resultado[entrada.Name] = new ActualizacionArchivo(url, nombre, sha1.ToLowerInvariant(), Str(entrada.Value, "version_number") ?? "");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.Warn("Error buscando actualizaciones en Modrinth", ex);
+            }
+            return resultado;
+        }
+
         public static ModVersion? ParsearVersion(JsonElement v)
         {
             try

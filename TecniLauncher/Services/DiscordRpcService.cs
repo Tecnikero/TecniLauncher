@@ -75,7 +75,7 @@ namespace TecniLauncher.Services
                     Assets = new Assets
                     {
                         LargeImageKey = "tecnilogo",
-                        LargeImageText = "TecniLauncher"
+                        LargeImageText = "KeroLauncher"
                     },
                     Timestamps = Timestamps.Now
                 });

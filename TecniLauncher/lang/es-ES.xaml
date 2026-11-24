@@ -10,6 +10,15 @@
     <sys:String x:Key="Menu_ModPacks">ModPacks</sys:String>
 
     <sys:String x:Key="client_des">Perfiles de juego hiper-optimizados, listos para instalar con un clic.</sys:String>
+    <sys:String x:Key="Welcome_Title">TecniLauncher ahora es KeroLauncher</sys:String>
+    <sys:String x:Key="Welcome_Intro">Es el mismo launcher de siempre, con nombre nuevo: "Kero" viene de Tecnikero, su creador. TecniLauncher es nuestro pasado y no lo olvidamos.</sys:String>
+    <sys:String x:Key="Welcome_NewTitle">NOVEDADES</sys:String>
+    <sys:String x:Key="Welcome_Item1">• Nuevo nombre y nuevo logo. TecniClient ahora se llama KeroClient.</sys:String>
+    <sys:String x:Key="Welcome_Item2">• Actualiza los mods de un perfil con un clic desde Modrinth y CurseForge.</sys:String>
+    <sys:String x:Key="Welcome_Item3">• Si abres el launcher dos veces, se muestra la ventana que ya tenías abierta.</sys:String>
+    <sys:String x:Key="Welcome_Item4">• Modpacks de CurseForge completos, más rápidos y sin congelar la ventana.</sys:String>
+    <sys:String x:Key="Welcome_Safe">Tus perfiles, mods, mundos y cuentas siguen exactamente igual.</sys:String>
+    <sys:String x:Key="Welcome_Start">EMPEZAR</sys:String>
     <sys:String x:Key="client_tab_pvp">PvP</sys:String>
     <sys:String x:Key="client_version">Versión</sys:String>
     <sys:String x:Key="client_sin_eventos">No hay eventos activos por ahora. ¡Vuelve pronto!</sys:String>
@@ -139,7 +148,7 @@
     <sys:String x:Key="Msg_ModpackOk">¡El modpack '{0}' se ha instalado correctamente!&#10;Ya puedes seleccionarlo en la pestaña Jugar.</sys:String>
     <sys:String x:Key="Msg_ModpackIncompleto">'{0}' se instaló, pero {1} archivo(s) no se pudieron descargar:&#10;{2}&#10;&#10;Vuelve a instalar el modpack para reintentar.</sys:String>
     <sys:String x:Key="Msg_ModsBloqueados">{0} archivo(s) no se pueden descargar automáticamente porque su autor solo permite descargarlos desde la web de CurseForge (tampoco están en Modrinth):&#10;{1}&#10;&#10;¿Abrir sus páginas en el navegador? La descarga empieza sola en unos segundos.</sys:String>
-    <sys:String x:Key="Msg_ModsBloqueadosEsperando">Cuando terminen de descargarse, pulsa SÍ y TecniLauncher los copiará al modpack desde:&#10;{1}&#10;&#10;Faltan {0}:&#10;{2}&#10;&#10;Pulsa NO para dejarlo así.</sys:String>
+    <sys:String x:Key="Msg_ModsBloqueadosEsperando">Cuando terminen de descargarse, pulsa SÍ y KeroLauncher los copiará al modpack desde:&#10;{1}&#10;&#10;Faltan {0}:&#10;{2}&#10;&#10;Pulsa NO para dejarlo así.</sys:String>
     <sys:String x:Key="Msg_ErrorModpack">Error instalando el modpack: {0}</sys:String>
     <sys:String x:Key="Msg_NuevaVersion">¡Nueva versión {0} disponible!</sys:String>
     <sys:String x:Key="Msg_ErrorGenerico">Error: {0}</sys:String>
@@ -172,7 +181,7 @@
     <sys:String x:Key="Txt_DescargandoMods">Descargando Mods...</sys:String>
     <sys:String x:Key="Txt_DescargandoCliente">Descargando {0}...</sys:String>
     <sys:String x:Key="Txt_Jugar">Jugar</sys:String>
-    <sys:String x:Key="Txt_DesarrolladoPor">TecniLauncher v{0} - Desarrollado por Johan</sys:String>
+    <sys:String x:Key="Txt_DesarrolladoPor">KeroLauncher v{0} - Desarrollado por Johan</sys:String>
     <sys:String x:Key="Txt_Editar">Editar</sys:String>
     <sys:String x:Key="Txt_Carpeta">Carpeta</sys:String>
     <sys:String x:Key="Txt_Eliminar">Eliminar</sys:String>
@@ -198,6 +207,15 @@
     <sys:String x:Key="Mods_SinResultados">No se encontraron resultados con estos filtros.</sys:String>
     <sys:String x:Key="Mods_SinInstalados">Todavía no hay nada instalado en esta sección.</sys:String>
     <sys:String x:Key="Mods_Contador">{0} activos · {1} desactivados</sys:String>
+    <sys:String x:Key="Mods_BuscarActualizaciones">Buscar actualizaciones</sys:String>
+    <sys:String x:Key="Mods_SinPerfil">Elige un perfil primero.</sys:String>
+    <sys:String x:Key="Mods_Buscando">Buscando actualizaciones...</sys:String>
+    <sys:String x:Key="Mods_AlDia">Todo está al día.</sys:String>
+    <sys:String x:Key="Mods_ConfirmarActualizar">Hay {0} actualización(es) disponibles:&#10;{1}&#10;&#10;¿Actualizar ahora? Las versiones antiguas se reemplazan.</sys:String>
+    <sys:String x:Key="Mods_Actualizando">Actualizando {0} archivo(s)...</sys:String>
+    <sys:String x:Key="Mods_Actualizados">{0} archivo(s) actualizados.</sys:String>
+    <sys:String x:Key="Mods_ActualizadosConFallos">{0} actualizados, {1} no se pudieron actualizar (se dejó la versión anterior).</sys:String>
+    <sys:String x:Key="Mods_ErrorActualizar">No se pudieron buscar actualizaciones. Revisa tu conexión.</sys:String>
     <sys:String x:Key="Mods_SwitchTooltip">Activar o desactivar</sys:String>
     <sys:String x:Key="Toast_Instalando">Instalando {0} y sus dependencias en segundo plano…</sys:String>
     <sys:String x:Key="Toast_SinVersion">{0} no tiene una versión compatible con {1} ({2}).</sys:String>
@@ -267,10 +285,10 @@
     <sys:String x:Key="Console_Copy">Copiar</sys:String>
     <sys:String x:Key="Console_Clear">Limpiar</sys:String>
     <sys:String x:Key="Console_OpenLogs">Abrir logs</sys:String>
-    <sys:String x:Key="Console_Header">[TecniLauncher] Perfil: {0} | Minecraft {1} | {2} | RAM: {3} MB</sys:String>
-    <sys:String x:Key="Console_JavaPath">[TecniLauncher] Java: {0}</sys:String>
-    <sys:String x:Key="Console_ExitOk">[TecniLauncher] El juego se cerró correctamente (código 0).</sys:String>
-    <sys:String x:Key="Console_ExitError">[TecniLauncher] El juego terminó con código {0}. Si fue un crasheo, revisa las líneas en rojo y la carpeta crash-reports del perfil.</sys:String>
+    <sys:String x:Key="Console_Header">[KeroLauncher] Perfil: {0} | Minecraft {1} | {2} | RAM: {3} MB</sys:String>
+    <sys:String x:Key="Console_JavaPath">[KeroLauncher] Java: {0}</sys:String>
+    <sys:String x:Key="Console_ExitOk">[KeroLauncher] El juego se cerró correctamente (código 0).</sys:String>
+    <sys:String x:Key="Console_ExitError">[KeroLauncher] El juego terminó con código {0}. Si fue un crasheo, revisa las líneas en rojo y la carpeta crash-reports del perfil.</sys:String>
     <sys:String x:Key="Console_CrashToast">El juego se cerró inesperadamente. Revisa la consola para ver el error.</sys:String>
     <sys:String x:Key="Msg_ConsolaActivada">Consola activada. Se abrirá al iniciar el juego y el launcher no se ocultará.</sys:String>
     <sys:String x:Key="Msg_ConsolaCopiada">Registros copiados al portapapeles.</sys:String>
@@ -290,7 +308,7 @@
     <sys:String x:Key="Settings_DebugConsoleDesc">Muestra los logs del juego en vivo en Jugar > Consola. Ideal para encontrar mods que crashean. El launcher no se oculta mientras juegas.</sys:String>
     <sys:String x:Key="Settings_Integrations">Integraciones</sys:String>
     <sys:String x:Key="Settings_DiscordRpc">Discord Rich Presence</sys:String>
-    <sys:String x:Key="Settings_DiscordRpcDesc">Muestra en tu perfil de Discord a qué estás jugando con TecniLauncher.</sys:String>
+    <sys:String x:Key="Settings_DiscordRpcDesc">Muestra en tu perfil de Discord a qué estás jugando con KeroLauncher.</sys:String>
     <sys:String x:Key="Share_Tooltip">Compartir instancia</sys:String>
     <sys:String x:Key="Share_Title">COMPARTIR INSTANCIA</sys:String>
     <sys:String x:Key="Share_Generando">Analizando mods y generando código...</sys:String>
@@ -327,7 +345,7 @@
     <!-- Privacidad y estadísticas -->
     <sys:String x:Key="Settings_Privacy">Privacidad y estadísticas</sys:String>
     <sys:String x:Key="Settings_Analytics">Estadísticas de uso voluntarias</sys:String>
-    <sys:String x:Key="Settings_AnalyticsOn">Activadas. Gracias por ayudar a mejorar TecniLauncher.</sys:String>
+    <sys:String x:Key="Settings_AnalyticsOn">Activadas. Gracias por ayudar a mejorar KeroLauncher.</sys:String>
     <sys:String x:Key="Settings_AnalyticsOff">Desactivadas. No se envía nada.</sys:String>
     <sys:String x:Key="Settings_AnalyticsSoon">Disponible próximamente.</sys:String>
     <sys:String x:Key="Settings_AnalyticsWhatTitle">Qué se recopila</sys:String>
@@ -336,7 +354,7 @@
     <sys:String x:Key="Msg_AnalyticsEnabled">Estadísticas activadas. ¡Gracias!</sys:String>
     <sys:String x:Key="Msg_AnalyticsDisabled">Estadísticas desactivadas. Tus datos se han borrado del servidor.</sys:String>
     <sys:String x:Key="Msg_AnalyticsDisabledPending">Estadísticas desactivadas. Se pedirá el borrado de tus datos cuando haya conexión.</sys:String>
-    <sys:String x:Key="Consent_Title">¿Quieres ayudar a mejorar TecniLauncher?</sys:String>
+    <sys:String x:Key="Consent_Title">¿Quieres ayudar a mejorar KeroLauncher?</sys:String>
     <sys:String x:Key="Consent_Intro">Puedes enviar estadísticas de uso voluntarias para saber cuántas instalaciones están activas, qué versiones de Minecraft y loaders se usan y si los lanzamientos funcionan. Está desactivado salvo que lo aceptes.</sys:String>
     <sys:String x:Key="Consent_SentTitle">Qué se envía</sys:String>
     <sys:String x:Key="Consent_Sent">Un identificador aleatorio de esta instalación (seudónimo, no ligado a tu cuenta), la versión del launcher, el sistema (Windows), la versión de Minecraft y el loader al pulsar Jugar, si el juego arrancó o el tipo de error, y la duración de la sesión del launcher.</sys:String>

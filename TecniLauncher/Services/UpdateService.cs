@@ -11,7 +11,7 @@ namespace TecniLauncher.Services
     public static class UpdateService
     {
         private const string URL_VERSION =
-            "https://raw.githubusercontent.com/johan12390785/TecniLauncher-Data/refs/heads/main/LauncherUpdate/versionV2.json";
+            "https://raw.githubusercontent.com/Tecnikero/TecniLauncher-Data/refs/heads/main/LauncherUpdate/versionV2.json";
 
         private static readonly HttpClient _http = AppHttpClient.Instance;
 

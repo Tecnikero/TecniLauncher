@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <ApplicationIcon>TecniLogo.ico</ApplicationIcon>
+    <ApplicationIcon>KeroLogo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,7 +25,7 @@
     <Content Include="lang\pt-BR.xaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="TecniLogo.ico" />
+    <Content Include="KeroLogo.ico" />
   </ItemGroup>
 
   <ItemGroup>
