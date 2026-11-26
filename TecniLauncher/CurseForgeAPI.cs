@@ -370,6 +370,61 @@ namespace TecniLauncher
         }
 
         /// <summary>Devuelve fingerprint → modId para los archivos que CurseForge reconoce. null si falla la red.</summary>
+        public record ArchivoCf(long ModId, long FileId, string NombreArchivo, string? Url, string? Sha1);
+
+        /// <summary>Huella → (mod, archivo) exactos en CurseForge. null si falla la consulta.</summary>
+        public static async Task<Dictionary<uint, ArchivoCf>?> ObtenerArchivosPorFingerprintAsync(List<uint> fingerprints)
+        {
+            var resultado = new Dictionary<uint, ArchivoCf>();
+            if (fingerprints.Count == 0) return resultado;
+            if (!Disponible) return null;
+            try
+            {
+                foreach (var lote in fingerprints.Chunk(500))
+                {
+                    using var doc = await PostAsync($"/fingerprints/{GameId}", new { fingerprints = lote });
+                    if (!Data(doc).TryGetProperty("exactMatches", out var matches) || matches.ValueKind != JsonValueKind.Array) continue;
+                    foreach (var match in matches.EnumerateArray())
+                    {
+                        if (!match.TryGetProperty("file", out var f)) continue;
+                        long fp = Num(f, "fileFingerprint");
+                        if (fp <= 0) continue;
+                        resultado[(uint)fp] = new ArchivoCf(Num(match, "id"), Num(f, "id"), Str(f, "fileName") ?? "", Str(f, "downloadUrl"), Sha1DeArchivo(f));
+                    }
+                }
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                LogService.Warn("Error identificando archivos en CurseForge", ex);
+                return null;
+            }
+        }
+
+        /// <summary>Datos de descarga de archivos concretos de CurseForge (POST /mods/files). null si falla.</summary>
+        public static async Task<List<ArchivoCf>?> ObtenerArchivosAsync(IEnumerable<long> fileIds)
+        {
+            var resultado = new List<ArchivoCf>();
+            var ids = fileIds.Where(i => i > 0).Distinct().ToList();
+            if (ids.Count == 0) return resultado;
+            if (!Disponible) return null;
+            try
+            {
+                foreach (var lote in ids.Chunk(200))
+                {
+                    using var doc = await PostAsync("/mods/files", new { fileIds = lote });
+                    foreach (var f in Data(doc).EnumerateArray())
+                        resultado.Add(new ArchivoCf(Num(f, "modId"), Num(f, "id"), Str(f, "fileName") ?? "", Str(f, "downloadUrl"), Sha1DeArchivo(f)));
+                }
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                LogService.Warn("Error obteniendo archivos de CurseForge", ex);
+                return null;
+            }
+        }
+
         public static async Task<Dictionary<uint, string>?> ObtenerModIdsPorFingerprintAsync(List<uint> fingerprints)
         {
             var resultado = new Dictionary<uint, string>();
@@ -614,7 +669,7 @@ namespace TecniLauncher
                     }
 
                     string? url = Str(f, "downloadUrl");
-                    var item = new MrPackFile { RutaDestino = ruta };
+                    var item = new MrPackFile { RutaDestino = ruta, CfModId = pid };
                     string? sha1 = Sha1DeArchivo(f);
                     if (sha1 != null) item.Hashes["sha1"] = sha1;
                     if (!string.IsNullOrEmpty(url))

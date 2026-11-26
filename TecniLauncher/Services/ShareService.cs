@@ -10,8 +10,18 @@ namespace TecniLauncher.Services
 {
     public class ManifestMod
     {
+        public const string FuenteCurseForge = "curseforge";
+
         public string ProjectId { get; set; } = "";
         public string VersionId { get; set; } = "";
+
+        /// <summary>null = Modrinth (formato original). "curseforge": ProjectId = modId y VersionId = fileId.
+        /// Los launchers anteriores descartan estas entradas sin fallar.</summary>
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        public string? Fuente { get; set; }
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool EsCurseForge => string.Equals(Fuente, FuenteCurseForge, StringComparison.OrdinalIgnoreCase);
     }
 
     public class ManifestInstancia
@@ -60,6 +70,7 @@ namespace TecniLauncher.Services
         private static readonly HttpClient _http = AppHttpClient.Instance;
         private static readonly Regex RxCodigo = new(@"^\d{6}$", RegexOptions.Compiled);
         private static readonly Regex RxIdModrinth = new(@"^[A-Za-z0-9]{8}$", RegexOptions.Compiled);
+        private static readonly Regex RxIdCurseForge = new(@"^\d{1,10}$", RegexOptions.Compiled);
         private static readonly Regex RxVersion = new(@"^[A-Za-z0-9._\-+]{1,48}$", RegexOptions.Compiled);
         private static readonly string[] LoadersValidos = { "Vanilla", "Fabric", "Forge", "NeoForge", "Quilt" };
         private const int MaxMods = 500;
@@ -70,7 +81,19 @@ namespace TecniLauncher.Services
         public static async Task<ResultadoExportacion> CompartirPerfilAsync(Perfil perfil, OpcionesCompartir opciones, CancellationToken ct = default)
         {
             var (manifest, omitidos) = await ConstruirManifestAsync(perfil, opciones, ct);
-            string codigo = await SubirManifestAsync(manifest, ct);
+            string codigo;
+            try
+            {
+                codigo = await SubirManifestAsync(manifest, ct);
+            }
+            catch (ShareException ex) when (ex.Tipo == ErrorCompartir.Red && ex.Message.StartsWith("Supabase respondió 4") && TieneCurseForge(manifest))
+            {
+                // Por si el servidor no acepta aún entradas de CurseForge: se comparte solo lo de Modrinth.
+                LogService.Warn("El servidor rechazó el código con mods de CurseForge; se reintenta solo con Modrinth", ex);
+                omitidos += QuitarCurseForge(manifest);
+                if (manifest.TotalArchivos == 0) throw;
+                codigo = await SubirManifestAsync(manifest, ct);
+            }
 
             return new ResultadoExportacion
             {
@@ -81,6 +104,12 @@ namespace TecniLauncher.Services
                 ArchivosOmitidos = omitidos
             };
         }
+
+        private static bool TieneCurseForge(ManifestInstancia m) =>
+            m.Mods.Any(x => x.EsCurseForge) || m.Shaders.Any(x => x.EsCurseForge) || m.Texturas.Any(x => x.EsCurseForge);
+
+        private static int QuitarCurseForge(ManifestInstancia m) =>
+            m.Mods.RemoveAll(x => x.EsCurseForge) + m.Shaders.RemoveAll(x => x.EsCurseForge) + m.Texturas.RemoveAll(x => x.EsCurseForge);
 
         private static async Task<(ManifestInstancia, int omitidos)> ConstruirManifestAsync(
             Perfil perfil, OpcionesCompartir opciones, CancellationToken ct)
@@ -112,23 +141,53 @@ namespace TecniLauncher.Services
             var archivos = new DirectoryInfo(carpeta).EnumerateFiles("*" + ext).ToList();
             if (archivos.Count == 0) return 0;
 
-            var hashes = await Task.Run(() => archivos
-                .Select(f => CalcularSha1(f.FullName))
-                .Where(h => h != null)
-                .Select(h => h!)
-                .Distinct()
+            var porArchivo = await Task.Run(() => archivos
+                .Select(f => (Archivo: f, Sha1: CalcularSha1(f.FullName)))
                 .ToList(), ct);
+            var hashes = porArchivo.Where(x => x.Sha1 != null).Select(x => x.Sha1!).Distinct().ToList();
 
             var encontrados = await ObtenerVersionesPorHashAsync(hashes, ct)
                 ?? throw new ShareException(ErrorCompartir.Red, "No se pudo consultar Modrinth.");
 
+            int incluidos = 0;
             var vistos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var (pid, vid) in encontrados.Values)
+            var sinModrinth = new List<FileInfo>();
+            foreach (var (archivo, sha1) in porArchivo)
             {
-                if (vistos.Add(vid))
-                    destino.Add(new ManifestMod { ProjectId = pid, VersionId = vid });
+                if (sha1 != null && encontrados.TryGetValue(sha1, out var v))
+                {
+                    incluidos++;
+                    if (vistos.Add(v.VersionId)) destino.Add(new ManifestMod { ProjectId = v.ProjectId, VersionId = v.VersionId });
+                }
+                else sinModrinth.Add(archivo);
             }
-            return Math.Max(0, archivos.Count - destino.Count);
+
+            // Lo que no está en Modrinth se busca en CurseForge por su huella.
+            if (sinModrinth.Count > 0 && CurseForgeAPI.Disponible)
+            {
+                var huellas = await Task.Run(() =>
+                {
+                    var l = new List<(FileInfo Archivo, uint Huella)>();
+                    foreach (var f in sinModrinth)
+                    {
+                        try { l.Add((f, CurseForgeAPI.CalcularFingerprint(f.FullName))); } catch { }
+                    }
+                    return l;
+                }, ct);
+
+                var cf = await CurseForgeAPI.ObtenerArchivosPorFingerprintAsync(huellas.Select(h => h.Huella).Distinct().ToList());
+                if (cf != null)
+                {
+                    foreach (var (_, huella) in huellas)
+                    {
+                        if (!cf.TryGetValue(huella, out var a) || a.ModId <= 0 || a.FileId <= 0) continue;
+                        incluidos++;
+                        if (vistos.Add("cf:" + a.FileId))
+                            destino.Add(new ManifestMod { ProjectId = a.ModId.ToString(), VersionId = a.FileId.ToString(), Fuente = ManifestMod.FuenteCurseForge });
+                    }
+                }
+            }
+            return Math.Max(0, archivos.Count - incluidos);
         }
 
         private static async Task<string> SubirManifestAsync(ManifestInstancia manifest, CancellationToken ct)
@@ -240,8 +299,10 @@ namespace TecniLauncher.Services
                 throw new ShareException(ErrorCompartir.ManifestInvalido, "Demasiados archivos en el manifest.");
 
             return lista
-                .Where(x => x != null && RxIdModrinth.IsMatch(x.VersionId ?? ""))
-                .GroupBy(x => x.VersionId, StringComparer.OrdinalIgnoreCase)
+                .Where(x => x != null && (x.EsCurseForge
+                    ? RxIdCurseForge.IsMatch(x.VersionId ?? "") && RxIdCurseForge.IsMatch(x.ProjectId ?? "")
+                    : x.Fuente == null && RxIdModrinth.IsMatch(x.VersionId ?? "")))
+                .GroupBy(x => (x.EsCurseForge ? "cf:" : "") + x.VersionId, StringComparer.OrdinalIgnoreCase)
                 .Select(g => g.First())
                 .ToList();
         }
@@ -253,12 +314,34 @@ namespace TecniLauncher.Services
             var fallos = new ConcurrentBag<string>();
 
             var tipoPorVersion = new Dictionary<string, TipoComplemento>(StringComparer.OrdinalIgnoreCase);
-            foreach (var m in manifest.Texturas) tipoPorVersion[m.VersionId] = TipoComplemento.Textura;
-            foreach (var m in manifest.Shaders) tipoPorVersion[m.VersionId] = TipoComplemento.Shader;
-            foreach (var m in manifest.Mods) tipoPorVersion[m.VersionId] = TipoComplemento.Mod;
+            var tipoPorArchivoCf = new Dictionary<long, TipoComplemento>();
+            void Agregar(List<ManifestMod> lista, TipoComplemento t)
+            {
+                foreach (var m in lista)
+                {
+                    if (m.EsCurseForge) { if (long.TryParse(m.VersionId, out long id)) tipoPorArchivoCf[id] = t; }
+                    else tipoPorVersion[m.VersionId] = t;
+                }
+            }
+            Agregar(manifest.Texturas, TipoComplemento.Textura);
+            Agregar(manifest.Shaders, TipoComplemento.Shader);
+            Agregar(manifest.Mods, TipoComplemento.Mod);
 
-            int total = tipoPorVersion.Count;
+            int totalCf = tipoPorArchivoCf.Count;
+            int total = tipoPorVersion.Count + totalCf;
             if (total == 0) return new List<string>();
+
+            int hechosCf = 0;
+            if (totalCf > 0)
+            {
+                foreach (var f in await DescargarDeCurseForgeAsync(tipoPorArchivoCf, carpetaPerfil, () =>
+                         {
+                             int n = Interlocked.Increment(ref hechosCf);
+                             progreso?.Report((Math.Min(n, total), total, "CurseForge"));
+                         }, ct))
+                    fallos.Add(f);
+                if (tipoPorVersion.Count == 0) return fallos.ToList();
+            }
 
             progreso?.Report((0, total, "Modrinth"));
 
@@ -269,7 +352,7 @@ namespace TecniLauncher.Services
             foreach (var id in tipoPorVersion.Keys)
                 if (!porId.ContainsKey(id)) fallos.Add(id);
 
-            int hechos = total - porId.Count;
+            int hechos = totalCf + (tipoPorVersion.Count - porId.Count);
             progreso?.Report((hechos, total, ""));
 
             await Parallel.ForEachAsync(porId.Values,
@@ -348,6 +431,59 @@ namespace TecniLauncher.Services
                 return null;
             }
         }
+        /// <summary>
+        /// Descarga los archivos de CurseForge de un código. Los que su autor no deja descargar desde
+        /// launchers se buscan en Modrinth por hash; si tampoco están, se devuelven como fallos.
+        /// </summary>
+        private static async Task<List<string>> DescargarDeCurseForgeAsync(
+            Dictionary<long, TipoComplemento> tipos, string carpetaPerfil, Action avance, CancellationToken ct)
+        {
+            var fallos = new ConcurrentBag<string>();
+            var archivos = await CurseForgeAPI.ObtenerArchivosAsync(tipos.Keys);
+            if (archivos == null)
+            {
+                foreach (var id in tipos.Keys) { fallos.Add("CurseForge #" + id); avance(); }
+                return fallos.ToList();
+            }
+            archivos = archivos.Where(a => tipos.ContainsKey(a.FileId)).GroupBy(a => a.FileId).Select(g => g.First()).ToList();
+            foreach (var id in tipos.Keys.Except(archivos.Select(a => a.FileId))) { fallos.Add("CurseForge #" + id); avance(); }
+
+            var sinUrl = archivos.Where(a => string.IsNullOrEmpty(a.Url) && a.Sha1 != null).ToList();
+            var enModrinth = sinUrl.Count > 0 ? await ModrinthAPI.ObtenerUrlsPorHashAsync(sinUrl.Select(a => a.Sha1!)) : new Dictionary<string, string>();
+
+            await Parallel.ForEachAsync(archivos,
+                new ParallelOptions { MaxDegreeOfParallelism = 3, CancellationToken = ct },
+                async (a, token) =>
+                {
+                    try
+                    {
+                        var tipo = tipos[a.FileId];
+                        string? url = !string.IsNullOrEmpty(a.Url) ? a.Url
+                            : (a.Sha1 != null && enModrinth.TryGetValue(a.Sha1, out var u) ? u : null);
+                        if (url == null) throw new InvalidOperationException("El autor no permite descargarlo desde launchers");
+                        if (!ModpacksApi.EsUrlPermitida(url)) throw new InvalidOperationException("Host no permitido");
+                        if (!tipo.Extensiones().Any(e => a.NombreArchivo.EndsWith(e, StringComparison.OrdinalIgnoreCase)))
+                            throw new InvalidOperationException("Extensión inesperada para " + tipo);
+
+                        string carpeta = Path.Combine(carpetaPerfil, tipo.Carpeta());
+                        string? destino = ModpacksApi.ResolverRutaSegura(carpeta, a.NombreArchivo);
+                        if (destino == null) throw new InvalidOperationException("Ruta insegura");
+
+                        Directory.CreateDirectory(carpeta);
+                        if (!File.Exists(destino))
+                            await AppHttpClient.DescargarArchivoAsync(url, destino, ct: token);
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception ex)
+                    {
+                        LogService.Warn($"Fallo al importar {a.NombreArchivo} (CurseForge)", ex);
+                        fallos.Add(string.IsNullOrEmpty(a.NombreArchivo) ? "CurseForge #" + a.FileId : a.NombreArchivo);
+                    }
+                    finally { avance(); }
+                });
+            return fallos.ToList();
+        }
+
         private static async Task<List<ModVersion>?> ObtenerVersionesPorIdsAsync(IEnumerable<string> ids, CancellationToken ct)
         {
             var resultado = new List<ModVersion>();

@@ -321,6 +321,9 @@ namespace TecniLauncher
 
             /// <summary>Página de CurseForge para descargarlo a mano cuando el autor bloquea las descargas de launchers.</summary>
             [JsonIgnore] public string? PaginaDescargaManual { get; set; }
+
+            /// <summary>Id del mod en CurseForge, para reconocerlo en Descargas aunque se baje otra versión.</summary>
+            [JsonIgnore] public long CfModId { get; set; }
         }
     }
 }

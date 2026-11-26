@@ -140,14 +140,15 @@
     <sys:String x:Key="Msg_ErrorVersionesMod">Erro de conexão ao buscar versões: {0}</sys:String>
     <sys:String x:Key="Msg_InstalandoMod">Instalando {0} e suas dependências (pode demorar)...</sys:String>
     <sys:String x:Key="Msg_ModInstalado">Mod e dependências instalados com sucesso!</sys:String>
-    <sys:String x:Key="Msg_ModInstaladoSinDeps">Mod instalado, mas estas dependências obrigatórias não têm versão compatível com {0} ({1}):&#10;- {2}&#10;&#10;Instale-as manualmente ou o jogo pode não iniciar.</sys:String>
+    <sys:String x:Key="Msg_ModInstaladoSinDeps" xml:space="preserve">Mod instalado, mas estas dependências obrigatórias não têm versão compatível com {0} ({1}):&#10;- {2}&#10;&#10;Instale-as manualmente ou o jogo pode não iniciar.</sys:String>
     <sys:String x:Key="Msg_ErrorDescarga">Erro no download: {0}</sys:String>
     <sys:String x:Key="Msg_WebView2Falta">Não foi possível iniciar o visualizador web (falta o runtime do Microsoft WebView2). A descrição do modpack não será exibida, mas você ainda pode instalá-lo.</sys:String>
     <sys:String x:Key="Msg_ErrorModpackLeer">Houve um erro ao ler ou descompactar o modpack.</sys:String>
-    <sys:String x:Key="Msg_ModpackOk">O modpack '{0}' foi instalado com sucesso!&#10;Agora você pode selecioná-lo na aba Jogar.</sys:String>
-    <sys:String x:Key="Msg_ModpackIncompleto">'{0}' foi instalado, mas {1} arquivo(s) não puderam ser baixados:&#10;{2}&#10;&#10;Reinstale o modpack para tentar novamente.</sys:String>
-    <sys:String x:Key="Msg_ModsBloqueados">{0} arquivo(s) não podem ser baixados automaticamente porque o autor só permite baixá-los pelo site do CurseForge (também não estão no Modrinth):&#10;{1}&#10;&#10;Abrir as páginas no navegador? O download começa sozinho em alguns segundos.</sys:String>
-    <sys:String x:Key="Msg_ModsBloqueadosEsperando">Quando terminarem de baixar, pressione SIM e o KeroLauncher vai copiá-los para o modpack a partir de:&#10;{1}&#10;&#10;Faltam {0}:&#10;{2}&#10;&#10;Pressione NÃO para deixar assim.</sys:String>
+    <sys:String x:Key="Msg_ModpackOk" xml:space="preserve">O modpack '{0}' foi instalado com sucesso!&#10;Agora você pode selecioná-lo na aba Jogar.</sys:String>
+    <sys:String x:Key="Msg_ModpackIncompleto" xml:space="preserve">'{0}' foi instalado, mas {1} arquivo(s) não puderam ser baixados:&#10;{2}&#10;&#10;Reinstale o modpack para tentar novamente.</sys:String>
+    <sys:String x:Key="Msg_ModsBloqueados" xml:space="preserve">{0} arquivo(s) não podem ser baixados automaticamente porque o autor só permite baixá-los pelo site do CurseForge (também não estão no Modrinth):&#10;{1}&#10;&#10;Abrir as páginas no navegador? O download começa sozinho em alguns segundos.</sys:String>
+    <sys:String x:Key="Msg_ModsBloqueadosEsperando" xml:space="preserve">Quando terminarem de baixar, pressione SIM e o KeroLauncher vai copiá-los para o modpack a partir de:&#10;{1}&#10;&#10;Faltam {0}:&#10;{2}&#10;&#10;Pressione NÃO para deixar assim.</sys:String>
+    <sys:String x:Key="Msg_ModsElegirArchivos" xml:space="preserve">Não encontrei {0} arquivo(s) em Downloads:&#10;{1}&#10;&#10;Quer escolhê-los você mesmo? Vai abrir uma janela para selecionar os .jar que você baixou.</sys:String>
     <sys:String x:Key="Msg_ErrorModpack">Erro ao instalar o modpack: {0}</sys:String>
     <sys:String x:Key="Msg_NuevaVersion">Nova versão {0} disponível!</sys:String>
     <sys:String x:Key="Msg_ErrorGenerico">Erro: {0}</sys:String>
@@ -210,7 +211,7 @@
     <sys:String x:Key="Mods_SinPerfil">Escolha um perfil primeiro.</sys:String>
     <sys:String x:Key="Mods_Buscando">Buscando atualizações...</sys:String>
     <sys:String x:Key="Mods_AlDia">Tudo está atualizado.</sys:String>
-    <sys:String x:Key="Mods_ConfirmarActualizar">Há {0} atualização(ões) disponível(is):&#10;{1}&#10;&#10;Atualizar agora? As versões antigas serão substituídas.</sys:String>
+    <sys:String x:Key="Mods_ConfirmarActualizar" xml:space="preserve">Há {0} atualização(ões) disponível(is):&#10;{1}&#10;&#10;Atualizar agora? As versões antigas serão substituídas.</sys:String>
     <sys:String x:Key="Mods_Actualizando">Atualizando {0} arquivo(s)...</sys:String>
     <sys:String x:Key="Mods_Actualizados">{0} arquivo(s) atualizados.</sys:String>
     <sys:String x:Key="Mods_ActualizadosConFallos">{0} atualizados, {1} não puderam ser atualizados (a versão anterior foi mantida).</sys:String>
@@ -300,7 +301,7 @@
     <sys:String x:Key="Settings_CacheEmpty">Não há nada para limpar</sys:String>
     <sys:String x:Key="Msg_CacheOcupado">Não é possível limpar o cache enquanto há um jogo, uma instalação ou um modpack em andamento.</sys:String>
     <sys:String x:Key="Msg_CacheNada">O cache já está limpo.</sys:String>
-    <sys:String x:Key="Msg_CacheConfirmar">Serão liberados até {0}:&#10;&#10;• Instaladores e downloads: {1}&#10;• Logs: {2}&#10;• Temporários: {3}&#10;&#10;Seus mundos, mods e perfis não são afetados. Continuar?</sys:String>
+    <sys:String x:Key="Msg_CacheConfirmar" xml:space="preserve">Serão liberados até {0}:&#10;&#10;• Instaladores e downloads: {1}&#10;• Logs: {2}&#10;• Temporários: {3}&#10;&#10;Seus mundos, mods e perfis não são afetados. Continuar?</sys:String>
     <sys:String x:Key="Msg_CacheListo">Cache limpo: {0} liberados.</sys:String>
     <sys:String x:Key="Settings_Debug">Depuração</sys:String>
     <sys:String x:Key="Settings_DebugConsole">Console de depuração</sys:String>
@@ -322,8 +323,8 @@
     <sys:String x:Key="Import_Confirmar">IMPORTAR</sys:String>
     <sys:String x:Key="Import_Obteniendo">Procurando o código...</sys:String>
     <sys:String x:Key="Import_Descargando">Baixando {0}/{1}  {2}</sys:String>
-    <sys:String x:Key="Import_Ok">Instância '{0}' importada com sucesso!&#10;Agora você pode selecioná-la na aba Jogar.</sys:String>
-    <sys:String x:Key="Import_Incompleta">A instância '{0}' foi importada, mas {1} mods não puderam ser baixados:&#10;{2}</sys:String>
+    <sys:String x:Key="Import_Ok" xml:space="preserve">Instância '{0}' importada com sucesso!&#10;Agora você pode selecioná-la na aba Jogar.</sys:String>
+    <sys:String x:Key="Import_Incompleta" xml:space="preserve">A instância '{0}' foi importada, mas {1} mods não puderam ser baixados:&#10;{2}</sys:String>
     <sys:String x:Key="Share_ErrCodigoInvalido">O código deve ter exatamente 6 dígitos.</sys:String>
     <sys:String x:Key="Share_ErrNoExiste">O código não existe ou já expirou (duram 24h).</sys:String>
     <sys:String x:Key="Share_ErrManifest">Os dados dessa instância não são válidos.</sys:String>
