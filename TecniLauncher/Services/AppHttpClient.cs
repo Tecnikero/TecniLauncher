@@ -10,7 +10,7 @@ namespace TecniLauncher.Services
 
         static AppHttpClient()
         {
-            Instance = new HttpClient(CrearHandler());
+            Instance = new HttpClient(CrearHandler(comprimir: true));
             Instance.DefaultRequestHeaders.Add("User-Agent", "TecniLauncher/1.0 (Johan/t3cnikero)");
             Instance.Timeout = TimeSpan.FromSeconds(30);
 
@@ -19,11 +19,15 @@ namespace TecniLauncher.Services
             Descargas.Timeout = Timeout.InfiniteTimeSpan;
         }
 
-        private static SocketsHttpHandler CrearHandler() => new SocketsHttpHandler
+        // comprimir: las APIs (Modrinth, CurseForge…) responden JSON en gzip/brotli y pesa mucho menos.
+        // Las descargas de archivos no lo usan: .jar y .zip ya van comprimidos y así el progreso es exacto.
+        private static SocketsHttpHandler CrearHandler(bool comprimir = false) => new SocketsHttpHandler
         {
             PooledConnectionLifetime = TimeSpan.FromMinutes(10),
             PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
             ConnectTimeout = TimeSpan.FromSeconds(30),
+            AutomaticDecompression = comprimir ? System.Net.DecompressionMethods.All : System.Net.DecompressionMethods.None,
+            EnableMultipleHttp2Connections = true,
         };
         public static async Task DescargarArchivoAsync(
             string url, string destino, TimeSpan? limite = null, CancellationToken ct = default, IProgress<int>? porcentaje = null)

@@ -50,7 +50,7 @@ namespace TecniLauncher
         private bool modoOnline = true;
         private List<Noticia> listaNoticias = new List<Noticia>();
         private int indiceActual = 0;
-        internal const string VERSION_ACTUAL = "1.6.1";
+        internal const string VERSION_ACTUAL = "1.6.2";
         private CancellationTokenSource _ctsLoaderVersiones;
         private readonly Dictionary<string, string> _cacheProyectosLocales = new();
         private readonly Dictionary<string, string> _cacheProyectosLocalesCf = new();
@@ -59,7 +59,9 @@ namespace TecniLauncher
         private DispatcherTimer _timerNoticias;
         private Rect _tamanoNormal;
         private bool _esFalsoMaximizado = false;
-        private int _offsetMods = 0;
+        private int _offsetMods = 0;          // Modrinth
+        private int _offsetCf = 0;            // CurseForge
+        private bool _hayMasMr = true, _hayMasCf = true;
         private bool _hayMasResultados = true;
         private readonly SemaphoreSlim _semMods = new SemaphoreSlim(1, 1);
         private System.Collections.ObjectModel.ObservableCollection<ModInfo> _listaModsActual
@@ -635,6 +637,17 @@ namespace TecniLauncher
         #region LanzarMine
         private async void BtnJugar_Click(object sender, RoutedEventArgs e)
         {
+            // Si ya se está abriendo una instancia, el botón hace de "Cancelar".
+            if (_ctsLanzar != null)
+            {
+                // Se cancela y el botón vuelve a "Jugar" en el acto: se puede abrir otra instancia enseguida.
+                var anterior = _ctsLanzar;
+                _ctsLanzar = null;
+                anterior.Cancel();
+                ModoLanzando(false);
+                return;
+            }
+
             var perfil = comboPerfilRapido.SelectedItem as Perfil;
             if (perfil == null)
             {
@@ -644,13 +657,15 @@ namespace TecniLauncher
             DiscordRpcService.Establecer($"Jugando a {perfil.Nombre}", $"Versión {perfil.Version}");
             AnalyticsHost.JuegoSolicitado(perfil.Version, perfil.TipoLoader);
             bool esperandoCierreJuegoJugar = false;
+            CancellationTokenSource? miCts = null;
             try
             {
-                btnJugar.IsEnabled = false;
-                PanelCarga.Visibility = Visibility.Visible;
+                miCts = new CancellationTokenSource();
+                _ctsLanzar = miCts;
+                ModoLanzando(true);
 
-                System.Diagnostics.Process procesoMinecraft = await LanzarMinecraft(perfil);
-                PanelCarga.Visibility = Visibility.Collapsed;
+                System.Diagnostics.Process procesoMinecraft = await LanzarMinecraft(perfil, miCts.Token);
+                if (ReferenceEquals(_ctsLanzar, miCts)) ModoLanzando(false);
 
                 if (procesoMinecraft != null)
                 {
@@ -689,15 +704,54 @@ namespace TecniLauncher
             }
             finally
             {
-                if (!esperandoCierreJuegoJugar) btnJugar.IsEnabled = true;
-                PanelCarga.Visibility = Visibility.Collapsed;
+                // Solo se toca la interfaz si este lanzamiento sigue siendo el actual (no uno ya cancelado).
+                if (ReferenceEquals(_ctsLanzar, miCts))
+                {
+                    _ctsLanzar = null;
+                    ModoLanzando(false);
+                    btnJugar.IsEnabled = !esperandoCierreJuegoJugar;
+                }
+                miCts?.Dispose();
             }
         }
-        private async Task<Process> LanzarMinecraft(Perfil perfil)
+
+        private CancellationTokenSource? _ctsLanzar;
+
+        /// <summary>Mientras se abre una instancia: barra junto a Jugar y el botón pasa a Cancelar (sin tapar la ventana).</summary>
+        private void ModoLanzando(bool activo)
+        {
+            PanelLanzando.Visibility = activo ? Visibility.Visible : Visibility.Collapsed;
+            btnJugar.Content = Core.T(activo ? "Play_BtnCancel" : "Play_BtnPlay");
+            if (activo) btnJugar.Background = (Brush)FindResource("ColorDanger");
+            else btnJugar.ClearValue(System.Windows.Controls.Control.BackgroundProperty); // vuelve al estilo (con su hover)
+            btnJugar.IsEnabled = true;
+            if (activo) { barraLanzando.IsIndeterminate = true; txtEstadoLanzando.Text = Core.T("Txt_Iniciando"); }
+        }
+
+        /// <summary>Texto de estado del arranque: en la barra de Jugar y en la pantalla de carga (KeroClient).</summary>
+        private void EstadoCarga(string texto)
+        {
+            txtEstadoCarga.Text = texto;
+            txtEstadoLanzando.Text = texto;
+        }
+
+        private void ProgresoCarga(double valor, double maximo)
+        {
+            barraCarga.IsIndeterminate = false; barraCarga.Maximum = maximo; barraCarga.Value = valor;
+            barraLanzando.IsIndeterminate = false; barraLanzando.Maximum = maximo; barraLanzando.Value = valor;
+        }
+
+        private void CargaIndeterminada(bool si)
+        {
+            barraCarga.IsIndeterminate = si;
+            barraLanzando.IsIndeterminate = si;
+        }
+
+        private async Task<Process> LanzarMinecraft(Perfil perfil, CancellationToken ct = default)
         {
             try
             {
-                txtEstadoCarga.Text = Core.T("Txt_Iniciando");
+                EstadoCarga(Core.T("Txt_Iniciando"));
                 barraCarga.Value = 0;
 
                 if (!Directory.Exists(perfil.RutaCarpeta))
@@ -728,30 +782,39 @@ namespace TecniLauncher
                     };
                 }
 
+                // La librería avisa por cada archivo (miles al verificar): se refresca la barra ~10 veces por
+                // segundo como mucho para no saturar la interfaz (y que Cancelar responda en el acto).
+                long ultimoRefresco = 0;
                 launcher.FileProgressChanged += (s, e) =>
                 {
-                    Dispatcher.Invoke(() =>
+                    if (ct.IsCancellationRequested) return;
+                    long ahora = Environment.TickCount64;
+                    bool ultimo = e.ProgressedTasks >= e.TotalTasks;
+                    if (!ultimo && ahora - Interlocked.Read(ref ultimoRefresco) < 100) return;
+                    Interlocked.Exchange(ref ultimoRefresco, ahora);
+                    Dispatcher.BeginInvoke(() =>
                     {
-                        barraCarga.Maximum = e.TotalTasks;
-                        barraCarga.Value = e.ProgressedTasks;
-                        txtEstadoCarga.Text = Core.T("Txt_VerificandoArchivo", e.Name);
+                        if (ct.IsCancellationRequested) return;
+                        ProgresoCarga(e.ProgressedTasks, Math.Max(1, e.TotalTasks));
+                        EstadoCarga(Core.T("Txt_VerificandoArchivo", e.Name));
                     });
                 };
 
-                string idVersion = await InstalarModLoader(perfil, launcher);
+                string idVersion = await InstalarModLoader(perfil, launcher, ct);
+                ct.ThrowIfCancellationRequested();
 
                 var argumentosExtra = new System.Collections.Generic.List<CmlLib.Core.ProcessBuilder.MArgument>();
 
                 if (Core.EsSesionTecniStudio)
                 {
-                    Dispatcher.Invoke(() => txtEstadoCarga.Text = Core.T("Txt_ConectandoSkins"));
+                    Dispatcher.Invoke(() => EstadoCarga(Core.T("Txt_ConectandoSkins")));
                     if (await AuthService.AsegurarTokenTecniAsync() == AuthService.EstadoToken.Expirado)
                     {
                         AuthService.CerrarSesionTecni();
                         ActualizarEstadoSesionTrasExpirar();
                         throw new InvalidOperationException(Core.T("Msg_SesionTecniExpirada")) { Data = { ["analytics_category"] = "authentication" } };
                     }
-                    string rutaJar = await PrepararAuthlibInjector(Core.RutaGlobal);
+                    string rutaJar = await PrepararAuthlibInjector(Core.RutaGlobal).WaitAsync(ct);
 
                     if (!string.IsNullOrEmpty(rutaJar))
                     {
@@ -770,7 +833,7 @@ namespace TecniLauncher
                         argumentosExtra.Add(new CmlLib.Core.ProcessBuilder.MArgument(bandera));
                     }
 
-                    Dispatcher.Invoke(() => txtEstadoCarga.Text = Core.T("Txt_InyectandoAikar"));
+                    Dispatcher.Invoke(() => EstadoCarga(Core.T("Txt_InyectandoAikar")));
                 }
 
                 var launchOption = new CmlLib.Core.ProcessBuilder.MLaunchOption
@@ -783,7 +846,13 @@ namespace TecniLauncher
                     ExtraJvmArguments = argumentosExtra
                 };
 
-                var process = await launcher.CreateProcessAsync(idVersion, launchOption);
+                // Descarga/verifica los archivos del juego y arma el proceso; se puede cancelar a mitad.
+                // La librería no siempre atiende la cancelación mientras verifica archivos: se deja de esperar
+                // en el acto y lo que quede termina solo en segundo plano (nunca abre el juego).
+                var tareaProceso = launcher.InstallAndBuildProcessAsync(idVersion, launchOption, ct).AsTask();
+                _ = tareaProceso.ContinueWith(t => { _ = t.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
+                var process = await tareaProceso.WaitAsync(ct);
+                ct.ThrowIfCancellationRequested(); // cancelado justo antes de abrir: no se abre
 
                 bool capturarConsola = Core.ConsolaDepuracionActiva;
                 process.StartInfo.UseShellExecute = false;
@@ -805,6 +874,12 @@ namespace TecniLauncher
                 AnalyticsHost.ProcesoJuegoIniciado();
 
                 return process;
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                LogService.Info($"Lanzamiento de {perfil.Nombre} cancelado por el usuario");
+                Aviso(Core.T("Play_Cancelado", perfil.Nombre));
+                return null;
             }
             catch (Exception ex)
             {
@@ -832,7 +907,7 @@ namespace TecniLauncher
                     File.Delete(rutaInjector);
                 }
 
-                Dispatcher.Invoke(() => txtEstadoCarga.Text = Core.T("Txt_DescargandoAuthlib"));
+                Dispatcher.Invoke(() => EstadoCarga(Core.T("Txt_DescargandoAuthlib")));
                 string rutaTemp = rutaInjector + ".descarga";
                 await AppHttpClient.DescargarArchivoAsync(URL_AUTHLIB, rutaTemp, TimeSpan.FromMinutes(5));
 
@@ -877,14 +952,14 @@ namespace TecniLauncher
                 ConsolaJuegoService.Adjuntar(process);
         }
 
-        private async Task<string> InstalarModLoader(Perfil perfil, MinecraftLauncher launcher)
+        private async Task<string> InstalarModLoader(Perfil perfil, MinecraftLauncher launcher, CancellationToken ct = default)
         {
             if (perfil.TipoLoader == "Vanilla") return perfil.Version;
 
             Dispatcher.Invoke(() =>
             {
-                txtEstadoCarga.Text = Core.T("Txt_InstalandoLoader", perfil.TipoLoader);
-                barraCarga.IsIndeterminate = true;
+                EstadoCarga(Core.T("Txt_InstalandoLoader", perfil.TipoLoader));
+                CargaIndeterminada(true);
             });
 
             try
@@ -898,41 +973,46 @@ namespace TecniLauncher
                 if (perfil.TipoLoader == "Fabric")
                 {
                     var installer = new TecniLauncher.FabricInstaller(launcher);
-                    verInstalada = await installer.InstallAsync(perfil.Version, versionExacta);
+                    verInstalada = await installer.InstallAsync(perfil.Version, versionExacta).WaitAsync(ct);
                 }
                 // === FORGE ===
                 else if (perfil.TipoLoader == "Forge")
                 {
                     var installer = new TecniLauncher.ForgeInstallerSinAnuncio(launcher);
                     if (!string.IsNullOrEmpty(versionExacta))
-                        verInstalada = await installer.Install(perfil.Version, versionExacta);
+                        verInstalada = await installer.Install(perfil.Version, versionExacta).WaitAsync(ct);
                     else
-                        verInstalada = await installer.Install(perfil.Version);
+                        verInstalada = await installer.Install(perfil.Version).WaitAsync(ct);
                 }
                 // === QUILT ===
                 else if (perfil.TipoLoader == "Quilt")
                 {
                     var installer = new TecniLauncher.QuiltInstaller(launcher);
-                    verInstalada = await installer.InstallAsync(perfil.Version, versionExacta);
+                    verInstalada = await installer.InstallAsync(perfil.Version, versionExacta).WaitAsync(ct);
                 }
                 // === NEOFORGE ===
                 else if (perfil.TipoLoader == "NeoForge")
                 {
                     var installer = new NeoForgeInstaller(launcher);
                     if (!string.IsNullOrEmpty(versionExacta))
-                        verInstalada = await installer.Install(perfil.Version, versionExacta);
+                        verInstalada = await installer.Install(perfil.Version, versionExacta).WaitAsync(ct);
                     else
-                        verInstalada = await installer.Install(perfil.Version);
+                        verInstalada = await installer.Install(perfil.Version).WaitAsync(ct);
                 }
 
-                Dispatcher.Invoke(() => barraCarga.IsIndeterminate = false);
+                Dispatcher.Invoke(() => CargaIndeterminada(false));
                 if (string.IsNullOrEmpty(verInstalada))
                     throw new Exception($"Loader no soportado: {perfil.TipoLoader}");
                 return verInstalada;
             }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                Dispatcher.Invoke(() => CargaIndeterminada(false));
+                throw;
+            }
             catch (Exception ex)
             {
-                Dispatcher.Invoke(() => barraCarga.IsIndeterminate = false);
+                Dispatcher.Invoke(() => CargaIndeterminada(false));
                 throw new Exception($"Error instalando Loader: {ex.Message}");
             }
         }
@@ -1633,7 +1713,7 @@ namespace TecniLauncher
             _tipo = nuevo;
 
             _busquedaId++;
-            _offsetMods = 0;
+            _offsetMods = 0; _offsetCf = 0; _hayMasMr = true; _hayMasCf = true;
             _hayMasResultados = true;
             _listaModsActual.Clear();
             MostrarEstadoMods(null);
@@ -1658,7 +1738,7 @@ namespace TecniLauncher
             _fuenteMods = nueva;
 
             _busquedaId++;
-            _offsetMods = 0;
+            _offsetMods = 0; _offsetCf = 0; _hayMasMr = true; _hayMasCf = true;
             _hayMasResultados = true;
             _listaModsActual.Clear();
             MostrarEstadoMods(null);
@@ -1754,7 +1834,7 @@ namespace TecniLauncher
             txtModLoader.Text = p.TipoLoader;
 
             _busquedaId++;
-            _offsetMods = 0;
+            _offsetMods = 0; _offsetCf = 0; _hayMasMr = true; _hayMasCf = true;
             _hayMasResultados = true;
             _listaModsActual.Clear();
             await AplicarPerfilAFiltrosAsync(p);
@@ -1804,7 +1884,7 @@ namespace TecniLauncher
             if (comboPerfilesMods.SelectedItem is not Perfil p) return;
 
             _busquedaId++;
-            _offsetMods = 0;
+            _offsetMods = 0; _offsetCf = 0; _hayMasMr = true; _hayMasCf = true;
             _hayMasResultados = true;
             _listaModsActual.Clear();
             listaModsGestor.ItemsSource = _listaModsActual;
@@ -1841,53 +1921,90 @@ namespace TecniLauncher
                     return;
                 }
 
-                var fuente = _fuenteMods;
-                if (fuente == FuenteContenido.CurseForge && !CurseForgeAPI.Disponible)
-                {
-                    MostrarEstadoMods(Core.T("CF_NoConfigurado"));
-                    _hayMasResultados = false;
-                    return;
-                }
-
                 if (esPrimeraCarga) MostrarEstadoMods(Core.T("Mods_Cargando"));
 
-                var res = fuente == FuenteContenido.CurseForge
-                    ? await CurseForgeAPI.BuscarMods(busqueda, loader, version, _offsetMods, limitePaginacion, categoria, tipo)
-                    : await ModrinthAPI.BuscarMods(busqueda, loader, version, _offsetMods, limitePaginacion, categoria, tipo.ProjectType());
+                // Se busca en Modrinth y CurseForge a la vez y se une en una sola lista.
+                bool usarMr = _hayMasMr;
+                bool usarCf = _hayMasCf && CurseForgeAPI.Disponible;
+                string? categoriaCf = null;
+                if (usarCf && !string.IsNullOrEmpty(categoria))
+                {
+                    categoriaCf = await CategoriaCurseForgeAsync(categoria, tipo);
+                    if (categoriaCf == null) usarCf = false; // esa categoría no existe en CurseForge
+                }
+
+                var tareaMr = usarMr
+                    ? ModrinthAPI.BuscarMods(busqueda, loader, version, _offsetMods, limitePaginacion, categoria, tipo.ProjectType())
+                    : Task.FromResult(new List<ModInfo>());
+                var tareaCf = usarCf
+                    ? CurseForgeAPI.BuscarMods(busqueda, loader, version, _offsetCf, limitePaginacion, categoriaCf, tipo)
+                    : Task.FromResult(new List<ModInfo>());
+                var resMr = await tareaMr ?? new List<ModInfo>();
+                var resCf = await tareaCf ?? new List<ModInfo>();
 
                 if (idBusqueda != _busquedaId) return;
 
-                if (res == null || res.Count == 0)
+                _offsetMods += resMr.Count;
+                _offsetCf += resCf.Count;
+                if (!usarMr || resMr.Count < limitePaginacion) _hayMasMr = false;
+                if (!usarCf || resCf.Count < limitePaginacion) _hayMasCf = false;
+                _hayMasResultados = _hayMasMr || _hayMasCf;
+
+                if (resMr.Count == 0 && resCf.Count == 0)
                 {
-                    _hayMasResultados = false;
-                    string vacio = fuente == FuenteContenido.CurseForge && CurseForgeAPI.BusquedaRechazada
-                        ? Core.T("CF_BusquedaRechazada") : Core.T("Mods_SinResultados");
-                    MostrarEstadoMods(_listaModsActual.Count == 0 ? vacio : null);
+                    MostrarEstadoMods(_listaModsActual.Count == 0 ? Core.T("Mods_SinResultados") : null);
                     return;
                 }
 
                 string carpetaMods = Path.Combine(p.RutaCarpeta, tipo.Carpeta());
-                var proyectosLocales = await ObtenerProjectIdsInstaladosAsync(carpetaMods, tipo, fuente);
+                var localesMr = await ObtenerProjectIdsInstaladosAsync(carpetaMods, tipo, FuenteContenido.Modrinth);
+                var localesCf = CurseForgeAPI.Disponible
+                    ? await ObtenerProjectIdsInstaladosAsync(carpetaMods, tipo, FuenteContenido.CurseForge)
+                    : new HashSet<string>();
 
                 if (idBusqueda != _busquedaId || !ReferenceEquals(comboPerfilesMods.SelectedItem, p)) return;
 
-                foreach (var m in res)
-                {
-                    if (_listaModsActual.Any(x => x.project_id == m.project_id)) continue;
+                var preferida = Core.FuentePreferidaEnum;
+                var nuevos = new List<ModInfo>();
+                ModInfo? Buscar(string clave) =>
+                    nuevos.FirstOrDefault(x => ClaveMod(x.title) == clave) ?? _listaModsActual.FirstOrDefault(x => ClaveMod(x.title) == clave);
 
+                foreach (var m in resMr)
+                {
+                    if (string.IsNullOrEmpty(m.project_id) || _listaModsActual.Any(x => x.IdModrinth == m.project_id) || nuevos.Any(x => x.IdModrinth == m.project_id)) continue;
+                    m.IdModrinth = m.project_id; m.SlugModrinth = m.slug;
+                    nuevos.Add(m);
+                }
+                foreach (var m in resCf)
+                {
+                    if (string.IsNullOrEmpty(m.project_id) || _listaModsActual.Any(x => x.IdCurseForge == m.project_id) || nuevos.Any(x => x.IdCurseForge == m.project_id)) continue;
+                    var mismo = Buscar(ClaveMod(m.title));
+                    if (mismo != null && !mismo.EnCurseForge)
+                    {
+                        mismo.IdCurseForge = m.project_id; mismo.SlugCurseForge = m.slug;
+                        mismo.downloads = Math.Max(mismo.downloads, m.downloads);
+                        if (string.IsNullOrEmpty(mismo.icon_url)) mismo.icon_url = m.icon_url;
+                        mismo.AplicarPreferencia(preferida);
+                        if (!string.IsNullOrEmpty(m.project_id) && localesCf.Contains(m.project_id)) mismo.estaInstalado = true;
+                        continue;
+                    }
+                    m.IdCurseForge = m.project_id; m.SlugCurseForge = m.slug;
+                    nuevos.Add(m);
+                }
+
+                foreach (var m in nuevos.OrderByDescending(x => x.downloads))
+                {
                     string titulo = (m.title ?? "").ToLower();
                     m.esRecomendado = tipo == TipoComplemento.Mod && (titulo.Contains("sodium") || titulo.Contains("iris") || titulo.Contains("lithium"));
 
                     if (string.IsNullOrEmpty(m.icon_url))
                         m.icon_url = "https://cdn.modrinth.com/assets/icon.png";
 
-                    m.estaInstalado = !string.IsNullOrEmpty(m.project_id) && proyectosLocales.Contains(m.project_id);
+                    m.AplicarPreferencia(preferida);
+                    m.estaInstalado = (m.EnModrinth && localesMr.Contains(m.IdModrinth!)) || (m.EnCurseForge && localesCf.Contains(m.IdCurseForge!));
 
                     _listaModsActual.Add(m);
                 }
-
-                _offsetMods += res.Count;
-                if (res.Count < limitePaginacion) _hayMasResultados = false;
 
                 MostrarEstadoMods(null);
             }
@@ -2009,15 +2126,45 @@ namespace TecniLauncher
             if (_listaModsActual.Count == 0) return;
 
             var tipo = _tipo;
-            var fuente = _fuenteMods;
-            var ids = await ObtenerProjectIdsInstaladosAsync(Path.Combine(p.RutaCarpeta, tipo.Carpeta()), tipo, fuente);
-            if (!ReferenceEquals(comboPerfilesMods.SelectedItem, p) || _tipo != tipo || _fuenteMods != fuente) return;
+            string carpeta = Path.Combine(p.RutaCarpeta, tipo.Carpeta());
+            var idsMr = await ObtenerProjectIdsInstaladosAsync(carpeta, tipo, FuenteContenido.Modrinth);
+            var idsCf = CurseForgeAPI.Disponible ? await ObtenerProjectIdsInstaladosAsync(carpeta, tipo, FuenteContenido.CurseForge) : new HashSet<string>();
+            if (!ReferenceEquals(comboPerfilesMods.SelectedItem, p) || _tipo != tipo) return;
 
             foreach (var m in _listaModsActual.ToList())
             {
-                bool instalado = !string.IsNullOrEmpty(m.project_id) && ids.Contains(m.project_id);
+                bool instalado = (m.EnModrinth && idsMr.Contains(m.IdModrinth!)) || (m.EnCurseForge && idsCf.Contains(m.IdCurseForge!));
                 if (instalado || !soloMarcar) m.estaInstalado = instalado;
             }
+        }
+
+        /// <summary>Clave para reconocer el mismo mod en las dos plataformas: título sin espacios ni símbolos.</summary>
+        private static string ClaveMod(string? titulo) =>
+            new string((titulo ?? "").ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
+
+        private readonly Dictionary<string, string?> _categoriasCf = new();
+
+        /// <summary>Categoría de CurseForge equivalente a una de Modrinth (por nombre). null si no hay.</summary>
+        private async Task<string?> CategoriaCurseForgeAsync(string slugModrinth, TipoComplemento tipo)
+        {
+            string clave = $"{tipo}|{slugModrinth}";
+            if (_categoriasCf.TryGetValue(clave, out var cache)) return cache;
+
+            var cats = await CurseForgeAPI.ObtenerCategoriasAsync(CurseForgeAPI.ClaseDe(tipo));
+            string buscado = ClaveMod(slugModrinth);
+            string Norm(string t) => ClaveMod(t);
+            var exacta = cats.FirstOrDefault(c => Norm(c.Texto) == buscado);
+            var parecida = exacta ?? cats.FirstOrDefault(c => Norm(c.Texto).Contains(buscado) || (buscado.Length >= 4 && buscado.Contains(Norm(c.Texto))));
+            string? id = parecida?.Clave;
+            _categoriasCf[clave] = id;
+            return id;
+        }
+
+        /// <summary>Al cambiar la plataforma preferida, las tarjetas que están en las dos pasan a instalar desde ella.</summary>
+        private void AplicarPreferenciaATarjetas()
+        {
+            var preferida = Core.FuentePreferidaEnum;
+            foreach (var m in _listaModsActual) m.AplicarPreferencia(preferida);
         }
 
         private async void ListaMods_ScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -2085,9 +2232,25 @@ namespace TecniLauncher
                 txtNombreModVersiones.Text = Core.T("Txt_BuscandoVersionesMod", mod.title);
 
                 string? loaderVer = _tipo.UsaLoader() ? perfilActual.TipoLoader : null;
-                var versiones = mod.Fuente == FuenteContenido.CurseForge
-                    ? await CurseForgeAPI.ObtenerListaVersiones(mod.project_id, perfilActual.Version, loaderVer)
-                    : await ModrinthAPI.ObtenerListaVersiones(mod.project_id, perfilActual.Version, loaderVer);
+                string? idMr = mod.IdModrinth ?? (mod.Fuente == FuenteContenido.Modrinth ? mod.project_id : null);
+                string? idCf = mod.IdCurseForge ?? (mod.Fuente == FuenteContenido.CurseForge ? mod.project_id : null);
+                var tMr = idMr != null ? ModrinthAPI.ObtenerListaVersiones(idMr, perfilActual.Version, loaderVer) : Task.FromResult(new List<ModVersion>());
+                var tCf = idCf != null ? CurseForgeAPI.ObtenerListaVersiones(idCf, perfilActual.Version, loaderVer) : Task.FromResult(new List<ModVersion>());
+                var deMr = await tMr ?? new List<ModVersion>();
+                var deCf = await tCf ?? new List<ModVersion>();
+                // Una pestaña por plataforma; se abre en la preferida si tiene versiones.
+                _versionesMr = deMr; _versionesCf = deCf;
+                TxtTabVerModrinth.Text = $"Modrinth ({deMr.Count})";
+                TxtTabVerCurseForge.Text = $"CurseForge ({deCf.Count})";
+                TabVerModrinth.Visibility = idMr != null ? Visibility.Visible : Visibility.Collapsed;
+                TabVerCurseForge.Visibility = idCf != null ? Visibility.Visible : Visibility.Collapsed;
+                TabsVersiones.Visibility = idMr != null && idCf != null ? Visibility.Visible : Visibility.Collapsed;
+                bool abrirCf = deCf.Count > 0 && (Core.FuentePreferidaEnum == FuenteContenido.CurseForge || deMr.Count == 0);
+                _cambiandoTabVersiones = true;
+                TabVerModrinth.IsChecked = !abrirCf;
+                TabVerCurseForge.IsChecked = abrirCf;
+                _cambiandoTabVersiones = false;
+                var versiones = abrirCf ? deCf : deMr;
 
                 if (versiones != null && versiones.Count > 0)
                 {
@@ -2104,6 +2267,17 @@ namespace TecniLauncher
                 AvisoError(Core.T("Msg_ErrorVersionesMod", ex.Message));
                 OverlayVersiones.Visibility = Visibility.Collapsed;
             }
+        }
+
+        private List<ModVersion> _versionesMr = new(), _versionesCf = new();
+        private bool _cambiandoTabVersiones;
+
+        private void TabVersiones_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_cambiandoTabVersiones || listaArchivosVersion == null) return;
+            var lista = ReferenceEquals(sender, TabVerCurseForge) ? _versionesCf : _versionesMr;
+            listaArchivosVersion.ItemsSource = lista;
+            if (lista.Count == 0) listaArchivosVersion.ItemsSource = null;
         }
 
         private void BtnInstalarRapido_Click(object sender, RoutedEventArgs e)
@@ -2127,7 +2301,9 @@ namespace TecniLauncher
 
             OverlayVersiones.Visibility = Visibility.Collapsed;
 
-            var tarjeta = _listaModsActual.FirstOrDefault(m => m.project_id == version.ProjectId && m.Fuente == version.Fuente);
+            var tarjeta = _listaModsActual.FirstOrDefault(m => version.Fuente == FuenteContenido.CurseForge
+                ? (m.IdCurseForge ?? (m.Fuente == FuenteContenido.CurseForge ? m.project_id : null)) == version.ProjectId
+                : (m.IdModrinth ?? (m.Fuente == FuenteContenido.Modrinth ? m.project_id : null)) == version.ProjectId);
             string titulo = tarjeta?.title ?? version.NombreVersion;
             _ = InstalarModEnSegundoPlanoAsync(p, tarjeta, version, titulo, version.ProjectId, version.Fuente);
         }
@@ -2156,12 +2332,25 @@ namespace TecniLauncher
                             : await ModrinthAPI.ObtenerListaVersiones(projectId, versionMC, loader);
                         version = lista.FirstOrDefault(v => v.Tipo == "release") ?? lista.FirstOrDefault();
 
+                        // Si la plataforma elegida no tiene versión compatible, se prueba la otra.
+                        if (version == null && tarjeta != null)
+                        {
+                            string? otroId = fuente == FuenteContenido.CurseForge ? tarjeta.IdModrinth : tarjeta.IdCurseForge;
+                            if (!string.IsNullOrEmpty(otroId))
+                            {
+                                var otra = fuente == FuenteContenido.CurseForge
+                                    ? await ModrinthAPI.ObtenerListaVersiones(otroId, versionMC, loader)
+                                    : await CurseForgeAPI.ObtenerListaVersiones(otroId, versionMC, loader);
+                                version = otra.FirstOrDefault(v => v.Tipo == "release") ?? otra.FirstOrDefault();
+                            }
+                        }
+
                         if (version == null && fuente == FuenteContenido.CurseForge
                             && await CurseForgeAPI.TieneSoloDescargasBloqueadasAsync(projectId, versionMC, loader))
                         {
                             MostrarToast(Core.T("CF_BloqueadoAutor", titulo), false, true);
                             if (tarjeta != null && !string.IsNullOrEmpty(tarjeta.slug))
-                                AbrirEnlaceExterno(CurseForgeAPI.UrlProyecto(tarjeta.slug, tipo));
+                                AbrirEnlaceExterno(CurseForgeAPI.UrlProyecto(tarjeta.SlugCurseForge ?? tarjeta.slug, tipo));
                             return;
                         }
 
@@ -2268,8 +2457,51 @@ namespace TecniLauncher
                 listaModsInstaladosGestor.ItemsSource = _modsLocales;
                 txtVacioInstalados.Visibility = _modsLocales.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
                 ActualizarContadorInstalados();
+                _ = CompletarInfoInstaladosAsync(_modsLocales, path, tipo);
             }
             catch (Exception exLog) { LogService.Warn("No se pudo listar los mods instalados", exLog); }
+        }
+
+        // "mr:id" / "cf:id" → nombre e icono del proyecto (se piden una vez por sesión)
+        private readonly Dictionary<string, (string Nombre, string? Icono)> _infoProyectos = new();
+
+        /// <summary>
+        /// Pone a cada archivo instalado el nombre e icono de su mod, como en la búsqueda.
+        /// Se identifica por hash en Modrinth y, si no está, por huella en CurseForge. Nunca lanza.
+        /// </summary>
+        private async Task CompletarInfoInstaladosAsync(List<ModLocal> lista, string carpeta, TipoComplemento tipo)
+        {
+            try
+            {
+                if (lista.Count == 0) return;
+
+                await ObtenerProjectIdsInstaladosAsync(carpeta, tipo, FuenteContenido.Modrinth); // rellena la caché por archivo
+                if (!ReferenceEquals(_modsLocales, lista)) return;
+
+                var porMr = lista.Select(m => (Mod: m, Id: _cacheProyectosLocales.TryGetValue(m.ClaveCache, out var id) ? id : "")).ToList();
+                var faltanMr = porMr.Where(x => x.Id.Length > 0 && !_infoProyectos.ContainsKey("mr:" + x.Id)).Select(x => x.Id).Distinct().ToList();
+                if (faltanMr.Count > 0)
+                    foreach (var kv in await ModrinthAPI.ObtenerInfoProyectosAsync(faltanMr)) _infoProyectos["mr:" + kv.Key] = kv.Value;
+
+                foreach (var (mod, id) in porMr)
+                    if (id.Length > 0 && _infoProyectos.TryGetValue("mr:" + id, out var info)) mod.AplicarInfo(info.Nombre, info.Icono, FuenteContenido.Modrinth);
+
+                // Lo que no está en Modrinth: CurseForge
+                if (!CurseForgeAPI.Disponible || !ReferenceEquals(_modsLocales, lista)) return;
+                if (!lista.Any(m => m.NombreReal == null)) return;
+                await ObtenerProjectIdsInstaladosAsync(carpeta, tipo, FuenteContenido.CurseForge);
+                if (!ReferenceEquals(_modsLocales, lista)) return;
+
+                var porCf = lista.Where(m => m.NombreReal == null)
+                    .Select(m => (Mod: m, Id: _cacheProyectosLocalesCf.TryGetValue(m.ClaveCache, out var id) ? id : "")).ToList();
+                var faltanCf = porCf.Where(x => x.Id.Length > 0 && !_infoProyectos.ContainsKey("cf:" + x.Id)).Select(x => x.Id).Distinct().ToList();
+                if (faltanCf.Count > 0)
+                    foreach (var kv in await CurseForgeAPI.ObtenerInfoModsAsync(faltanCf)) _infoProyectos["cf:" + kv.Key] = kv.Value;
+
+                foreach (var (mod, id) in porCf)
+                    if (id.Length > 0 && _infoProyectos.TryGetValue("cf:" + id, out var info)) mod.AplicarInfo(info.Nombre, info.Icono, FuenteContenido.CurseForge);
+            }
+            catch (Exception ex) { LogService.Debug("No se pudo completar la información de los instalados", ex); }
         }
 
         private void ActualizarContadorInstalados()
@@ -2853,6 +3085,9 @@ namespace TecniLauncher
 
             chkConsola.IsChecked = Core.ConsolaDepuracionActiva;
             chkDiscordRpc.IsChecked = Core.DiscordRpcActivado;
+            _cargandoFuentePreferida = true;
+            comboFuentePreferida.SelectedIndex = Core.FuentePreferidaEnum == FuenteContenido.CurseForge ? 1 : 0;
+            _cargandoFuentePreferida = false;
             AplicarVisibilidadConsola();
         }
 
@@ -2938,6 +3173,16 @@ namespace TecniLauncher
 
             if (Core.ConsolaDepuracionActiva)
                 Aviso(Core.T("Msg_ConsolaActivada"));
+        }
+
+        private bool _cargandoFuentePreferida;
+
+        private void ComboFuentePreferida_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_cargandoFuentePreferida || comboFuentePreferida == null) return;
+            Core.FuentePreferida = comboFuentePreferida.SelectedIndex == 1 ? "CurseForge" : "Modrinth";
+            Core.GuardarConfiguracion();
+            AplicarPreferenciaATarjetas();
         }
 
         private void ChkDiscordRpc_Click(object sender, RoutedEventArgs e)

@@ -41,6 +41,24 @@ namespace TecniLauncher
         [System.Text.Json.Serialization.JsonIgnore]
         public bool PuedeInstalar => !_estaInstalado && !_instalando;
 
+        // ---- Disponibilidad por plataforma (la búsqueda une Modrinth y CurseForge en una sola tarjeta)
+        [System.Text.Json.Serialization.JsonIgnore] public string? IdModrinth { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore] public string? SlugModrinth { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore] public string? IdCurseForge { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore] public string? SlugCurseForge { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore] public bool EnModrinth => !string.IsNullOrEmpty(IdModrinth);
+        [System.Text.Json.Serialization.JsonIgnore] public bool EnCurseForge => !string.IsNullOrEmpty(IdCurseForge);
+
+        /// <summary>project_id, slug y Fuente pasan a la plataforma preferida si el mod está en las dos.</summary>
+        public void AplicarPreferencia(FuenteContenido preferida)
+        {
+            bool usarCf = EnCurseForge && (preferida == FuenteContenido.CurseForge || !EnModrinth);
+            if (usarCf) { project_id = IdCurseForge!; slug = SlugCurseForge ?? ""; Fuente = FuenteContenido.CurseForge; }
+            else if (EnModrinth) { project_id = IdModrinth!; slug = SlugModrinth ?? ""; Fuente = FuenteContenido.Modrinth; }
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(EnModrinth)));
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(EnCurseForge)));
+        }
+
         [System.Text.Json.Serialization.JsonIgnore]
         public string BotonTexto =>
             _instalando ? Core.T("Mods_Instalando") :
@@ -139,11 +157,29 @@ namespace TecniLauncher
             NombreArchivo = f.Name;
             Bytes = f.Length;
             Habilitado = !f.Name.EndsWith(SufijoDeshabilitado, StringComparison.OrdinalIgnoreCase);
+            ClaveCache = $"{f.FullName}|{f.Length}|{f.LastWriteTimeUtc.Ticks}";
         }
 
-        public string RutaCompleta => System.IO.Path.Combine(Directorio, NombreArchivo);
+        /// <summary>Clave con la que el launcher cachea a qué proyecto corresponde el archivo.</summary>
+        public string ClaveCache { get; }
 
-        public string Titulo
+        // Datos del proyecto en Modrinth/CurseForge (se rellenan en segundo plano).
+        public string? NombreReal { get; private set; }
+        public string? IconoUrl { get; private set; }
+        public bool EnModrinth { get; private set; }
+        public bool EnCurseForge { get; private set; }
+        public bool TieneIcono => !string.IsNullOrEmpty(IconoUrl);
+
+        public void AplicarInfo(string? nombre, string? icono, FuenteContenido fuente)
+        {
+            if (!string.IsNullOrWhiteSpace(nombre)) NombreReal = nombre;
+            if (!string.IsNullOrWhiteSpace(icono)) IconoUrl = icono;
+            if (fuente == FuenteContenido.CurseForge) EnCurseForge = true; else EnModrinth = true;
+            foreach (var n in new[] { nameof(NombreReal), nameof(IconoUrl), nameof(TieneIcono), nameof(EnModrinth), nameof(EnCurseForge), nameof(Titulo), nameof(Detalle) })
+                PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(n));
+        }
+
+        private string NombreSinExtension
         {
             get
             {
@@ -154,7 +190,15 @@ namespace TecniLauncher
             }
         }
 
-        public string Detalle => Bytes >= 1024 * 1024 ? $"{Bytes / 1048576.0:0.#} MB" : $"{Math.Max(1, Bytes / 1024)} KB";
+        public string RutaCompleta => System.IO.Path.Combine(Directorio, NombreArchivo);
+
+        /// <summary>Nombre del mod si se identificó; si no, el nombre del archivo.</summary>
+        public string Titulo => NombreReal ?? NombreSinExtension;
+
+        private string Tamano => Bytes >= 1024 * 1024 ? $"{Bytes / 1048576.0:0.#} MB" : $"{Math.Max(1, Bytes / 1024)} KB";
+
+        /// <summary>Con nombre real: "archivo · tamaño"; si no, solo el tamaño.</summary>
+        public string Detalle => NombreReal != null ? $"{NombreSinExtension} · {Tamano}" : Tamano;
 
         public bool Alternar(out string? error)
         {
@@ -188,6 +232,7 @@ namespace TecniLauncher
             PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Habilitado)));
             PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(NombreArchivo)));
             PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Titulo)));
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Detalle)));
         }
 
         public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
@@ -210,6 +255,7 @@ namespace TecniLauncher
         public string UrlDescarga { get; set; }
         public string ColorTipo => Tipo == "release" ? "#2ecc71" : (Tipo == "beta" ? "#f1c40f" : "#e74c3c");
         public FuenteContenido Fuente { get; set; } = FuenteContenido.Modrinth;
+        public bool EsCurseForge => Fuente == FuenteContenido.CurseForge;
         public List<DependenciaMod> Requeridas { get; set; } = new List<DependenciaMod>();
         public List<string> DependenciasRequeridas => Requeridas
             .Where(d => !string.IsNullOrEmpty(d.ProjectId)).Select(d => d.ProjectId!).ToList();
@@ -285,6 +331,30 @@ namespace TecniLauncher
                 LogService.Warn("Error obteniendo versiones de Minecraft", ex);
                 return new List<string>();
             }
+        }
+
+        /// <summary>id de proyecto → (nombre, icono). Vacío si falla.</summary>
+        public static async Task<Dictionary<string, (string Nombre, string? Icono)>> ObtenerInfoProyectosAsync(IEnumerable<string> ids)
+        {
+            var r = new Dictionary<string, (string, string?)>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                foreach (var lote in ids.Where(i => !string.IsNullOrEmpty(i)).Distinct().Chunk(100))
+                {
+                    string lista = "[" + string.Join(",", lote.Select(i => $"\"{i}\"")) + "]";
+                    using var resp = await client.GetAsync($"{Base}/projects?ids={Uri.EscapeDataString(lista)}");
+                    if (!resp.IsSuccessStatusCode) continue;
+                    using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+                    if (doc.RootElement.ValueKind != JsonValueKind.Array) continue;
+                    foreach (var pr in doc.RootElement.EnumerateArray())
+                    {
+                        string? id = Str(pr, "id"), titulo = Str(pr, "title");
+                        if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(titulo)) r[id] = (titulo, Str(pr, "icon_url"));
+                    }
+                }
+            }
+            catch (Exception ex) { LogService.Warn("Error obteniendo información de proyectos de Modrinth", ex); }
+            return r;
         }
 
         public static async Task<Dictionary<string, string>?> ObtenerProjectIdsPorHashAsync(List<string> hashesSha1)

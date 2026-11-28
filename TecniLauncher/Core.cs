@@ -32,6 +32,10 @@ namespace TecniLauncher
             EsTecniStudio && SesionUsuario != null && SesionUsuario.UserType == "mojang";
         public static string IdiomaActual { get; set; } = "en-US";
         public static bool DiscordRpcActivado { get; set; } = true;
+        /// <summary>"Modrinth" o "CurseForge": qué se instala al pulsar Instalar si el mod está en las dos.</summary>
+        public static string FuentePreferida { get; set; } = "Modrinth";
+        public static FuenteContenido FuentePreferidaEnum =>
+            string.Equals(FuentePreferida, "CurseForge", StringComparison.OrdinalIgnoreCase) ? FuenteContenido.CurseForge : FuenteContenido.Modrinth;
         public static bool ConsolaDepuracionActiva { get; set; } = false;
         public static string T(string clave, params object[] args)
         {
@@ -123,6 +127,7 @@ namespace TecniLauncher
                     EsTecniStudio,
                     IdiomaActual,
                     DiscordRpcActivado,
+                    FuentePreferida,
                     ConsolaDepuracionActiva,
                     UltimasNovedadesVistas
                 };
@@ -149,6 +154,7 @@ namespace TecniLauncher
                     if (doc.RootElement.TryGetProperty("EsTecniStudio", out var ely)) EsTecniStudio = ely.GetBoolean();
                     if (doc.RootElement.TryGetProperty("IdiomaActual", out var lang)) IdiomaActual = lang.GetString() ?? "es-ES";
                     if (doc.RootElement.TryGetProperty("DiscordRpcActivado", out var rpc)) DiscordRpcActivado = rpc.GetBoolean();
+                    if (doc.RootElement.TryGetProperty("FuentePreferida", out var fp)) FuentePreferida = fp.GetString() == "CurseForge" ? "CurseForge" : "Modrinth";
                     if (doc.RootElement.TryGetProperty("ConsolaDepuracionActiva", out var cons)) ConsolaDepuracionActiva = cons.GetBoolean();
                     if (doc.RootElement.TryGetProperty("UltimasNovedadesVistas", out var nov)) UltimasNovedadesVistas = nov.GetString() ?? "";
                 }

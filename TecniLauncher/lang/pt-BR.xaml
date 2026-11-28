@@ -32,6 +32,9 @@
     <sys:String x:Key="Play_NewsJoin">PARTICIPAR AGORA</sys:String>
     <sys:String x:Key="Play_SelectProfile">SELECIONE SEU PERFIL</sys:String>
     <sys:String x:Key="Play_BtnPlay">JOGAR AGORA</sys:String>
+    <sys:String x:Key="Play_BtnCancel">CANCELAR</sys:String>
+    <sys:String x:Key="Play_Cancelando">Cancelando...</sys:String>
+    <sys:String x:Key="Play_Cancelado">A abertura de {0} foi cancelada.</sys:String>
 
     <sys:String x:Key="Profiles_Title">GERENCIAR PERFIS</sys:String>
     <sys:String x:Key="Profiles_CreateNew">CRIAR NOVO PERFIL</sys:String>
@@ -207,6 +210,11 @@
     <sys:String x:Key="Mods_SinResultados">Nenhum resultado encontrado com estes filtros.</sys:String>
     <sys:String x:Key="Mods_SinInstalados">Ainda não há nada instalado nesta seção.</sys:String>
     <sys:String x:Key="Mods_Contador">{0} ativos · {1} desativados</sys:String>
+    <sys:String x:Key="Settings_Fuente">Plataforma de mods</sys:String>
+    <sys:String x:Key="Settings_FuentePreferida">Plataforma preferida</sys:String>
+    <sys:String x:Key="Settings_FuentePreferidaDesc">Se um mod está no Modrinth e no CurseForge, o botão Instalar usa esta. Em ⋯ você sempre vê as versões das duas.</sys:String>
+    <sys:String x:Key="Mods_EnModrinth">Disponível no Modrinth</sys:String>
+    <sys:String x:Key="Mods_EnCurseForge">Disponível no CurseForge</sys:String>
     <sys:String x:Key="Mods_BuscarActualizaciones">Buscar atualizações</sys:String>
     <sys:String x:Key="Mods_SinPerfil">Escolha um perfil primeiro.</sys:String>
     <sys:String x:Key="Mods_Buscando">Buscando atualizações...</sys:String>

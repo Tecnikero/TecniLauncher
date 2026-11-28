@@ -32,6 +32,9 @@
     <sys:String x:Key="Play_NewsJoin">JOIN NOW</sys:String>
     <sys:String x:Key="Play_SelectProfile">SELECT YOUR PROFILE</sys:String>
     <sys:String x:Key="Play_BtnPlay">PLAY NOW</sys:String>
+    <sys:String x:Key="Play_BtnCancel">CANCEL</sys:String>
+    <sys:String x:Key="Play_Cancelando">Cancelling...</sys:String>
+    <sys:String x:Key="Play_Cancelado">Launching {0} was cancelled.</sys:String>
 
     <sys:String x:Key="Profiles_Title">PROFILE MANAGER</sys:String>
     <sys:String x:Key="Profiles_CreateNew">CREATE NEW PROFILE</sys:String>
@@ -207,6 +210,11 @@
     <sys:String x:Key="Mods_SinResultados">No results found with these filters.</sys:String>
     <sys:String x:Key="Mods_SinInstalados">Nothing installed in this section yet.</sys:String>
     <sys:String x:Key="Mods_Contador">{0} enabled · {1} disabled</sys:String>
+    <sys:String x:Key="Settings_Fuente">Mod platform</sys:String>
+    <sys:String x:Key="Settings_FuentePreferida">Preferred platform</sys:String>
+    <sys:String x:Key="Settings_FuentePreferidaDesc">If a mod is on both Modrinth and CurseForge, the Install button uses this one. In ⋯ you always see versions from both.</sys:String>
+    <sys:String x:Key="Mods_EnModrinth">Available on Modrinth</sys:String>
+    <sys:String x:Key="Mods_EnCurseForge">Available on CurseForge</sys:String>
     <sys:String x:Key="Mods_BuscarActualizaciones">Check for updates</sys:String>
     <sys:String x:Key="Mods_SinPerfil">Choose a profile first.</sys:String>
     <sys:String x:Key="Mods_Buscando">Checking for updates...</sys:String>

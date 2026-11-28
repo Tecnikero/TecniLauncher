@@ -339,11 +339,14 @@ namespace TecniLauncher
         /// <summary>Fingerprint de CurseForge: MurmurHash2 (semilla 1) ignorando bytes de espacio en blanco (9, 10, 13, 32).</summary>
         public static uint CalcularFingerprint(string ruta)
         {
-            byte[] bruto = File.ReadAllBytes(ruta);
-            var buf = new byte[bruto.Length];
+            // Se quitan los espacios en el mismo array (sin una segunda copia del archivo en memoria).
+            byte[] buf = File.ReadAllBytes(ruta);
             int len = 0;
-            foreach (byte b in bruto)
+            for (int j = 0; j < buf.Length; j++)
+            {
+                byte b = buf[j];
                 if (b != 9 && b != 10 && b != 13 && b != 32) buf[len++] = b;
+            }
 
             unchecked
             {
@@ -457,6 +460,29 @@ namespace TecniLauncher
         #endregion
 
         #region Modpacks
+
+        /// <summary>id de mod → (nombre, icono). Vacío si falla.</summary>
+        public static async Task<Dictionary<string, (string Nombre, string? Icono)>> ObtenerInfoModsAsync(IEnumerable<string> ids)
+        {
+            var r = new Dictionary<string, (string, string?)>();
+            var numeros = ids.Select(i => long.TryParse(i, out long n) ? n : 0).Where(n => n > 0).Distinct().ToList();
+            if (numeros.Count == 0 || !Disponible) return r;
+            try
+            {
+                foreach (var lote in numeros.Chunk(200))
+                {
+                    using var doc = await PostAsync("/mods", new { modIds = lote });
+                    foreach (var m in Data(doc).EnumerateArray())
+                    {
+                        string? nombre = Str(m, "name");
+                        string? icono = m.TryGetProperty("logo", out var logo) && logo.ValueKind == JsonValueKind.Object ? Str(logo, "thumbnailUrl") ?? Str(logo, "url") : null;
+                        if (!string.IsNullOrEmpty(nombre)) r[Num(m, "id").ToString()] = (nombre, icono);
+                    }
+                }
+            }
+            catch (Exception ex) { LogService.Warn("Error obteniendo información de mods de CurseForge", ex); }
+            return r;
+        }
 
         public static async Task<List<ModpackProject>> BuscarModpacksAsync(string busqueda, int offset, int limite)
         {
